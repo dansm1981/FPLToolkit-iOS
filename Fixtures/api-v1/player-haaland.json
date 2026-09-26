@@ -1,0 +1,262 @@
+{
+  "data": {
+    "player": {
+      "id": 411,
+      "webName": "Haaland",
+      "clubId": 15,
+      "position": "FWD",
+      "price": 15.6,
+      "availability": {
+        "code": "a",
+        "level": "ok",
+        "chanceNext": null,
+        "news": null
+      },
+      "selectedByPct": 73.8,
+      "nextFixture": {
+        "gw": 6,
+        "blank": false,
+        "opponentClubId": 14,
+        "home": false,
+        "kickoff": "2026-10-11T15:30:00.000Z",
+        "xfdr": {
+          "value": 3.09,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      "firstName": "Erling",
+      "secondName": "Haaland",
+      "form": 9.2,
+      "pointsPerGame": 7.8,
+      "totalPoints": 39,
+      "minutes": 450,
+      "newsAddedAt": null
+    },
+    "insights": [
+      {
+        "id": "411-elite-Elite 100:gw5",
+        "playerId": 411,
+        "category": "elite",
+        "severity": 66,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "9% of the top 100 managers bought him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 9,
+          "unit": "%",
+          "label": "Top 100 bought"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/411?insight=411-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "411-setpiece-Set pieces:gw5",
+        "playerId": 411,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on penalties.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/411?insight=411-setpiece-Set%20pieces%3Agw5"
+      }
+    ],
+    "fixtures": [
+      {
+        "gw": 6,
+        "blank": false,
+        "opponentClubId": 14,
+        "home": false,
+        "kickoff": "2026-10-11T15:30:00.000Z",
+        "xfdr": {
+          "value": 3.09,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 7,
+        "blank": false,
+        "opponentClubId": 12,
+        "home": true,
+        "kickoff": "2026-10-17T14:00:00.000Z",
+        "xfdr": {
+          "value": 1,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 8,
+        "blank": false,
+        "opponentClubId": 2,
+        "home": false,
+        "kickoff": "2026-10-24T11:30:00.000Z",
+        "xfdr": {
+          "value": 2.46,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 9,
+        "blank": false,
+        "opponentClubId": 5,
+        "home": true,
+        "kickoff": "2026-10-31T15:00:00.000Z",
+        "xfdr": {
+          "value": 1.33,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 10,
+        "blank": false,
+        "opponentClubId": 18,
+        "home": false,
+        "kickoff": "2026-11-07T17:30:00.000Z",
+        "xfdr": {
+          "value": 2.13,
+          "lens": "attack",
+          "source": "market"
+        }
+      }
+    ],
+    "market": {
+      "selectedByPct": 73.8,
+      "transfersInEvent": 69530,
+      "transfersOutEvent": 17094,
+      "ownershipChange7d": 0.5,
+      "ownershipTrend7d": [
+        {
+          "date": "2026-09-19",
+          "selectedByPct": 73.3
+        },
+        {
+          "date": "2026-09-20",
+          "selectedByPct": 73.4
+        },
+        {
+          "date": "2026-09-21",
+          "selectedByPct": 73.5
+        },
+        {
+          "date": "2026-09-22",
+          "selectedByPct": 73.6
+        },
+        {
+          "date": "2026-09-23",
+          "selectedByPct": 73.7
+        },
+        {
+          "date": "2026-09-24",
+          "selectedByPct": 73.7
+        },
+        {
+          "date": "2026-09-25",
+          "selectedByPct": 73.7
+        },
+        {
+          "date": "2026-09-26",
+          "selectedByPct": 73.8
+        }
+      ]
+    },
+    "pricePrediction": {
+      "progressPct": 20,
+      "hourlyRate": 21,
+      "tonightPct": 20.3,
+      "projections": [
+        {
+          "offset": 0,
+          "projectedPct": 20.3,
+          "likelihood": 2
+        },
+        {
+          "offset": 1,
+          "projectedPct": 20.6,
+          "likelihood": 2
+        },
+        {
+          "offset": 2,
+          "projectedPct": 20.9,
+          "likelihood": 2
+        }
+      ],
+      "lockedUntil": null,
+      "calibrating": false
+    },
+    "elite": {
+      "gw": 5,
+      "cohortSize": 100,
+      "ownedPct": 82,
+      "captainPct": 81,
+      "boughtPct": 9,
+      "soldPct": 1
+    },
+    "defcon": {
+      "threshold": 12,
+      "starts": 5,
+      "hits": 0,
+      "hitRateStarts": 0,
+      "dcPer90": 4
+    },
+    "links": {
+      "web": "https://www.fpltoolkit.co.uk/players/erling-haaland"
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-26T18:29:02.117Z",
+    "freshness": [
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "availability",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "price_predictions",
+        "asOf": null,
+        "expectedMaxAgeSeconds": 3600,
+        "state": "unknown"
+      },
+      {
+        "source": "elite",
+        "asOf": "2026-09-26T04:05:02.610Z",
+        "expectedMaxAgeSeconds": 604800,
+        "state": "fresh",
+        "label": "Top 100 cohort, published GW5"
+      },
+      {
+        "source": "xfdr",
+        "asOf": "2026-09-13T00:00:00.000Z",
+        "expectedMaxAgeSeconds": null,
+        "state": "fresh",
+        "label": "Market FDR v2.1, model date 2026-09-13"
+      },
+      {
+        "source": "defcon",
+        "asOf": "2026-09-26T06:17:01.733Z",
+        "expectedMaxAgeSeconds": 172800,
+        "state": "fresh"
+      }
+    ]
+  }
+}

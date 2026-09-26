@@ -1,0 +1,300 @@
+{
+  "data": {
+    "player": {
+      "id": 154,
+      "webName": "Palmer",
+      "clubId": 6,
+      "position": "MID",
+      "price": 9.7,
+      "availability": {
+        "code": "d",
+        "level": "doubt",
+        "chanceNext": 75,
+        "news": "Muscular injury - 75% chance of playing"
+      },
+      "selectedByPct": 25.9,
+      "nextFixture": {
+        "gw": 6,
+        "blank": false,
+        "opponentClubId": 3,
+        "home": true,
+        "kickoff": "2026-10-10T14:00:00.000Z",
+        "xfdr": {
+          "value": 1,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      "firstName": "Cole",
+      "secondName": "Palmer",
+      "form": 3.8,
+      "pointsPerGame": 5.6,
+      "totalPoints": 28,
+      "minutes": 442,
+      "newsAddedAt": "2026-09-21T13:00:09.022Z"
+    },
+    "insights": [
+      {
+        "id": "154-availability-Availability:gw5",
+        "playerId": 154,
+        "category": "availability",
+        "severity": 90,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Availability",
+        "summary": "Muscular injury - 75% chance of playing",
+        "supportingValue": {
+          "kind": "chance_of_playing",
+          "value": 75,
+          "unit": "%",
+          "label": "Chance of playing"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/154?insight=154-availability-Availability%3Agw5"
+      },
+      {
+        "id": "154-elite-Elite 100:gw5",
+        "playerId": 154,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "7% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 7,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/154?insight=154-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "154-market-Market:gw5",
+        "playerId": 154,
+        "category": "market",
+        "severity": 59,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Market",
+        "summary": "Net 103k transfers out across all managers this gameweek.",
+        "supportingValue": {
+          "kind": "net_transfers",
+          "value": -103007,
+          "unit": "count",
+          "label": "Net transfers this GW"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/154?insight=154-market-Market%3Agw5"
+      },
+      {
+        "id": "154-setpiece-Set pieces:gw5",
+        "playerId": 154,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on penalties.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/154?insight=154-setpiece-Set%20pieces%3Agw5"
+      }
+    ],
+    "fixtures": [
+      {
+        "gw": 6,
+        "blank": false,
+        "opponentClubId": 3,
+        "home": true,
+        "kickoff": "2026-10-10T14:00:00.000Z",
+        "xfdr": {
+          "value": 1,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 7,
+        "blank": false,
+        "opponentClubId": 9,
+        "home": false,
+        "kickoff": "2026-10-17T11:30:00.000Z",
+        "xfdr": {
+          "value": 2.54,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 8,
+        "blank": false,
+        "opponentClubId": 19,
+        "home": true,
+        "kickoff": "2026-10-24T16:30:00.000Z",
+        "xfdr": {
+          "value": 2.44,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 9,
+        "blank": false,
+        "opponentClubId": 16,
+        "home": true,
+        "kickoff": "2026-10-31T12:30:00.000Z",
+        "xfdr": {
+          "value": 2.03,
+          "lens": "attack",
+          "source": "market"
+        }
+      },
+      {
+        "gw": 10,
+        "blank": false,
+        "opponentClubId": 20,
+        "home": false,
+        "kickoff": "2026-11-08T14:00:00.000Z",
+        "xfdr": {
+          "value": 2.22,
+          "lens": "attack",
+          "source": "market"
+        }
+      }
+    ],
+    "market": {
+      "selectedByPct": 25.9,
+      "transfersInEvent": 44288,
+      "transfersOutEvent": 147295,
+      "ownershipChange7d": -1.1,
+      "ownershipTrend7d": [
+        {
+          "date": "2026-09-19",
+          "selectedByPct": 27
+        },
+        {
+          "date": "2026-09-20",
+          "selectedByPct": 26.8
+        },
+        {
+          "date": "2026-09-21",
+          "selectedByPct": 26.7
+        },
+        {
+          "date": "2026-09-22",
+          "selectedByPct": 26.4
+        },
+        {
+          "date": "2026-09-23",
+          "selectedByPct": 26.2
+        },
+        {
+          "date": "2026-09-24",
+          "selectedByPct": 26
+        },
+        {
+          "date": "2026-09-25",
+          "selectedByPct": 25.9
+        },
+        {
+          "date": "2026-09-26",
+          "selectedByPct": 25.9
+        }
+      ]
+    },
+    "pricePrediction": {
+      "progressPct": -10,
+      "hourlyRate": -153,
+      "tonightPct": -9.8,
+      "projections": [
+        {
+          "offset": 0,
+          "projectedPct": -9.8,
+          "likelihood": null
+        },
+        {
+          "offset": 1,
+          "projectedPct": -11,
+          "likelihood": null
+        },
+        {
+          "offset": 2,
+          "projectedPct": -12.2,
+          "likelihood": null
+        }
+      ],
+      "lockedUntil": null,
+      "calibrating": false
+    },
+    "elite": {
+      "gw": 5,
+      "cohortSize": 100,
+      "ownedPct": 85,
+      "captainPct": 2,
+      "boughtPct": 0,
+      "soldPct": 7
+    },
+    "defcon": {
+      "threshold": 12,
+      "starts": 5,
+      "hits": 0,
+      "hitRateStarts": 0,
+      "dcPer90": 5.904977375565611
+    },
+    "links": {
+      "web": "https://www.fpltoolkit.co.uk/players/cole-palmer"
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-26T18:29:00.994Z",
+    "freshness": [
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "availability",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "price_predictions",
+        "asOf": null,
+        "expectedMaxAgeSeconds": 3600,
+        "state": "unknown"
+      },
+      {
+        "source": "elite",
+        "asOf": "2026-09-26T04:05:02.610Z",
+        "expectedMaxAgeSeconds": 604800,
+        "state": "fresh",
+        "label": "Top 100 cohort, published GW5"
+      },
+      {
+        "source": "xfdr",
+        "asOf": "2026-09-13T00:00:00.000Z",
+        "expectedMaxAgeSeconds": null,
+        "state": "fresh",
+        "label": "Market FDR v2.1, model date 2026-09-13"
+      },
+      {
+        "source": "defcon",
+        "asOf": "2026-09-26T00:17:00.876Z",
+        "expectedMaxAgeSeconds": 172800,
+        "state": "fresh"
+      }
+    ]
+  }
+}

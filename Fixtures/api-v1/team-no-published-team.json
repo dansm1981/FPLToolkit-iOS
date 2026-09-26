@@ -1,0 +1,38 @@
+{
+  "data": {
+    "entry": {
+      "id": 10000001,
+      "name": "Sample New Team"
+    },
+    "snapshot": null,
+    "noSnapshotReason": "no_published_team_yet",
+    "players": {}
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-26T18:29:13.903Z",
+    "freshness": [
+      {
+        "source": "picks",
+        "asOf": "2026-09-26T18:29:13.903Z",
+        "expectedMaxAgeSeconds": null,
+        "state": "fresh",
+        "label": "Published squad for GW5"
+      },
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "xfdr",
+        "asOf": "2026-09-13T00:00:00.000Z",
+        "expectedMaxAgeSeconds": null,
+        "state": "fresh",
+        "label": "Market FDR v2.1, model date 2026-09-13"
+      }
+    ]
+  }
+}

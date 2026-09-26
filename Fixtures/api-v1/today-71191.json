@@ -1,0 +1,995 @@
+{
+  "data": {
+    "entry": {
+      "id": 71191,
+      "name": "Sample Team (rank ~100k)"
+    },
+    "gameweek": {
+      "next": {
+        "id": 6,
+        "deadline": "2026-10-10T10:00:00.000Z"
+      }
+    },
+    "snapshot": {
+      "gw": 5,
+      "deadline": "2026-09-18T17:30:00.000Z",
+      "freeHitGw": null
+    },
+    "status": "clear",
+    "attentionCount": 0,
+    "insights": [
+      {
+        "id": "154-availability-Availability:gw5",
+        "playerId": 154,
+        "category": "availability",
+        "severity": 90,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Availability",
+        "summary": "Muscular injury - 75% chance of playing",
+        "supportingValue": {
+          "kind": "chance_of_playing",
+          "value": 75,
+          "unit": "%",
+          "label": "Chance of playing"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/154?insight=154-availability-Availability%3Agw5"
+      },
+      {
+        "id": "165-availability-Availability:gw5",
+        "playerId": 165,
+        "category": "availability",
+        "severity": 90,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Availability",
+        "summary": "Knee injury - 75% chance of playing",
+        "supportingValue": {
+          "kind": "chance_of_playing",
+          "value": 75,
+          "unit": "%",
+          "label": "Chance of playing"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/165?insight=165-availability-Availability%3Agw5"
+      },
+      {
+        "id": "368-price-Price:gw5",
+        "playerId": 368,
+        "category": "price",
+        "severity": 87,
+        "tone": "bad",
+        "needsAttention": false,
+        "title": "Price",
+        "summary": "Close to a price fall (-91% progress). Tonight’s forecast -91%.",
+        "supportingValue": {
+          "kind": "price_progress",
+          "value": -91,
+          "unit": "%",
+          "label": "Of price-change threshold"
+        },
+        "sourceTimestamp": null,
+        "expiresAt": "2026-09-27T00:30:00.000Z",
+        "deepLink": "fpltoolkit://player/368?insight=368-price-Price%3Agw5"
+      },
+      {
+        "id": "8-price-Price:gw5",
+        "playerId": 8,
+        "category": "price",
+        "severity": 86,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Price",
+        "summary": "Close to a price rise (89% progress). Tonight’s forecast 89%. Club: Arsenal.",
+        "supportingValue": {
+          "kind": "price_progress",
+          "value": 89,
+          "unit": "%",
+          "label": "Of price-change threshold"
+        },
+        "sourceTimestamp": null,
+        "expiresAt": "2026-09-27T00:30:00.000Z",
+        "deepLink": "fpltoolkit://player/8?insight=8-price-Price%3Agw5"
+      },
+      {
+        "id": "165-minutes-Minutes:gw5",
+        "playerId": 165,
+        "category": "minutes",
+        "severity": 80,
+        "tone": "bad",
+        "needsAttention": false,
+        "title": "Minutes",
+        "summary": "Unused last gameweek — 0 minutes.",
+        "supportingValue": {
+          "kind": "minutes",
+          "value": 0,
+          "unit": "min",
+          "label": "Minutes"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/165?insight=165-minutes-Minutes%3Agw5"
+      },
+      {
+        "id": "586-minutes-Minutes:gw5",
+        "playerId": 586,
+        "category": "minutes",
+        "severity": 80,
+        "tone": "bad",
+        "needsAttention": false,
+        "title": "Minutes",
+        "summary": "Unused last gameweek — 0 minutes.",
+        "supportingValue": {
+          "kind": "minutes",
+          "value": 0,
+          "unit": "min",
+          "label": "Minutes"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/586?insight=586-minutes-Minutes%3Agw5"
+      },
+      {
+        "id": "586-price-Price:gw5",
+        "playerId": 586,
+        "category": "price",
+        "severity": 70,
+        "tone": "info",
+        "needsAttention": false,
+        "title": "Price",
+        "summary": "Price locked until 27 Sept.",
+        "supportingValue": null,
+        "sourceTimestamp": null,
+        "expiresAt": "2026-09-27T00:30:00.000Z",
+        "deepLink": "fpltoolkit://player/586?insight=586-price-Price%3Agw5"
+      },
+      {
+        "id": "40-price-Price:gw5",
+        "playerId": 40,
+        "category": "price",
+        "severity": 68,
+        "tone": "info",
+        "needsAttention": false,
+        "title": "Price",
+        "summary": "Rising fast (80% towards a rise). Tonight’s forecast 80%.",
+        "supportingValue": {
+          "kind": "price_progress",
+          "value": 80,
+          "unit": "%",
+          "label": "Of price-change threshold"
+        },
+        "sourceTimestamp": null,
+        "expiresAt": "2026-09-27T00:30:00.000Z",
+        "deepLink": "fpltoolkit://player/40?insight=40-price-Price%3Agw5"
+      },
+      {
+        "id": "124-price-Price:gw5",
+        "playerId": 124,
+        "category": "price",
+        "severity": 68,
+        "tone": "info",
+        "needsAttention": false,
+        "title": "Price",
+        "summary": "Rising fast (83% towards a rise). Tonight’s forecast 84%.",
+        "supportingValue": {
+          "kind": "price_progress",
+          "value": 83,
+          "unit": "%",
+          "label": "Of price-change threshold"
+        },
+        "sourceTimestamp": null,
+        "expiresAt": "2026-09-27T00:30:00.000Z",
+        "deepLink": "fpltoolkit://player/124?insight=124-price-Price%3Agw5"
+      },
+      {
+        "id": "464-price-Price:gw5",
+        "playerId": 464,
+        "category": "price",
+        "severity": 68,
+        "tone": "info",
+        "needsAttention": false,
+        "title": "Price",
+        "summary": "Rising fast (58% towards a rise). Tonight’s forecast 58%.",
+        "supportingValue": {
+          "kind": "price_progress",
+          "value": 58,
+          "unit": "%",
+          "label": "Of price-change threshold"
+        },
+        "sourceTimestamp": null,
+        "expiresAt": "2026-09-27T00:30:00.000Z",
+        "deepLink": "fpltoolkit://player/464?insight=464-price-Price%3Agw5"
+      },
+      {
+        "id": "8-elite-Elite 100:gw5",
+        "playerId": 8,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "9% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 9,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/8?insight=8-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "40-elite-Elite 100:gw5",
+        "playerId": 40,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "11% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 11,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/40?insight=40-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "124-elite-Elite 100:gw5",
+        "playerId": 124,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "5% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 5,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/124?insight=124-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "154-elite-Elite 100:gw5",
+        "playerId": 154,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "7% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 7,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/154?insight=154-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "165-elite-Elite 100:gw5",
+        "playerId": 165,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "37% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 37,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/165?insight=165-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "368-elite-Elite 100:gw5",
+        "playerId": 368,
+        "category": "elite",
+        "severity": 67,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "15% of the top 100 managers sold him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 15,
+          "unit": "%",
+          "label": "Top 100 sold"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/368?insight=368-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "31-elite-Elite 100:gw5",
+        "playerId": 31,
+        "category": "elite",
+        "severity": 66,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "11% of the top 100 managers bought him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 11,
+          "unit": "%",
+          "label": "Top 100 bought"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/31?insight=31-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "334-elite-Elite 100:gw5",
+        "playerId": 334,
+        "category": "elite",
+        "severity": 66,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "10% of the top 100 managers bought him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 10,
+          "unit": "%",
+          "label": "Top 100 bought"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/334?insight=334-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "411-elite-Elite 100:gw5",
+        "playerId": 411,
+        "category": "elite",
+        "severity": 66,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "9% of the top 100 managers bought him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 9,
+          "unit": "%",
+          "label": "Top 100 bought"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/411?insight=411-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "464-elite-Elite 100:gw5",
+        "playerId": 464,
+        "category": "elite",
+        "severity": 66,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Elite 100",
+        "summary": "9% of the top 100 managers bought him last gameweek.",
+        "supportingValue": {
+          "kind": "elite_pct",
+          "value": 9,
+          "unit": "%",
+          "label": "Top 100 bought"
+        },
+        "sourceTimestamp": "2026-09-26T04:05:02.610Z",
+        "expiresAt": "2026-10-10T14:00:00.000Z",
+        "deepLink": "fpltoolkit://player/464?insight=464-elite-Elite%20100%3Agw5"
+      },
+      {
+        "id": "154-market-Market:gw5",
+        "playerId": 154,
+        "category": "market",
+        "severity": 59,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Market",
+        "summary": "Net 103k transfers out across all managers this gameweek.",
+        "supportingValue": {
+          "kind": "net_transfers",
+          "value": -103007,
+          "unit": "count",
+          "label": "Net transfers this GW"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/154?insight=154-market-Market%3Agw5"
+      },
+      {
+        "id": "165-market-Market:gw5",
+        "playerId": 165,
+        "category": "market",
+        "severity": 59,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Market",
+        "summary": "Net 314k transfers out across all managers this gameweek.",
+        "supportingValue": {
+          "kind": "net_transfers",
+          "value": -314391,
+          "unit": "count",
+          "label": "Net transfers this GW"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/165?insight=165-market-Market%3Agw5"
+      },
+      {
+        "id": "368-market-Market:gw5",
+        "playerId": 368,
+        "category": "market",
+        "severity": 59,
+        "tone": "warn",
+        "needsAttention": false,
+        "title": "Market",
+        "summary": "Net 164k transfers out across all managers this gameweek.",
+        "supportingValue": {
+          "kind": "net_transfers",
+          "value": -164124,
+          "unit": "count",
+          "label": "Net transfers this GW"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/368?insight=368-market-Market%3Agw5"
+      },
+      {
+        "id": "124-market-Market:gw5",
+        "playerId": 124,
+        "category": "market",
+        "severity": 58,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Market",
+        "summary": "Net 734k transfers in across all managers this gameweek.",
+        "supportingValue": {
+          "kind": "net_transfers",
+          "value": 733743,
+          "unit": "count",
+          "label": "Net transfers this GW"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/124?insight=124-market-Market%3Agw5"
+      },
+      {
+        "id": "449-market-Market:gw5",
+        "playerId": 449,
+        "category": "market",
+        "severity": 58,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Market",
+        "summary": "Net 211k transfers in across all managers this gameweek.",
+        "supportingValue": {
+          "kind": "net_transfers",
+          "value": 211440,
+          "unit": "count",
+          "label": "Net transfers this GW"
+        },
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": "2026-10-10T10:00:00.000Z",
+        "deepLink": "fpltoolkit://player/449?insight=449-market-Market%3Agw5"
+      },
+      {
+        "id": "124-setpiece-Set pieces:gw5",
+        "playerId": 124,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on penalties, first on direct free kicks, first on corners.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/124?insight=124-setpiece-Set%20pieces%3Agw5"
+      },
+      {
+        "id": "154-setpiece-Set pieces:gw5",
+        "playerId": 154,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on penalties.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/154?insight=154-setpiece-Set%20pieces%3Agw5"
+      },
+      {
+        "id": "368-setpiece-Set pieces:gw5",
+        "playerId": 368,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on penalties, first on direct free kicks, first on corners.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/368?insight=368-setpiece-Set%20pieces%3Agw5"
+      },
+      {
+        "id": "411-setpiece-Set pieces:gw5",
+        "playerId": 411,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on penalties.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/411?insight=411-setpiece-Set%20pieces%3Agw5"
+      },
+      {
+        "id": "449-setpiece-Set pieces:gw5",
+        "playerId": 449,
+        "category": "setpiece",
+        "severity": 50,
+        "tone": "good",
+        "needsAttention": false,
+        "title": "Set pieces",
+        "summary": "Listed first on direct free kicks, first on corners.",
+        "supportingValue": null,
+        "sourceTimestamp": "2026-09-26T03:20:17.977Z",
+        "expiresAt": null,
+        "deepLink": "fpltoolkit://player/449?insight=449-setpiece-Set%20pieces%3Agw5"
+      }
+    ],
+    "players": {
+      "1": {
+        "id": 1,
+        "webName": "Raya",
+        "clubId": 1,
+        "position": "GK",
+        "price": 6.1,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 42.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "8": {
+        "id": 8,
+        "webName": "Calafiori",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 50.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "31": {
+        "id": 31,
+        "webName": "Konsa",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 4.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 19.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "40": {
+        "id": 40,
+        "webName": "Rogers",
+        "clubId": 6,
+        "position": "MID",
+        "price": 7.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 40.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "124": {
+        "id": 124,
+        "webName": "Groß",
+        "clubId": 5,
+        "position": "MID",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 28.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.99,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "236": {
+        "id": 236,
+        "webName": "Dewsbury-Hall",
+        "clubId": 9,
+        "position": "MID",
+        "price": 6.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "334": {
+        "id": 334,
+        "webName": "Muharemović",
+        "clubId": 13,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 4.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 1,
+          "home": false,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 4.45,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "368": {
+        "id": 368,
+        "webName": "Szoboszlai",
+        "clubId": 14,
+        "position": "MID",
+        "price": 7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 32.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "449": {
+        "id": 449,
+        "webName": "Hall",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.1,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "464": {
+        "id": 464,
+        "webName": "Wissa",
+        "clubId": 17,
+        "position": "FWD",
+        "price": 6.2,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 18.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.21,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "586": {
+        "id": 586,
+        "webName": "Mendy",
+        "clubId": 11,
+        "position": "DEF",
+        "price": 4.1,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 6.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.38,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "623": {
+        "id": 623,
+        "webName": "Bentley",
+        "clubId": 7,
+        "position": "GK",
+        "price": 4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 17,
+          "home": true,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 3.93,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-26T18:28:58.820Z",
+    "freshness": [
+      {
+        "source": "picks",
+        "asOf": "2026-09-26T18:28:58.820Z",
+        "expectedMaxAgeSeconds": null,
+        "state": "fresh",
+        "label": "Published squad for GW5"
+      },
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "availability",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "price_predictions",
+        "asOf": null,
+        "expectedMaxAgeSeconds": 3600,
+        "state": "unknown"
+      },
+      {
+        "source": "elite",
+        "asOf": "2026-09-26T04:05:02.610Z",
+        "expectedMaxAgeSeconds": 604800,
+        "state": "fresh",
+        "label": "Top 100 cohort, published GW5"
+      }
+    ]
+  }
+}

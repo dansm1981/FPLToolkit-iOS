@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "entry_not_found",
+    "message": "We couldn't find an FPL team with that ID.",
+    "retryable": false
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-26T18:29:03.762Z"
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "data": {
+    "season": "2026/27",
+    "gameweek": {
+      "current": 5,
+      "locked": 5,
+      "next": {
+        "id": 6,
+        "deadline": "2026-10-10T10:00:00.000Z"
+      }
+    },
+    "clubs": [
+      {
+        "id": 1,
+        "name": "Arsenal",
+        "shortName": "ARS"
+      },
+      {
+        "id": 2,
+        "name": "Aston Villa",
+        "shortName": "AVL"
+      },
+      {
+        "id": 3,
+        "name": "Bournemouth",
+        "shortName": "BOU"
+      },
+      {
+        "id": 4,
+        "name": "Brentford",
+        "shortName": "BRE"
+      },
+      {
+        "id": 5,
+        "name": "Brighton",
+        "shortName": "BHA"
+      },
+      {
+        "id": 6,
+        "name": "Chelsea",
+        "shortName": "CHE"
+      },
+      {
+        "id": 7,
+        "name": "Coventry City",
+        "shortName": "COV"
+      },
+      {
+        "id": 8,
+        "name": "Crystal Palace",
+        "shortName": "CRY"
+      },
+      {
+        "id": 9,
+        "name": "Everton",
+        "shortName": "EVE"
+      },
+      {
+        "id": 10,
+        "name": "Fulham",
+        "shortName": "FUL"
+      },
+      {
+        "id": 11,
+        "name": "Hull City",
+        "shortName": "HUL"
+      },
+      {
+        "id": 12,
+        "name": "Ipswich Town",
+        "shortName": "IPS"
+      },
+      {
+        "id": 13,
+        "name": "Leeds",
+        "shortName": "LEE"
+      },
+      {
+        "id": 14,
+        "name": "Liverpool",
+        "shortName": "LIV"
+      },
+      {
+        "id": 15,
+        "name": "Man City",
+        "shortName": "MCI"
+      },
+      {
+        "id": 16,
+        "name": "Man Utd",
+        "shortName": "MUN"
+      },
+      {
+        "id": 17,
+        "name": "Newcastle",
+        "shortName": "NEW"
+      },
+      {
+        "id": 18,
+        "name": "Nott'm Forest",
+        "shortName": "NFO"
+      },
+      {
+        "id": 19,
+        "name": "Spurs",
+        "shortName": "TOT"
+      },
+      {
+        "id": 20,
+        "name": "Sunderland",
+        "shortName": "SUN"
+      }
+    ],
+    "config": {
+      "minSupportedAppVersion": "1.0.0",
+      "webBaseUrl": "https://www.fpltoolkit.co.uk",
+      "disclosure": "FPLToolkit is an unofficial, fan-made app. It is not affiliated with the Premier League or Fantasy Premier League.",
+      "features": {
+        "priceAlerts": false,
+        "availabilityAlerts": false,
+        "deadlineReminders": false
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-26T18:28:56.230Z",
+    "freshness": [
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-26T03:20:17.977Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      }
+    ]
+  }
+}
