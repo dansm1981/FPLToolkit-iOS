@@ -2,13 +2,14 @@ import Foundation
 import Observation
 
 enum AppTab: Hashable {
-    case today, team, watch
+    case today, team, planner, watch
 }
 
 /// `fpltoolkit://` links (§5). Unknown links open Today.
 enum DeepLink: Equatable {
     case today
     case team
+    case planner
     case watch
     case alerts
     /// `event` is set when the link came from an alert (notifications.md §6).
@@ -20,6 +21,7 @@ enum DeepLink: Equatable {
         let parts = url.pathComponents.filter { $0 != "/" }
         switch host {
         case "team": self = .team
+        case "planner": self = .planner
         case "watch": self = parts.first?.lowercased() == "alerts" ? .alerts : .watch
         case "player":
             guard let id = parts.first.flatMap(Int.init), id > 0 else { self = .today; return }
@@ -44,6 +46,7 @@ final class Router {
         switch link {
         case .today: selectedTab = .today
         case .team: selectedTab = .team
+        case .planner: selectedTab = .planner
         case .watch: selectedTab = .watch
         case .alerts:
             selectedTab = .watch

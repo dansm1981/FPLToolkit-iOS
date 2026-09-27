@@ -293,6 +293,7 @@ private struct WatchContent: View {
                                 Button("Stop watching", role: .destructive) {
                                     Task { await store.setWatched(false, playerId: item.playerId) }
                                 }
+                                .tint(ToolkitColor.destructiveAction)
                             }
                     }
                 }

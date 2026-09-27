@@ -1,0 +1,134 @@
+import Foundation
+import Observation
+
+/// The device's planner drafts (contract §13). Every rule runs on the server; this sends
+/// requests and keeps the last copy of each list and gameweek for offline reading.
+struct PlannerRepository: Sendable {
+    let session: DeviceSession
+    let cache: ResponseCache
+    private static let base = "planner/drafts"
+
+    var list: PlannerListEndpoint { PlannerListEndpoint(session: session, cache: cache) }
+
+    func draft(_ id: String, gw: Int?) -> PlannerDraftEndpoint {
+        PlannerDraftEndpoint(session: session, cache: cache, id: id, gw: gw)
+    }
+
+    func create(_ request: PlannerNewDraft) async throws -> PlannerDraft {
+        let fetched = try await session.send("POST", Self.base, body: request, as: PlannerDraft.self)
+        return saved(fetched)
+    }
+
+    func apply(_ action: PlannerAction, to id: String) async throws -> PlannerDraft {
+        let fetched = try await session.send("POST", "\(Self.base)/\(id)/actions", body: action, as: PlannerDraft.self)
+        return saved(fetched)
+    }
+
+    func update(_ id: String, _ patch: PlannerDraftPatch) async throws -> PlannerDraft {
+        let fetched = try await session.send("PATCH", "\(Self.base)/\(id)", body: patch, as: PlannerDraft.self)
+        return saved(fetched)
+    }
+
+    func delete(_ id: String) async throws {
+        _ = try await session.send("DELETE", "\(Self.base)/\(id)", as: DeleteResult.self)
+    }
+
+    func picker(_ id: String, query: [URLQueryItem]) async throws -> PlannerPicker {
+        try await session.send("GET", "\(Self.base)/\(id)/picker", query: query, as: PlannerPicker.self).envelope.data
+    }
+
+    /// Keeps the answer as that gameweek's saved copy.
+    private func saved(_ fetched: Fetched<PlannerDraft>) -> PlannerDraft {
+        let draft = fetched.envelope.data
+        cache.write(fetched.raw, for: PlannerDraftEndpoint.cacheKey(draft.id, gw: draft.gw))
+        return draft
+    }
+}
+
+struct PlannerListEndpoint: LoadableEndpoint {
+    let session: DeviceSession
+    let cache: ResponseCache
+    private let key = "planner/drafts"
+
+    func fetch(bypassCache: Bool = false) async throws -> Loaded<PlannerDraftList> {
+        let fetched = try await session.send("GET", key, as: PlannerDraftList.self)
+        cache.write(fetched.raw, for: key)
+        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    }
+
+    func cached() -> Loaded<PlannerDraftList>? {
+        CachedEndpoint<PlannerDraftList>(client: .production, cache: cache, path: key).cached()
+    }
+}
+
+struct PlannerDraftEndpoint: LoadableEndpoint {
+    let session: DeviceSession
+    let cache: ResponseCache
+    let id: String
+    /// nil: the next deadline's gameweek.
+    let gw: Int?
+
+    static func cacheKey(_ id: String, gw: Int?) -> String {
+        "planner/drafts/\(id)/gw-\(gw.map(String.init) ?? "next")"
+    }
+
+    func fetch(bypassCache: Bool = false) async throws -> Loaded<PlannerDraft> {
+        let query = gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []
+        let fetched = try await session.send("GET", "planner/drafts/\(id)", query: query, as: PlannerDraft.self)
+        cache.write(fetched.raw, for: Self.cacheKey(id, gw: gw))
+        if gw == nil { cache.write(fetched.raw, for: Self.cacheKey(id, gw: fetched.envelope.data.gw)) }
+        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    }
+
+    func cached() -> Loaded<PlannerDraft>? {
+        CachedEndpoint<PlannerDraft>(client: .production, cache: cache, path: Self.cacheKey(id, gw: gw)).cached()
+    }
+}
+
+/// One draft on screen: the gameweek shown, stepping between gameweeks, and (from P2-5) edits
+/// with undo. The draft shown is always the server's answer; nothing is changed locally.
+@MainActor
+@Observable
+final class DraftModel {
+    let id: String
+    private let repository: PlannerRepository
+    private(set) var resource: Resource<PlannerDraft>
+
+    init(id: String, repository: PlannerRepository) {
+        self.id = id
+        self.repository = repository
+        self.resource = Resource(repository.draft(id, gw: nil))
+    }
+
+    var draft: PlannerDraft? { resource.loaded?.value }
+
+    func load() async {
+        if resource.isInitial { await resource.load() }
+    }
+
+    /// True while another gameweek loads; the current one stays on screen meanwhile.
+    private(set) var isStepping = false
+    /// Why the last gameweek change didn't load.
+    private(set) var stepError: ErrorCopy?
+
+    /// The gameweeks the stepper can show: the starting squad's to 38.
+    var gwRange: ClosedRange<Int>? {
+        guard let d = draft else { return nil }
+        return (d.baseGw ?? d.firstEditableGw)...d.lastGw
+    }
+
+    /// Shows another gameweek (a saved copy first when there is one).
+    func show(gw: Int) async {
+        guard let current = draft, gw != current.gw, gwRange?.contains(gw) == true else { return }
+        isStepping = true
+        stepError = nil
+        defer { isStepping = false }
+        let next = Resource(repository.draft(id, gw: gw))
+        await next.load()
+        if next.loaded != nil {
+            resource = next
+        } else if case .failed(let copy) = next.phase {
+            stepError = copy
+        }
+    }
+}

@@ -23,6 +23,7 @@ final class AppModel {
     let teamRepository: TeamRepository
     let playerRepository: PlayerRepository
     let deviceSession: DeviceSession
+    let plannerRepository: PlannerRepository
 
     private let cache: ResponseCache
     private let defaults: UserDefaults
@@ -35,7 +36,9 @@ final class AppModel {
         self.bootstrapRepository = BootstrapRepository(client: client, cache: cache)
         self.teamRepository = TeamRepository(client: client, cache: cache)
         self.playerRepository = PlayerRepository(client: client, cache: cache)
-        self.deviceSession = DeviceSession(client: client)
+        let session = DeviceSession(client: client)
+        self.deviceSession = session
+        self.plannerRepository = PlannerRepository(session: session, cache: cache)
         self.cache = cache
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)

@@ -1,0 +1,888 @@
+{
+  "data": {
+    "id": "5c319f4e-e7bb-4a0b-878d-597ae26fccb3",
+    "name": "All priced in",
+    "source": "import",
+    "entryId": 22615,
+    "shareUrl": "https://www.fpltoolkit.co.uk/share/73bebfd6-abe3-4561-b2a6-d6ea8e46233f",
+    "gw": 6,
+    "firstEditableGw": 6,
+    "baseGw": 5,
+    "lastGw": 38,
+    "starting": [
+      {
+        "playerId": 496,
+        "slot": 1,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.5,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 391,
+        "slot": 2,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5.5,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 8,
+        "slot": 3,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5.5,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 449,
+        "slot": 4,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5,
+        "sellingPrice": 5.1,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 31,
+        "slot": 5,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.4,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 40,
+        "slot": 6,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 7.5,
+        "sellingPrice": 7.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 480,
+        "slot": 7,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 7.9,
+        "sellingPrice": 7.9,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 565,
+        "slot": 8,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5.6,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 154,
+        "slot": 9,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 9.5,
+        "sellingPrice": 9.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 411,
+        "slot": 10,
+        "isCaptain": true,
+        "isVice": false,
+        "purchasePrice": 15.5,
+        "sellingPrice": 15.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 249,
+        "slot": 11,
+        "isCaptain": false,
+        "isVice": true,
+        "purchasePrice": 5.6,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      }
+    ],
+    "bench": [
+      {
+        "playerId": 109,
+        "slot": 12,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.5,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 165,
+        "slot": 13,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 7.5,
+        "sellingPrice": 7.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 115,
+        "slot": 14,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.6,
+        "sellingPrice": 4.8,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 290,
+        "slot": 15,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.5,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      }
+    ],
+    "formation": "4-4-2",
+    "emptySlots": {
+      "starting": {
+        "GK": 0,
+        "DEF": 0,
+        "MID": 0,
+        "FWD": 0
+      },
+      "bench": {
+        "GK": 0,
+        "DEF": 0,
+        "MID": 0,
+        "FWD": 0
+      }
+    },
+    "players": {
+      "8": {
+        "id": 8,
+        "webName": "Calafiori",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 50.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "31": {
+        "id": 31,
+        "webName": "Konsa",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 4.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 19.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "40": {
+        "id": 40,
+        "webName": "Rogers",
+        "clubId": 6,
+        "position": "MID",
+        "price": 7.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 40.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "109": {
+        "id": 109,
+        "webName": "Verbruggen",
+        "clubId": 5,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 21.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "115": {
+        "id": 115,
+        "webName": "De Cuyper",
+        "clubId": 5,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 27.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "249": {
+        "id": 249,
+        "webName": "Barry",
+        "clubId": 9,
+        "position": "FWD",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 8.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "290": {
+        "id": 290,
+        "webName": "Slater",
+        "clubId": 11,
+        "position": "MID",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 5.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.81,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "391": {
+        "id": 391,
+        "webName": "Gvardiol",
+        "clubId": 15,
+        "position": "DEF",
+        "price": 5.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 26.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.12,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "449": {
+        "id": 449,
+        "webName": "Hall",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "480": {
+        "id": 480,
+        "webName": "Gibbs-White",
+        "clubId": 18,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 15.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      "496": {
+        "id": 496,
+        "webName": "Kinsky",
+        "clubId": 19,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      "565": {
+        "id": 565,
+        "webName": "M.Sangaré",
+        "clubId": 4,
+        "position": "MID",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 10,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      }
+    },
+    "fixtures": {
+      "8": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "31": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "40": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "109": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "115": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "154": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "165": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "249": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "290": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.81,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "391": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.12,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "411": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "449": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "480": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ],
+      "496": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      ],
+      "565": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      ]
+    },
+    "money": {
+      "bank": 2.2,
+      "squadValue": 99.8,
+      "sellValue": 98.5,
+      "profitToDate": 0,
+      "startBudget": 99.8
+    },
+    "check": {
+      "ok": true,
+      "issues": [],
+      "players": 15
+    },
+    "chips": [
+      {
+        "key": "wildcard1",
+        "label": "Wildcard 1",
+        "window": {
+          "start": 2,
+          "end": 19
+        },
+        "state": "played",
+        "gw": 3,
+        "note": "Played in GW3"
+      },
+      {
+        "key": "freehit1",
+        "label": "Free Hit 1",
+        "window": {
+          "start": 2,
+          "end": 19
+        },
+        "state": "available",
+        "gw": null,
+        "note": null
+      },
+      {
+        "key": "bboost1",
+        "label": "Bench Boost 1",
+        "window": {
+          "start": 1,
+          "end": 19
+        },
+        "state": "played",
+        "gw": 1,
+        "note": "Played in GW1"
+      },
+      {
+        "key": "3xc1",
+        "label": "Triple Captain 1",
+        "window": {
+          "start": 1,
+          "end": 19
+        },
+        "state": "played",
+        "gw": 4,
+        "note": "Played in GW4"
+      },
+      {
+        "key": "wildcard2",
+        "label": "Wildcard 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      },
+      {
+        "key": "freehit2",
+        "label": "Free Hit 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      },
+      {
+        "key": "bboost2",
+        "label": "Bench Boost 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      },
+      {
+        "key": "3xc2",
+        "label": "Triple Captain 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      }
+    ],
+    "transfers": {
+      "out": [],
+      "in": []
+    },
+    "ledger": [],
+    "freeTransfers": {
+      "starting": 2,
+      "estimated": true
+    },
+    "estimatedPurchasePrices": false
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T15:02:13.024Z",
+    "freshness": []
+  }
+}

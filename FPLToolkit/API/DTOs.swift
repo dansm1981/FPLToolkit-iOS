@@ -36,6 +36,11 @@ enum APIErrorCode: String, FallbackDecodable {
     /// Device routes: the device isn't registered, or its secret is wrong.
     case unauthorized
     case invalidRequest = "invalid_request"
+    /// Planner: not this device's draft.
+    case draftNotFound = "draft_not_found"
+    /// Planner: a rule refused the edit; the message says why.
+    case invalidAction = "invalid_action"
+    case tooManyDrafts = "too_many_drafts"
     case `internal`
     case unknown
     static let fallback = Self.unknown

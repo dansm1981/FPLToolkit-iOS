@@ -79,6 +79,12 @@ struct MainView: View {
             .tag(AppTab.team)
 
             NavigationStack {
+                PlannerView(entryId: entryId, repository: appModel.plannerRepository)
+            }
+            .tabItem { Label("Planner", systemImage: "calendar") }
+            .tag(AppTab.planner)
+
+            NavigationStack {
                 WatchView(entryId: entryId)
             }
             .tabItem { Label("Watch", systemImage: "bell") }

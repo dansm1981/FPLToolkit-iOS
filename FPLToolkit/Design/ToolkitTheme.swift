@@ -21,6 +21,9 @@ enum ToolkitColor {
     static let positive = Color("tk.green")
     static let positiveFill = Color("tk.greenBg")
     static let nav = Color("tk.nav")
+    /// Destructive swipe buttons (white text): a deep red that reads in light and dark mode.
+    /// The app tint would otherwise make them gold, and the dark-mode red is too pale for white text.
+    static let destructiveAction = Color(red: 0.639, green: 0.153, blue: 0.239)
 }
 
 enum ToolkitSpace {

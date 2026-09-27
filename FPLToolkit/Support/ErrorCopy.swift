@@ -32,6 +32,14 @@ struct ErrorCopy: Equatable {
             self.init(title: "We couldn't load that just now",
                       message: "Something went wrong on our side. Try again in a few minutes.",
                       canRetry: true)
+        case .server(.invalidAction, let message, _):
+            self.init(title: "That move isn't allowed", message: message, canRetry: false)
+        case .server(.draftNotFound, _, _):
+            self.init(title: "That draft isn't here any more",
+                      message: "It may have been deleted, or the app's data was reset.",
+                      canRetry: false)
+        case .server(.tooManyDrafts, let message, _):
+            self.init(title: "You've reached the draft limit", message: message, canRetry: false)
         case .server(_, let message, let retryable):
             self.init(title: "Something went wrong", message: message, canRetry: retryable)
         case .offline:

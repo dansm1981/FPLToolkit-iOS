@@ -1,0 +1,45 @@
+{
+  "data": {
+    "drafts": [
+      {
+        "id": "4b455bcd-cc75-43a3-811a-1effd50b08e2",
+        "name": "New draft",
+        "source": "blank",
+        "entryId": null,
+        "createdAt": "2026-09-27T15:02:33.517026+00:00",
+        "updatedAt": "2026-09-27T15:02:33.517026+00:00",
+        "plannedGws": [],
+        "playerCount": 0
+      },
+      {
+        "id": "0b315cb7-91b2-4252-819c-c18c0fc1179f",
+        "name": "E2E test (copy)",
+        "source": "import",
+        "entryId": 22615,
+        "createdAt": "2026-09-27T15:02:32.24324+00:00",
+        "updatedAt": "2026-09-27T15:02:32.24324+00:00",
+        "plannedGws": [
+          6
+        ],
+        "playerCount": 15
+      },
+      {
+        "id": "5c319f4e-e7bb-4a0b-878d-597ae26fccb3",
+        "name": "E2E test",
+        "source": "import",
+        "entryId": 22615,
+        "createdAt": "2026-09-27T15:02:12.724037+00:00",
+        "updatedAt": "2026-09-27T15:02:30.556+00:00",
+        "plannedGws": [
+          6
+        ],
+        "playerCount": 15
+      }
+    ]
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T15:02:34.301Z",
+    "freshness": []
+  }
+}

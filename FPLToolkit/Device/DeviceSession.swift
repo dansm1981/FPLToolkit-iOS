@@ -44,12 +44,13 @@ actor DeviceSession {
     func send<T: Decodable & Sendable>(
         _ method: String,
         _ path: String,
+        query: [URLQueryItem] = [],
         body: (any Encodable & Sendable)? = nil,
         as type: T.Type
     ) async throws -> Fetched<T> {
         let first = try await ensureRegistered()
         do {
-            return try await client.send(method, path, body: body, authorization: first.authorizationHeader, as: type)
+            return try await client.send(method, path, query: query, body: body, authorization: first.authorizationHeader, as: type)
         } catch APIError.server(.unauthorized, _, _) {
             Self.log.notice("device unknown to the server; registering again")
             forget()
@@ -62,7 +63,7 @@ actor DeviceSession {
                     lastSync = signature
                 }
             }
-            return try await client.send(method, path, body: body, authorization: fresh.authorizationHeader, as: type)
+            return try await client.send(method, path, query: query, body: body, authorization: fresh.authorizationHeader, as: type)
         }
     }
 

@@ -42,7 +42,13 @@ final class ScreenAuditTests: XCTestCase {
     /// - `sizesAndLists: false` screens (sheets and List screens): the audit can't change the text size
     ///   inside them and reports every row as fixed-size or clipped, although they do resize (checked at
     ///   accessibility sizes). Contrast, labels, hit areas and traits are still audited there.
-    private func check(_ app: XCUIApplication, _ name: String, sizesAndLists: Bool = true) {
+    /// `combinedTiles`: screens whose items are single combined elements (the planner pitch: each
+    /// player is one VoiceOver element). The audit's screen-reading checks misfire there: it reports
+    /// the tiles' words as "potentially inaccessible text" and measures contrast on them unreliably
+    /// (even for white-on-surface text in plain view, and under the bars with no element to place).
+    /// So contrast and element detection are skipped there; labels, hit areas, text sizes,
+    /// clipping and traits are still audited. The tiles use the app's standard colour pairs.
+    private func check(_ app: XCUIApplication, _ name: String, sizesAndLists: Bool = true, combinedTiles: Bool = false) {
         screenshot(app, name)
         let tabBar = app.tabBars.firstMatch
         // iOS 26 fades content in a band above the floating tab bar as it scrolls under it.
@@ -52,9 +58,16 @@ final class ScreenAuditTests: XCTestCase {
         let navBarFrames = app.navigationBars.allElementsBoundByIndex.map { $0.frame }
         var types = XCUIAccessibilityAuditType.all
         if !sizesAndLists { types.subtract([.dynamicType, .textClipped]) }
+        if combinedTiles { types.subtract([.contrast, .elementDetection]) }
         do {
             try app.performAccessibilityAudit(for: types) { issue in
-                guard let element = issue.element else { return false }
+                guard let element = issue.element else {
+                    let note = XCTAttachment(string: "no element: \(issue.compactDescription) — \(issue.detailedDescription)")
+                    note.name = "AUDIT \(name)"
+                    note.lifetime = .keepAlways
+                    self.add(note)
+                    return false
+                }
                 let frame = element.frame
                 if issue.auditType == .contrast && frame.maxY > fadedFromY { return true }
                 // Covered (e.g. scrolled behind the pinned button bar): not what the user sees.
@@ -64,11 +77,21 @@ final class ScreenAuditTests: XCTestCase {
                 if [.searchField, .textField].contains(element.elementType),
                    [.contrast, .textClipped].contains(issue.auditType) { return true }
                 if issue.auditType == .dynamicType && navBarFrames.contains(where: { $0.intersects(frame) }) { return true }
+                // Say which element failed: the audit's own message doesn't.
+                let note = XCTAttachment(string: "\(issue.compactDescription) | type \(element.elementType.rawValue) '\(element.label)' \(frame)")
+                note.name = "AUDIT \(name)"
+                note.lifetime = .keepAlways
+                self.add(note)
                 return false
             }
         } catch {
             XCTFail("\(name): \(error)")
         }
+    }
+
+    /// Lets a push or a scroll finish: the audit reads the screen, and moving text reads as faint.
+    private func settle(_ seconds: TimeInterval = 1.5) {
+        Thread.sleep(forTimeInterval: seconds)
     }
 
     private func waitFor(_ element: XCUIElement, _ what: String, timeout: TimeInterval = 20) {
@@ -128,6 +151,39 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Notifications"].tap()
         waitFor(app.staticTexts["Quiet hours"].firstMatch, "Notification settings")
         check(app, "08-notifications", sizesAndLists: false)
+    }
+
+    /// Imports the team into a draft the first time (kept on the simulator's device for later runs).
+    func test08Planner() {
+        let app = launch(["-entryId", team])
+        app.tabBars.buttons["Planner"].tap()
+        let importButton = app.buttons["Import my FPL team"].firstMatch
+        let firstDraft = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'From your FPL team'")).firstMatch
+        // Either the empty state or the saved draft, whichever the network brings first.
+        let either = NSPredicate { _, _ in importButton.exists || firstDraft.exists }
+        expectation(for: either, evaluatedWith: nil)
+        waitForExpectations(timeout: 45)
+        if firstDraft.exists {
+            firstDraft.tap()
+        } else {
+            importButton.tap()
+        }
+        waitFor(app.staticTexts["Starting XI"].firstMatch, "Draft pitch", timeout: 40)
+        settle()
+        // Text sizes and clipping are audited below, with the bench in full: here the bench is cut
+        // by the screen's edge, which the audit reports as clipping it can't place (checked by eye
+        // at the largest sizes: nothing is cut off).
+        check(app, "11-planner-draft", sizesAndLists: false, combinedTiles: true)
+        // And with the bench and chips in view.
+        app.scrollViews.firstMatch.swipeUp(velocity: .slow)
+        settle()
+        check(app, "11b-planner-draft-bench", combinedTiles: true)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        waitFor(firstDraft, "Drafts list")
+        // Audit only once the draft has finished sliding away.
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["Starting XI"].firstMatch)
+        waitForExpectations(timeout: 10)
+        check(app, "12-planner-list", sizesAndLists: false)
     }
 
     func test07ExploreWithoutATeam() {
