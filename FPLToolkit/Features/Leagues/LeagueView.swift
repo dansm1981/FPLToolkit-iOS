@@ -8,8 +8,11 @@ struct LeagueView: View {
     let league: LeagueList.League
 
     enum Tab: String, CaseIterable, Identifiable {
-        case overview = "Overview", standings = "Standings"
+        case overview = "Overview", standings = "Standings", rivals = "Rivals", players = "Players"
+        case captains = "Captains", chips = "Chips", transfers = "Transfers", history = "History", report = "Report"
         var id: String { rawValue }
+        /// Tabs whose numbers depend on whose squad the league is compared with.
+        var usesBaseline: Bool { self == .overview || self == .rivals || self == .players }
     }
 
     @State private var tab: Tab = .overview
@@ -17,6 +20,15 @@ struct LeagueView: View {
     @State private var drafts: [PlannerDraftSummary] = []
     @State private var overview: LeagueOverview?
     @State private var standings: LeagueStandings?
+    @State private var rivals: LeagueRivals?
+    @State private var players: LeaguePlayers?
+    @State private var captains: LeagueCaptains?
+    @State private var chips: LeagueChips?
+    @State private var transfers: LeagueTransfers?
+    @State private var history: LeagueHistory?
+    @State private var report: LeagueReport?
+    @State private var transfersRecent = false
+    @State private var reportGw: Int?
     @State private var loadError: ErrorCopy?
     @State private var vs: VsTarget?
 
@@ -30,21 +42,11 @@ struct LeagueView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
-                Picker("View", selection: $tab) {
-                    ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                tabBar
                 if let loadError {
-                    ErrorStateView(copy: loadError) { Task { await load() } }
+                    ErrorStateView(copy: loadError) { Task { await load(force: true) } }
                 } else {
-                    switch tab {
-                    case .overview:
-                        if let overview { OverviewSection(overview: overview) { vs = VsTarget(entryId: $0) } }
-                        else { SkeletonCards(caption: "Reading the league…", count: 3) }
-                    case .standings:
-                        if let standings { StandingsSection(standings: standings) { vs = VsTarget(entryId: $0) } }
-                        else { SkeletonCards(caption: "Loading the standings…", count: 3) }
-                    }
+                    content
                 }
                 footnote
             }
@@ -68,8 +70,15 @@ struct LeagueView: View {
                 }
             }
         }
-        .task(id: TaskKey(tab: tab, baseline: baseline)) { await load() }
+        .task(id: TaskKey(tab: tab, baseline: baseline, recent: transfersRecent, reportGw: reportGw)) { await load() }
         .task { drafts = (try? await appModel.plannerRepository.list.fetch().value.drafts) ?? [] }
+        .onChange(of: baseline) {
+            overview = nil
+            rivals = nil
+            players = nil
+        }
+        .onChange(of: transfersRecent) { transfers = nil }
+        .onChange(of: reportGw) { report = nil }
         .refreshable { await load(force: true) }
         .sheet(item: $vs) { target in
             NavigationStack {
@@ -81,7 +90,56 @@ struct LeagueView: View {
     private struct TaskKey: Hashable {
         let tab: Tab
         let baseline: LeagueBaseline
+        let recent: Bool
+        let reportGw: Int?
     }
+
+    /// The website's tab row, scrolling sideways.
+    private var tabBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: ToolkitSpace.sm) {
+                ForEach(Tab.allCases) { t in
+                    Button { tab = t } label: {
+                        Text(t.rawValue)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(t == tab ? ToolkitColor.onAccent : ToolkitColor.primaryText)
+                            .padding(.horizontal, ToolkitSpace.md)
+                            .frame(minHeight: 44)
+                            .background(t == tab ? ToolkitColor.accent : ToolkitColor.surface, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(t == tab ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        let open: (Int) -> Void = { vs = VsTarget(entryId: $0) }
+        switch tab {
+        case .overview:
+            if let overview { OverviewSection(overview: overview, onManager: open) } else { loading }
+        case .standings:
+            if let standings { StandingsSection(standings: standings, onManager: open) } else { loading }
+        case .rivals:
+            if let rivals { LeagueRivalsSection(data: rivals, onManager: open) } else { loading }
+        case .players:
+            if let players { LeaguePlayersSection(data: players) } else { loading }
+        case .captains:
+            if let captains { LeagueCaptainsSection(data: captains, onManager: open) } else { loading }
+        case .chips:
+            if let chips { LeagueChipsSection(data: chips, onManager: open) } else { loading }
+        case .transfers:
+            if let transfers { LeagueTransfersSection(data: transfers, recent: $transfersRecent, onManager: open) } else { loading }
+        case .history:
+            if let history { LeagueHistorySection(data: history, onManager: open) } else { loading }
+        case .report:
+            if let report { LeagueReportSection(data: report, gw: $reportGw) } else { loading }
+        }
+    }
+
+    private var loading: some View { SkeletonCards(caption: "Reading the league…", count: 3) }
 
     private var footnote: some View {
         var parts: [String] = []
@@ -90,7 +148,9 @@ struct LeagueView: View {
         } else if let managers = league.managers, managers > league.tracked {
             parts.append("This league has \(managers) managers; the top \(league.tracked) are tracked.")
         }
-        parts.append("Updated after each deadline. Compared with: \(baseline.label).")
+        parts.append("Updated after each deadline.")
+        if tab.usesBaseline { parts.append("Compared with: \(baseline.label).") }
+        if tab == .players { parts.append("Threat and opportunity scores (0–100) come from current league data only; no future points are projected.") }
         return Text(parts.joined(separator: " "))
             .font(.footnote)
             .foregroundStyle(ToolkitColor.secondaryText)
@@ -99,23 +159,31 @@ struct LeagueView: View {
 
     private func load(force: Bool = false) async {
         loadError = nil
+        let id = league.id
         do {
             switch tab {
             case .overview:
-                if force || overview == nil || overview?.baseline != baselineKey { overview = nil }
-                if overview == nil { overview = try await repository.overview(league.id, baseline: baseline) }
+                if force || overview == nil { overview = try await repository.overview(id, baseline: baseline) }
             case .standings:
-                if force { standings = nil }
-                if standings == nil { standings = try await repository.standings(league.id) }
+                if force || standings == nil { standings = try await repository.standings(id) }
+            case .rivals:
+                if force || rivals == nil { rivals = try await repository.rivals(id, baseline: baseline) }
+            case .players:
+                if force || players == nil { players = try await repository.players(id, baseline: baseline) }
+            case .captains:
+                if force || captains == nil { captains = try await repository.captains(id) }
+            case .chips:
+                if force || chips == nil { chips = try await repository.chips(id) }
+            case .transfers:
+                if force || transfers == nil { transfers = try await repository.transfers(id, recent: transfersRecent) }
+            case .history:
+                if force || history == nil { history = try await repository.history(id) }
+            case .report:
+                if force || report == nil { report = try await repository.report(id, gw: reportGw) }
             }
         } catch let error as APIError {
             loadError = ErrorCopy(error)
         } catch {}
-    }
-
-    private var baselineKey: String {
-        if case .draft = baseline { return "draft" }
-        return "team"
     }
 }
 

@@ -393,6 +393,23 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "24-league-vs")
         app.buttons["Done"].firstMatch.tap()
 
+        // The remaining tabs, each audited.
+        let tabs: [(String, NSPredicate, String)] = [
+            ("Rivals", NSPredicate(format: "label ==[c] 'Your current rivals'"), "25-league-rivals"),
+            ("Players", NSPredicate(format: "label ==[c] 'Your biggest threats'"), "26-league-players"),
+            ("Captains", NSPredicate(format: "label ==[c] 'League captaincy trend'"), "27-league-captains"),
+            ("Chips", NSPredicate(format: "label ==[c] 'League chip usage'"), "28-league-chips"),
+            ("Transfers", NSPredicate(format: "label ==[c] 'Most bought'"), "29-league-transfers"),
+            ("History", NSPredicate(format: "label ==[c] 'Season performance'"), "30-league-history"),
+            ("Report", NSPredicate(format: "label ==[c] 'Share report'"), "31-league-report"),
+        ]
+        for (name, marker, shot) in tabs {
+            app.buttons[name].firstMatch.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, "\(name) tab", timeout: 60)
+            settle()
+            check(app, shot)
+        }
+
         // Back on the Team tab: touch and hold to remove the league again.
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(league, "Back on Leagues")

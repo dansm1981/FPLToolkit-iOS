@@ -27,6 +27,33 @@ struct LeaguesRepository: Sendable {
         try await session.send("GET", "leagues/\(leagueId)/standings", as: LeagueStandings.self).envelope.data
     }
 
+    func rivals(_ leagueId: Int, baseline: LeagueBaseline) async throws -> LeagueRivals {
+        try await get("rivals", leagueId, baseline.queryItems)
+    }
+
+    func players(_ leagueId: Int, baseline: LeagueBaseline) async throws -> LeaguePlayers {
+        try await get("players", leagueId, baseline.queryItems)
+    }
+
+    func captains(_ leagueId: Int) async throws -> LeagueCaptains { try await get("captains", leagueId) }
+
+    func chips(_ leagueId: Int) async throws -> LeagueChips { try await get("chips", leagueId) }
+
+    /// `recent`: the last six gameweeks; otherwise the synced one.
+    func transfers(_ leagueId: Int, recent: Bool) async throws -> LeagueTransfers {
+        try await get("transfers", leagueId, [URLQueryItem(name: "scope", value: recent ? "recent" : "gw")])
+    }
+
+    func history(_ leagueId: Int) async throws -> LeagueHistory { try await get("history", leagueId) }
+
+    func report(_ leagueId: Int, gw: Int?) async throws -> LeagueReport {
+        try await get("report", leagueId, gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
+    }
+
+    private func get<T: Decodable & Sendable>(_ tab: String, _ leagueId: Int, _ query: [URLQueryItem] = []) async throws -> T {
+        try await session.send("GET", "leagues/\(leagueId)/\(tab)", query: query, as: T.self).envelope.data
+    }
+
     func vs(_ leagueId: Int, entryId: Int, baseline: LeagueBaseline) async throws -> LeagueVs {
         try await session.send("GET", "leagues/\(leagueId)/vs/\(entryId)", query: baseline.queryItems, as: LeagueVs.self).envelope.data
     }

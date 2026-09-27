@@ -202,3 +202,152 @@ enum LeagueBaseline: Hashable, Sendable {
         }
     }
 }
+
+// MARK: - The remaining tabs (P2-10b, happy-backend-pal#23)
+
+struct LeagueSimilar: Decodable, Sendable, Hashable {
+    let manager: LeagueManager
+    let similarity: Int
+}
+
+struct LeagueRivals: Decodable, Sendable {
+    let league: LeagueMeta
+    let rivals: [LeagueRival]
+    let mostSimilar: [LeagueSimilar]
+    let mostDifferent: [LeagueSimilar]
+    let players: [String: PlayerSummary]
+    func name(_ id: Int) -> String { players[String(id)]?.webName ?? "Player \(id)" }
+}
+
+struct LeaguePlayers: Decodable, Sendable {
+    struct Template: Decodable, Sendable { let formation: String; let xi: [Int]; let bench: [Int]; let owned: Int; let similarityPct: Int? }
+    struct Consensus: Decodable, Sendable, Hashable, Identifiable { let playerId: Int; let leaguePct: Double; let globalPct: Double; let gapPp: Double; var id: Int { playerId } }
+    struct Captaincy: Decodable, Sendable, Hashable, Identifiable { let playerId: Int; let count: Int; let pct: Double; var id: Int { playerId } }
+    struct Ownership: Decodable, Sendable, Hashable, Identifiable { let playerId: Int; let ownedPct: Double; let started: Int; let eo: Double; let globalPct: Double; var id: Int { playerId } }
+    let league: LeagueMeta
+    let threats: [LeagueIntel]
+    let opportunities: [LeagueIntel]
+    let template: Template
+    let loves: [Consensus]
+    let avoids: [Consensus]
+    let captaincy: [Captaincy]
+    let ownership: [Ownership]
+    let players: [String: PlayerSummary]
+    func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
+    func name(_ id: Int) -> String { player(id)?.webName ?? "Player \(id)" }
+}
+
+struct LeagueCaptains: Decodable, Sendable {
+    struct Row: Decodable, Sendable, Hashable { let manager: LeagueManager; let captains: [Int?] }
+    struct Trend: Decodable, Sendable, Hashable {
+        struct Top: Decodable, Sendable, Hashable { let playerId: Int; let pct: Double }
+        let gw: Int
+        let total: Int
+        let top: [Top]
+    }
+    let league: LeagueMeta
+    let gws: [Int]
+    let rows: [Row]
+    let trend: [Trend]
+    let players: [String: PlayerSummary]
+    func name(_ id: Int?) -> String { id.flatMap { players[String($0)]?.webName } ?? "–" }
+}
+
+struct LeagueChips: Decodable, Sendable {
+    struct Row: Decodable, Sendable, Hashable { let manager: LeagueManager; let remaining: [String: Int]; let used: [LeagueChip] }
+    struct Usage: Decodable, Sendable, Hashable { let chip: String; let label: String; let used: Int; let left: Int }
+    let league: LeagueMeta
+    let rows: [Row]
+    let usage: [Usage]
+}
+
+struct LeagueTransfers: Decodable, Sendable {
+    struct Intel: Decodable, Sendable, Hashable, Identifiable {
+        struct Counterpart: Decodable, Sendable, Hashable { let playerId: Int; let count: Int }
+        struct Manager: Decodable, Sendable, Hashable { let entryId: Int; let name: String }
+        let playerId: Int
+        let count: Int
+        let pct: Double
+        let counterparts: [Counterpart]
+        let managers: [Manager]
+        var id: Int { playerId }
+    }
+    struct Trend: Decodable, Sendable, Hashable { let gw: Int; let transfers: Int; let managersActive: Int; let hits: Int }
+    struct Feed: Decodable, Sendable, Hashable {
+        struct Move: Decodable, Sendable, Hashable { let out: Int; let `in`: Int }
+        struct Chip: Decodable, Sendable, Hashable { let chip: String; let label: String }
+        let manager: LeagueManager
+        let transfers: [Move]
+        let cost: Int
+        let chip: Chip?
+    }
+    let league: LeagueMeta
+    let scope: String
+    let gws: [Int]
+    let total: Int
+    let bought: [Intel]
+    let sold: [Intel]
+    let trend: [Trend]
+    let feed: [Feed]
+    let players: [String: PlayerSummary]
+    func name(_ id: Int) -> String { players[String(id)]?.webName ?? "Player \(id)" }
+}
+
+struct LeagueHistory: Decodable, Sendable {
+    struct Position: Decodable, Sendable, Hashable {
+        struct Point: Decodable, Sendable, Hashable { let gw: Int; let rank: Int; let gapToLeader: Int }
+        let manager: LeagueManager
+        let points: [Point]
+    }
+    struct Performance: Decodable, Sendable, Hashable {
+        struct Week: Decodable, Sendable, Hashable { let gw: Int; let points: Int }
+        let manager: LeagueManager?
+        let entryId: Int
+        let avgPoints: Double
+        let best: Week?
+        let worst: Week?
+        let transfers: Int
+        let hitPoints: Int
+        let benchPoints: Int
+        let wastage: Int
+    }
+    let league: LeagueMeta
+    let positions: [Position]
+    let performance: [Performance]
+}
+
+struct LeagueReport: Decodable, Sendable {
+    struct Manager: Decodable, Sendable, Hashable { let entryId: Int; let name: String; let team: String }
+    struct Points: Decodable, Sendable, Hashable { let manager: Manager; let points: Int }
+    struct Total: Decodable, Sendable, Hashable { let manager: Manager; let total: Int }
+    struct Places: Decodable, Sendable, Hashable { let manager: Manager; let places: Int }
+    struct Captain: Decodable, Sendable, Hashable { let manager: Manager; let playerId: Int; let points: Int }
+    struct Hit: Decodable, Sendable, Hashable { let manager: Manager; let points: Int; let transfers: Int }
+    struct Differential: Decodable, Sendable, Hashable { let playerId: Int; let points: Int; let owners: Int; let ownedPct: Double }
+    struct ChipPlay: Decodable, Sendable, Hashable { let manager: Manager; let chip: String; let label: String }
+    struct You: Decodable, Sendable, Hashable { let manager: Manager; let points: Int; let rank: Int?; let gapToLeader: Int }
+    struct Body: Decodable, Sendable {
+        let managers: Int
+        let average: Double
+        let winner: Points?
+        let lowest: Points?
+        let leader: Total?
+        let climber: Places?
+        let faller: Places?
+        let bestCaptain: Captain?
+        let worstCaptain: Captain?
+        let worstBench: Points?
+        let biggestHit: Hit?
+        let bestDifferential: Differential?
+        let chips: [ChipPlay]
+        let you: You?
+    }
+    let league: LeagueMeta
+    let gw: Int
+    let gws: [Int]
+    let report: Body
+    /// The website's "Share report" text.
+    let text: String
+    let players: [String: PlayerSummary]
+    func name(_ id: Int) -> String { players[String(id)]?.webName ?? "Player \(id)" }
+}
