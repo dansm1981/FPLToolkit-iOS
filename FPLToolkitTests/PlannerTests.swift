@@ -113,6 +113,32 @@ struct PlannerTests {
         #expect(news.insights[firstCalm...].allSatisfy { !$0.needsAttention })
     }
 
+    /// Squad evolution and the timeline (live, 27 Sep, after happy-backend-pal#16; Slater → Saka in
+    /// GW6 and a Free Hit in GW7 planned on a test device).
+    @Test func evolutionAndPlan() throws {
+        let evo = try fixture("planner-evolution-22615", as: PlannerEvolution.self)
+        #expect(evo.weeks.map(\.gw) == Array(6...11))
+        #expect(evo.groups.map(\.position) == [.gk, .def, .mid, .fwd])
+        for group in evo.groups {
+            for id in group.playerIds {
+                #expect(evo.cells(for: id).count == evo.weeks.count && evo.player(id) != nil)
+            }
+        }
+        // Each week's suggested XI has eleven players.
+        for (i, _) in evo.weeks.enumerated() {
+            let xi = evo.groups.flatMap(\.playerIds).filter { evo.cells(for: $0)[i].suggested }
+            #expect(xi.count == 11)
+        }
+        let plan = try fixture("planner-plan-22615", as: PlannerPlan.self)
+        #expect(plan.events.map(\.gw) == [1, 3, 4, 6, 7])
+        let gw6 = try #require(plan.events.first { $0.gw == 6 })
+        let outs: [String] = gw6.out.map(plan.name)
+        let ins: [String] = gw6.in.map(plan.name)
+        #expect(outs == ["Slater"] && ins == ["Saka"])
+        #expect(plan.events.first { $0.gw == 7 }?.chips.first?.label == "Free Hit 1")
+        #expect(plan.ledger.first?.freeTransfers == 2 && plan.totals.hits == 0)
+    }
+
     @Test func afterATransfer() throws {
         let draft = try fixture("planner-draft-22615-transfer", as: PlannerDraft.self)
         #expect(draft.transfers.out == [290] && draft.transfers.in == [12])

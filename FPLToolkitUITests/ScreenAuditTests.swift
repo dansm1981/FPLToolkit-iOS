@@ -174,8 +174,15 @@ final class ScreenAuditTests: XCTestCase {
         // by the screen's edge, which the audit reports as clipping it can't place (checked by eye
         // at the largest sizes: nothing is cut off).
         check(app, "11-planner-draft", sizesAndLists: false, combinedTiles: true)
-        // And with the bench and chips in view.
-        app.scrollViews.firstMatch.swipeUp(velocity: .slow)
+        // And with the bench and chips in view: the Bench heading just under the bar, so no card is
+        // cut by the screen's edge (whatever sits above the pitch).
+        let benchHeading = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'bench'")).firstMatch
+        let dy = benchHeading.frame.minY - (app.navigationBars.firstMatch.frame.maxY + 16)
+        if dy > 0 {
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+            start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -dy)),
+                        withVelocity: .slow, thenHoldForDuration: 0.5)
+        }
         settle()
         check(app, "11b-planner-draft-bench", combinedTiles: true)
 

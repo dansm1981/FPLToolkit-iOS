@@ -1,0 +1,1501 @@
+{
+  "data": {
+    "weeks": [
+      {
+        "gw": 6,
+        "formation": "3-5-2"
+      },
+      {
+        "gw": 7,
+        "formation": "5-3-2"
+      },
+      {
+        "gw": 8,
+        "formation": "3-5-2"
+      },
+      {
+        "gw": 9,
+        "formation": "3-4-3"
+      },
+      {
+        "gw": 10,
+        "formation": "4-3-3"
+      },
+      {
+        "gw": 11,
+        "formation": "3-4-3"
+      }
+    ],
+    "groups": [
+      {
+        "position": "GK",
+        "playerIds": [
+          496,
+          109
+        ]
+      },
+      {
+        "position": "DEF",
+        "playerIds": [
+          8,
+          391,
+          449,
+          115,
+          31
+        ]
+      },
+      {
+        "position": "MID",
+        "playerIds": [
+          154,
+          12,
+          480,
+          40,
+          565
+        ]
+      },
+      {
+        "position": "FWD",
+        "playerIds": [
+          411,
+          165,
+          249
+        ]
+      }
+    ],
+    "cells": {
+      "8": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 18,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 17,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "12": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 18,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 17,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "31": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 18,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 17,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "40": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 3,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 19,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 16,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 20,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "109": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 20,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 8,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 5,
+          "band": 5,
+          "opponentClubId": 15,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 4,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "115": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 20,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 8,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 5,
+          "band": 5,
+          "opponentClubId": 15,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 4,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "154": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 3,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 19,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 16,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 20,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "165": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 3,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 19,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 16,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 20,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "249": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 6,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 5,
+          "band": 5,
+          "opponentClubId": 1,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 17,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 7,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 4,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "391": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 12,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 2,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 5,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 18,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 10,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "411": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 12,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 2,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 5,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 18,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 10,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "449": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 7,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 2,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 8,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 10,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 1,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "480": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 8,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 1,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 12,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 4,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 15,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 3,
+          "home": false,
+          "games": 1
+        }
+      ],
+      "496": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 16,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 7,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 6,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 8,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 13,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 12,
+          "home": true,
+          "games": 1
+        }
+      ],
+      "565": [
+        {
+          "gw": 6,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 2,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 7,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 14,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 8,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 2,
+          "band": 2,
+          "opponentClubId": 11,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 9,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 18,
+          "home": true,
+          "games": 1
+        },
+        {
+          "gw": 10,
+          "inSquad": true,
+          "suggested": false,
+          "blank": false,
+          "fdr": 4,
+          "band": 4,
+          "opponentClubId": 5,
+          "home": false,
+          "games": 1
+        },
+        {
+          "gw": 11,
+          "inSquad": true,
+          "suggested": true,
+          "blank": false,
+          "fdr": 3,
+          "band": 3,
+          "opponentClubId": 9,
+          "home": true,
+          "games": 1
+        }
+      ]
+    },
+    "players": {
+      "8": {
+        "id": 8,
+        "webName": "Calafiori",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 50.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "12": {
+        "id": 12,
+        "webName": "Saka",
+        "clubId": 1,
+        "position": "MID",
+        "price": 9.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 13.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "31": {
+        "id": 31,
+        "webName": "Konsa",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 4.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 19.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "40": {
+        "id": 40,
+        "webName": "Rogers",
+        "clubId": 6,
+        "position": "MID",
+        "price": 7.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 40.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "109": {
+        "id": 109,
+        "webName": "Verbruggen",
+        "clubId": 5,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 21.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "115": {
+        "id": 115,
+        "webName": "De Cuyper",
+        "clubId": 5,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 27.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "249": {
+        "id": 249,
+        "webName": "Barry",
+        "clubId": 9,
+        "position": "FWD",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 8.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "391": {
+        "id": 391,
+        "webName": "Gvardiol",
+        "clubId": 15,
+        "position": "DEF",
+        "price": 5.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 26.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.12,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "449": {
+        "id": 449,
+        "webName": "Hall",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "480": {
+        "id": 480,
+        "webName": "Gibbs-White",
+        "clubId": 18,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 15.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "496": {
+        "id": 496,
+        "webName": "Kinsky",
+        "clubId": 19,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "565": {
+        "id": 565,
+        "webName": "M.Sangaré",
+        "clubId": 4,
+        "position": "MID",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 10,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T18:22:11.222Z",
+    "freshness": []
+  }
+}
