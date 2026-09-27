@@ -26,12 +26,34 @@ Then ask: **"Do tasks/phase-1.md Step 2."**
 
 | Setting | Value |
 |---|---|
-| Bundle ID | `uk.co.fpltoolkit.app` |
+| Bundle ID | `uk.co.fpltoolkit.app` (Release). Debug builds use `uk.co.fpltoolkit.app.dev` while signing with the free Personal Team, so the real ID stays unregistered until the paid team exists. |
 | Display name | FPLToolkit |
 | Minimum iOS | 17.0 |
 | UI | SwiftUI, `@Observable`, async/await, URLSession, Codable |
 | Dependencies | none (ask before adding any) |
 | Signing | Personal team (free Apple ID) until the Apple Developer Program membership arrives. Builds last 7 days; push notifications need the paid membership. |
+
+## The Xcode project
+
+Open `FPLToolkit.xcodeproj`. The groups are synchronised with the folders, so a new `.swift` file in `FPLToolkit/` is picked up without editing the project.
+
+```
+FPLToolkit/
+  App/            FPLToolkitApp (root, tabs), AppModel (connected team, bootstrap, repositories)
+  API/            APIClient (the only networking), DTOs (v1 contract, fallback enums)
+  Repositories/   CachedEndpoint + ResponseCache (last good response on disk), Resource (screen loader)
+  Design/         ToolkitTheme (colours from Assets.xcassets, spacing, buttons, pills)
+  Components/     InsightCard, "What we checked", skeletons, saved-data banner, error state
+  Features/       Onboarding (S01–S03, S24), Today (S05/S06/S23/S27), Team (S07), Player (S08/S09/S29), Settings
+  Support/        Formatting, Team ID input parsing, error copy, preview fixtures
+FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (Swift Testing)
+```
+
+- **Run on the iPhone:** in Xcode, pick the phone in the device menu and press ▶. Free signing lasts 7 days, then re-install.
+- **Tests:** `xcodebuild test -project FPLToolkit.xcodeproj -scheme FPLToolkit -destination 'platform=iOS Simulator,name=iPhone 17'`
+- **Debug launch arguments** (Xcode: Product → Scheme → Edit Scheme → Run → Arguments):
+  - `-entryId 71191` opens straight on Today for that team;
+  - `-apiBaseURL http://127.0.0.1:9/` points at an unreachable host to see the offline states. Debug builds only.
 
 ## Fixtures
 
