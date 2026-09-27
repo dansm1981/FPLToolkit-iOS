@@ -103,6 +103,16 @@ struct PlannerTests {
         #expect(values?.first?.lens == .match)
     }
 
+    /// Team news for a draft (live, 27 Sep, after happy-backend-pal#15): Today's notes, attention first.
+    @Test func draftNews() throws {
+        let news = try fixture("planner-news-22615", as: PlannerNews.self)
+        #expect(news.gw == 6 && !news.insights.isEmpty)
+        #expect(news.insights.first?.needsAttention == true)
+        #expect(news.insights.allSatisfy { news.player($0.playerId) != nil })
+        let firstCalm = news.insights.firstIndex { !$0.needsAttention } ?? news.insights.count
+        #expect(news.insights[firstCalm...].allSatisfy { !$0.needsAttention })
+    }
+
     @Test func afterATransfer() throws {
         let draft = try fixture("planner-draft-22615-transfer", as: PlannerDraft.self)
         #expect(draft.transfers.out == [290] && draft.transfers.in == [12])
