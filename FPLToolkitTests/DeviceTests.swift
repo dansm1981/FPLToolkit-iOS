@@ -41,16 +41,19 @@ struct DeviceTests {
         #expect(watch.reasons(for: 154) == [.manual])
     }
 
-    /// §12.6 rows: assembled from captured responses until a live one is saved after the server change ships.
-    @Test func watchRowsCarryNoteThenPriceThenOwnership() throws {
-        let watch = try fixture("watch-rows-example", as: Watch.self)
+    /// §12.6 rows, captured live for team 22615 on 27 Sep 2026: most urgent first.
+    @Test func watchRowsCarryNotePriceAndOwnership() throws {
+        let watch = try fixture("watch-rows-22615", as: Watch.self)
         let first = try #require(watch.effective.first)
-        #expect(first.needsAttention == true)
-        #expect(first.topInsight?.tone == .bad)
-        #expect(first.price == .init(progressPct: -41, tonightPct: -63.5))
-        #expect(first.ownershipChange7d == -2.4)
-        #expect(watch.effective[1].price?.tonightPct == nil)
+        #expect(first.needsAttention == false)
+        #expect(first.topInsight?.tone == .warn)
+        #expect(first.price?.progressPct == -10)
+        #expect(first.price?.tonightPct == -10.7)
+        #expect(first.ownershipChange7d == -1)
+        let severities = watch.effective.map { $0.topInsight?.severity ?? -1 }
+        #expect(severities == severities.sorted(by: >))
         #expect(watch.effective.last?.topInsight == nil)
+        #expect(watch.effective.contains { $0.reasons == [.manual] })
     }
 
     @Test func olderWatchResponsesStillDecode() throws {

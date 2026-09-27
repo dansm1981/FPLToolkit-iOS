@@ -388,7 +388,7 @@ private struct WatchRow: View {
                     Label {
                         Text(insight.summary)
                             .foregroundStyle(ToolkitColor.primaryText)
-                            .lineLimit(2)
+                            .lineLimit(3)
                             .fixedSize(horizontal: false, vertical: true)
                     } icon: {
                         Image(systemName: insight.symbol)
@@ -430,7 +430,8 @@ private struct WatchRow: View {
     /// Price progress (tonight's projection when there is one, as on the player page) and ownership trend.
     private var trends: [(text: String, spoken: String)] {
         var parts: [(String, String)] = []
-        if let price = item.price, let value = price.tonightPct ?? price.progressPct {
+        // A price note already says this, in words.
+        if item.topInsight?.category != .price, let price = item.price, let value = price.tonightPct ?? price.progressPct {
             let side = value < 0 ? "fall" : "rise"
             let when = price.tonightPct != nil ? "tonight" : "now"
             parts.append(("Price \(Format.signedPercent(value)) \(when)",

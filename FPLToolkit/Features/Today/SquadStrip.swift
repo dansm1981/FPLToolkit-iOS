@@ -58,12 +58,12 @@ private struct SquadChip: View {
                 .foregroundStyle(ToolkitColor.secondaryText)
             if let xfdr = player.nextFixture?.xfdr {
                 Text("xFDR \(xfdr.value.formatted(.number.precision(.fractionLength(1))))")
-                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(ToolkitColor.secondaryText)
             }
             if pick.role == .bench {
                 Text("Bench")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption)
                     .foregroundStyle(ToolkitColor.secondaryText)
             }
         }

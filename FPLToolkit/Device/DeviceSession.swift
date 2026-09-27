@@ -1,17 +1,24 @@
 import Foundation
+import OSLog
 
 /// This install's identity on the server (§6). Registers lazily on the first device-scoped call,
 /// re-registers once if the server no longer knows the device, and keeps the server told which
 /// team this device follows. Reads (team, today, players) never need it.
 actor DeviceSession {
+    private static let log = Logger(subsystem: "uk.co.fpltoolkit.app", category: "device")
     private let client: APIClient
     private let store: DeviceCredentialsStore
     private let defaults: UserDefaults
     private var credentials: DeviceCredentials?
     private var registering: Task<DeviceCredentials, Error>?
+    /// What was last sent this launch. Kept in memory only, so every launch tells the server once:
+    /// a remembered value could drift from the server (a server-side change, a new registration).
+    private var lastSync: String?
+    /// The team the app last asked for (nil inside means "none"); replayed onto a new registration.
+    private var followed: Int??
 
     private enum Keys {
-        static let lastSync = "device.lastSync"
+        static let legacyLastSync = "device.lastSync"
         static let apnsToken = "device.apnsToken"
     }
 
@@ -29,6 +36,7 @@ actor DeviceSession {
         self.store = store
         self.defaults = defaults
         self.credentials = store.load()
+        defaults.removeObject(forKey: Keys.legacyLastSync)
     }
 
     /// A device-scoped request. On 401 the saved identity is dropped and the call retried once
@@ -43,8 +51,17 @@ actor DeviceSession {
         do {
             return try await client.send(method, path, body: body, authorization: first.authorizationHeader, as: type)
         } catch APIError.server(.unauthorized, _, _) {
+            Self.log.notice("device unknown to the server; registering again")
             forget()
             let fresh = try await ensureRegistered()
+            // A new registration has no team yet: say which one before retrying, or the retried call
+            // (e.g. the watch list) would answer for a device without a squad.
+            if path != "devices/me", let followed {
+                let (update, signature) = syncUpdate(entryId: followed)
+                if (try? await client.send("PUT", "devices/me", body: update, authorization: fresh.authorizationHeader, as: DeviceInfo.self)) != nil {
+                    lastSync = signature
+                }
+            }
             return try await client.send(method, path, body: body, authorization: fresh.authorizationHeader, as: type)
         }
     }
@@ -52,8 +69,27 @@ actor DeviceSession {
     /// Tells the server which team this device follows, its time zone and app version.
     /// Skipped when nothing has changed since the last successful sync.
     func sync(entryId: Int?) async {
+        followed = .some(entryId)
         // Never register a device just to say "no team" (e.g. straight after Reset app data).
         if entryId == nil && credentials == nil { return }
+        let (update, signature) = syncUpdate(entryId: entryId)
+        guard lastSync != signature else {
+            Self.log.debug("sync skipped, unchanged: \(signature, privacy: .public)")
+            return
+        }
+        // Claimed before the request, so a second caller at launch doesn't send the same update.
+        lastSync = signature
+        do {
+            let info = try await send("PUT", "devices/me", body: update, as: DeviceInfo.self).envelope.data
+            Self.log.debug("synced \(signature, privacy: .public); server entry \(String(describing: info.entryId), privacy: .public)")
+        } catch {
+            // Tried again on the next call, launch or foreground.
+            if lastSync == signature { lastSync = nil }
+            Self.log.error("sync failed: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    private func syncUpdate(entryId: Int?) -> (DeviceUpdate, String) {
         let token = defaults.string(forKey: Keys.apnsToken)
         let update = DeviceUpdate(
             entryId: .some(entryId),
@@ -62,13 +98,7 @@ actor DeviceSession {
             apnsToken: .some(token),
             apnsEnvironment: token == nil ? nil : Self.apnsEnvironment)
         let signature = "\(entryId.map(String.init) ?? "none")|\(update.timeZone ?? "")|\(update.appVersion ?? "")|\(token ?? "no-token")"
-        guard credentials == nil || defaults.string(forKey: Keys.lastSync) != signature else { return }
-        do {
-            _ = try await send("PUT", "devices/me", body: update, as: DeviceInfo.self)
-            defaults.set(signature, forKey: Keys.lastSync)
-        } catch {
-            // Tried again on the next launch or foreground.
-        }
+        return (update, signature)
     }
 
     /// The push token iOS handed us (hex), or nil when notifications are off. Sent on the next sync,
@@ -113,14 +143,13 @@ actor DeviceSession {
         let fresh = try await task.value
         store.save(fresh)
         credentials = fresh
-        defaults.removeObject(forKey: Keys.lastSync)
         return fresh
     }
 
     private func forget() {
         store.delete()
         credentials = nil
-        defaults.removeObject(forKey: Keys.lastSync)
+        lastSync = nil
         defaults.removeObject(forKey: Keys.apnsToken)
     }
 
