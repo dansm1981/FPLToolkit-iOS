@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// The Research tab: the website's research pages, starting with its Fixtures group (the ticker,
-/// the rotation planner and congestion). The server builds every table with the website's code.
+/// The Research tab: the website's research pages, in its groups: Fixtures (the ticker, the rotation
+/// planner and congestion) and Market (prices, predictions, trends, transfers and ownership). The
+/// server builds every table with the website's code.
 struct ResearchView: View {
+    @Environment(AppModel.self) private var appModel
     let entryId: Int?
 
     var body: some View {
@@ -22,6 +24,51 @@ struct ResearchView: View {
                 }
             } header: {
                 Text("Fixtures")
+            }
+            .listRowBackground(ToolkitColor.surface)
+
+            Section {
+                row("Price changes", systemImage: "sterlingsign.arrow.circlepath",
+                    detail: "Confirmed rises and falls day by day, and the season's biggest movers.") {
+                    MarketChangesView()
+                }
+                row("Predictions", systemImage: "gauge.with.dots.needle.67percent",
+                    detail: "FPL's own figures for who is closest to a rise or fall tonight.") {
+                    MarketPredictionsView()
+                }
+                row("Price and transfer trends", systemImage: "chart.line.uptrend.xyaxis",
+                    detail: "Today's movers, the strongest flows, and every player sorted your way.") {
+                    MarketTrendsView(entryId: entryId)
+                }
+                row("Transfers and ownership", systemImage: "arrow.left.arrow.right",
+                    detail: "This gameweek's most bought and sold, and who owns whom.") {
+                    MarketTransfersView()
+                }
+                Button {
+                    appModel.router.selectedTab = .watch
+                } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.md) {
+                        Image(systemName: "bell")
+                            .foregroundStyle(ToolkitColor.link)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("My price tracker")
+                                .font(.headline)
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            Text("Your watched players' price progress lives on the Watch tab.")
+                                .font(.subheadline)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.vertical, ToolkitSpace.xs)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the Watch tab")
+            } header: {
+                Text("Market")
             }
             .listRowBackground(ToolkitColor.surface)
         }

@@ -130,3 +130,40 @@ struct ResearchRepository: Sendable {
         ])
     }
 }
+
+/// The Research tab's Market screens (contract §16): public data, saved offline.
+struct MarketRepository: Sendable {
+    let client: APIClient
+    let cache: ResponseCache
+
+    func changes(day: String?) -> CachedEndpoint<MarketChanges> {
+        .init(client: client, cache: cache, path: "market/changes",
+              query: day.map { [URLQueryItem(name: "day", value: $0)] } ?? [])
+    }
+
+    func predictions(club: Int?, position: Position?, maxPrice: Int?) -> CachedEndpoint<MarketPredictions> {
+        var query: [URLQueryItem] = []
+        if let club { query.append(URLQueryItem(name: "club", value: String(club))) }
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if let maxPrice { query.append(URLQueryItem(name: "maxPrice", value: String(maxPrice))) }
+        return .init(client: client, cache: cache, path: "market/predictions", query: query)
+    }
+
+    /// `ids`: only these players (My squad or Shortlist); nil for everyone.
+    func trends(position: Position?, club: Int?, band: Int, ids: [Int]?, sort: String, ascending: Bool) -> CachedEndpoint<MarketTrends> {
+        var query = [
+            URLQueryItem(name: "band", value: String(band)),
+            URLQueryItem(name: "sort", value: sort),
+            URLQueryItem(name: "dir", value: ascending ? "asc" : "desc"),
+        ]
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if let club { query.append(URLQueryItem(name: "club", value: String(club))) }
+        if let ids { query.append(URLQueryItem(name: "ids", value: ids.sorted().map(String.init).joined(separator: ","))) }
+        return .init(client: client, cache: cache, path: "market/trends", query: query)
+    }
+
+    var transfers: CachedEndpoint<MarketTransfers> {
+        .init(client: client, cache: cache, path: "market/transfers")
+    }
+}
+

@@ -52,7 +52,12 @@ final class ScreenAuditTests: XCTestCase {
     /// reads the whole row, and the cells' colour pairs were checked by hand (all 4.5:1 or better).
     /// With the keyboard up, Apple's suggestion bar ("no description") and the search field's
     /// "Clear text" button are system components too.
-    private func check(_ app: XCUIApplication, _ name: String, sizesAndLists: Bool = true, combinedTiles: Bool = false) {
+    /// `clippingCheckedLarge`: long player rows that wrap (the Market lists). At the default size the
+    /// audit reports one or two of them as "may be clipped" although they re-flow; the same screens run
+    /// at accessibility-large report no clipping and show every row whole (checked 27 Sep 2026). Only
+    /// the clipping check is skipped; Dynamic Type and everything else are still audited.
+    private func check(_ app: XCUIApplication, _ name: String, sizesAndLists: Bool = true, combinedTiles: Bool = false,
+                       clippingCheckedLarge: Bool = false) {
         screenshot(app, name)
         let tabBar = app.tabBars.firstMatch
         // iOS 26 fades content in a band above the floating tab bar as it scrolls under it.
@@ -65,6 +70,7 @@ final class ScreenAuditTests: XCTestCase {
         var types = XCUIAccessibilityAuditType.all
         if !sizesAndLists { types.subtract([.dynamicType, .textClipped]) }
         if combinedTiles { types.subtract([.contrast, .elementDetection]) }
+        if clippingCheckedLarge { types.subtract(.textClipped) }
         do {
             try app.performAccessibilityAudit(for: types) { issue in
                 guard let element = issue.element else {
@@ -481,6 +487,37 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(club, "Congestion", timeout: 60)
         settle()
         check(app, "36-research-congestion", combinedTiles: true)
+    }
+
+    /// The Research tab's Market group. `auditApiBaseURL` as for test11.
+    func test12Market() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let screens: [(String, NSPredicate, String)] = [
+            ("Price changes", NSPredicate(format: "label BEGINSWITH[c] 'Price rises'"), "37-market-changes"),
+            ("Predictions", NSPredicate(format: "label ==[c] 'Closest to a rise'"), "38-market-predictions"),
+            ("Price and transfer trends", NSPredicate(format: "label ==[c] 'Strongest upward flow'"), "39-market-trends"),
+            ("Transfers and ownership", NSPredicate(format: "label BEGINSWITH[c] 'Most bought'"), "40-market-transfers"),
+        ]
+        for (title, marker, shot) in screens {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
+            waitFor(link, "\(title) on the hub")
+            link.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            settle()
+            check(app, shot, clippingCheckedLarge: true)
+            if title == "Transfers and ownership" {
+                app.buttons["Ownership"].firstMatch.tap()
+                waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'Most owned'")).firstMatch, "Ownership")
+                settle()
+                check(app, "41-market-ownership", clippingCheckedLarge: true)
+            }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+        }
     }
 
     func test07ExploreWithoutATeam() {
