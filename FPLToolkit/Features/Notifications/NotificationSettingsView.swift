@@ -1,0 +1,165 @@
+import SwiftUI
+
+/// S15. Only the push types the server has switched on are listed; changes are saved straight away.
+struct NotificationSettingsView: View {
+    @Environment(AppModel.self) private var appModel
+    @State private var prefs: DevicePrefs?
+    @State private var error: ErrorCopy?
+    @State private var saving = false
+    @State private var showingPrimer = false
+
+    var body: some View {
+        List {
+            Section {
+                permissionRow
+            }
+            .listRowBackground(ToolkitColor.surface)
+
+            if let prefs {
+                let f = appModel.pushFeatures
+                Section {
+                    if f?.priceAlerts == true {
+                        toggle("Price projections", "When a watched player may rise or fall tonight (15:00–22:30 UK)", \.notifications.price, prefs)
+                    }
+                    if f?.availabilityAlerts == true {
+                        toggle("Availability changes", "When FPL changes a watched player's status", \.notifications.availability, prefs)
+                    }
+                    if f?.deadlineReminders == true {
+                        toggle("Deadline: 24 hours before", "With how many of your players are flagged", \.notifications.deadline24h, prefs)
+                        toggle("Deadline: 3 hours before", "With how many of your players are flagged", \.notifications.deadline3h, prefs)
+                    }
+                } header: {
+                    Text("Alerts")
+                } footer: {
+                    Text("Only for players in your squad or watch list. At most 5 a day, plus deadline reminders.")
+                }
+                .listRowBackground(ToolkitColor.surface)
+
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { prefs.quietHours.start != prefs.quietHours.end },
+                        set: { on in
+                            var next = prefs
+                            next.quietHours = on ? .init(start: "22:30", end: "07:30") : .init(start: "00:00", end: "00:00")
+                            save(next)
+                        }
+                    )) {
+                        Text("Quiet hours")
+                    }
+                    .tint(ToolkitColor.accent)
+                    if prefs.quietHours.start != prefs.quietHours.end {
+                        timePicker("From", \.quietHours.start, prefs)
+                        timePicker("Until", \.quietHours.end, prefs)
+                    }
+                } header: {
+                    Text("Quiet hours")
+                } footer: {
+                    Text("On this phone's clock. Availability changes and deadline reminders wait until quiet hours end; price alerts found during them are skipped.")
+                }
+                .listRowBackground(ToolkitColor.surface)
+            } else if let error {
+                Section {
+                    Text("\(error.title). \(error.message)")
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    Button("Try again") { Task { await load() } }
+                }
+                .listRowBackground(ToolkitColor.surface)
+            } else {
+                Section { ProgressView() }.listRowBackground(ToolkitColor.surface)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(ToolkitColor.canvas.ignoresSafeArea())
+        .navigationTitle("Notifications")
+        .task { await load() }
+        .sheet(isPresented: $showingPrimer) { NotificationPrimerView() }
+    }
+
+    @ViewBuilder
+    private var permissionRow: some View {
+        switch appModel.push.permission {
+        case .authorized:
+            Label("Notifications are on for this iPhone", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(ToolkitColor.positive)
+        case .denied:
+            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+                Label("Notifications are off in iPhone Settings", systemImage: "bell.slash")
+                    .foregroundStyle(ToolkitColor.warning)
+                Button("Open iPhone Settings") { appModel.push.openSystemSettings() }
+            }
+        case .notDetermined, .unknown:
+            Button {
+                showingPrimer = true
+            } label: {
+                Label("Turn on notifications", systemImage: "bell.badge")
+            }
+        }
+    }
+
+    private func toggle(_ title: String, _ detail: String, _ path: WritableKeyPath<DevicePrefs, Bool>, _ prefs: DevicePrefs) -> some View {
+        Toggle(isOn: Binding(
+            get: { prefs[keyPath: path] },
+            set: { on in
+                var next = prefs
+                next[keyPath: path] = on
+                save(next)
+            }
+        )) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                Text(detail).font(.footnote).foregroundStyle(ToolkitColor.secondaryText)
+            }
+        }
+        .tint(ToolkitColor.accent)
+        .disabled(saving)
+    }
+
+    private func timePicker(_ title: String, _ path: WritableKeyPath<DevicePrefs, String>, _ prefs: DevicePrefs) -> some View {
+        DatePicker(title, selection: Binding(
+            get: { Self.date(from: prefs[keyPath: path]) },
+            set: { date in
+                var next = prefs
+                next[keyPath: path] = Self.hhmm(from: date)
+                save(next)
+            }
+        ), displayedComponents: .hourAndMinute)
+        .disabled(saving)
+    }
+
+    private func load() async {
+        error = nil
+        do {
+            prefs = try await appModel.deviceSession.device().prefs
+            if prefs == nil { error = ErrorCopy(title: "Settings aren't available", message: "Try again in a moment.", canRetry: true) }
+        } catch let e as APIError {
+            error = ErrorCopy(e)
+        } catch {}
+    }
+
+    /// Optimistic: shows the change, saves it, and puts it back if saving fails.
+    private func save(_ next: DevicePrefs) {
+        let previous = prefs
+        prefs = next
+        saving = true
+        Task {
+            defer { saving = false }
+            do {
+                let saved = try await appModel.deviceSession.updatePrefs(.init(notifications: next.notifications, quietHours: next.quietHours))
+                prefs = saved.prefs ?? next
+            } catch let e as APIError {
+                prefs = previous
+                error = ErrorCopy(e)
+            } catch {}
+        }
+    }
+
+    private static func date(from hhmm: String) -> Date {
+        let parts = hhmm.split(separator: ":").compactMap { Int($0) }
+        return Calendar.current.date(bySettingHour: parts.first ?? 0, minute: parts.dropFirst().first ?? 0, second: 0, of: .now) ?? .now
+    }
+
+    private static func hhmm(from date: Date) -> String {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)
+    }
+}

@@ -21,6 +21,17 @@ struct SettingsView: View {
                 }
                 .listRowBackground(ToolkitColor.surface)
 
+                if appModel.anyPushFeature {
+                    Section {
+                        NavigationLink {
+                            NotificationSettingsView()
+                        } label: {
+                            Label("Notifications", systemImage: "bell")
+                        }
+                    }
+                    .listRowBackground(ToolkitColor.surface)
+                }
+
                 Section {
                     Text(appModel.disclosure)
                         .font(.callout)

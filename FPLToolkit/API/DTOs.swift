@@ -384,21 +384,49 @@ struct DeviceRegistration: Decodable, Sendable {
     let deviceSecret: String
 }
 
+/// Notification preferences (contract §12.3). Device-local quiet hours; start == end means none.
+struct DevicePrefs: Codable, Sendable, Equatable {
+    struct Notifications: Codable, Sendable, Equatable {
+        var price: Bool
+        var availability: Bool
+        var deadline24h: Bool
+        var deadline3h: Bool
+    }
+    struct QuietHours: Codable, Sendable, Equatable {
+        var start: String
+        var end: String
+    }
+    var notifications: Notifications
+    var quietHours: QuietHours
+    var autoTrackSquad: Bool
+}
+
 struct DeviceInfo: Decodable, Sendable {
     let id: String
     let entryId: Int?
     let apnsRegistered: Bool
     let timeZone: String?
     let appVersion: String?
+    let prefs: DevicePrefs?
 }
 
 /// `PUT /devices/me`. Only the fields that are set are sent.
 struct DeviceUpdate: Encodable, Sendable {
+    /// The notification part of prefs only, so the watch list's squad toggle is never overwritten.
+    struct PrefsPatch: Encodable, Sendable {
+        var notifications: DevicePrefs.Notifications?
+        var quietHours: DevicePrefs.QuietHours?
+    }
+
     var entryId: Int??
     var timeZone: String?
     var appVersion: String?
+    /// `.some(nil)` clears the token (notifications turned off).
+    var apnsToken: String??
+    var apnsEnvironment: String?
+    var prefs: PrefsPatch?
 
-    private enum CodingKeys: String, CodingKey { case entryId, timeZone, appVersion }
+    private enum CodingKeys: String, CodingKey { case entryId, timeZone, appVersion, apnsToken, apnsEnvironment, prefs }
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -406,9 +434,47 @@ struct DeviceUpdate: Encodable, Sendable {
             // .some(nil) sends an explicit null: "no team".
             if let id = entryId { try c.encode(id, forKey: .entryId) } else { try c.encodeNil(forKey: .entryId) }
         }
+        if let apnsToken {
+            if let token = apnsToken { try c.encode(token, forKey: .apnsToken) } else { try c.encodeNil(forKey: .apnsToken) }
+        }
         try c.encodeIfPresent(timeZone, forKey: .timeZone)
         try c.encodeIfPresent(appVersion, forKey: .appVersion)
+        try c.encodeIfPresent(apnsEnvironment, forKey: .apnsEnvironment)
+        try c.encodeIfPresent(prefs, forKey: .prefs)
     }
+}
+
+/// One entry in the alert history (contract §12.4): what was sent, held or not sent, and why.
+struct AlertItem: Decodable, Sendable, Identifiable, Hashable {
+    enum Category: String, FallbackDecodable {
+        case price, availability, deadline
+        case other
+        static let fallback = Self.other
+    }
+    enum Status: String, FallbackDecodable {
+        case sent, deferred, suppressed, superseded, failed, queued
+        case unknown
+        static let fallback = Self.unknown
+    }
+
+    let eventKey: String
+    let category: Category
+    let playerId: Int?
+    let gameweek: Int?
+    let title: String
+    let body: String
+    let status: Status
+    let reason: String?
+    let detectedAt: Date
+    let sentAt: Date?
+    let expiresAt: Date
+    let deepLink: String
+
+    var id: String { eventKey }
+}
+
+struct AlertHistory: Decodable, Sendable {
+    let alerts: [AlertItem]
 }
 
 /// The effective watch set is computed by the server: manual ∪ (autoTrackSquad ? squad : ∅).

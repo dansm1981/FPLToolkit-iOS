@@ -57,7 +57,16 @@ FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (S
 - **Debug launch arguments** (Xcode: Product → Scheme → Edit Scheme → Run → Arguments):
   - `-entryId 71191` opens straight on Today for that team;
   - `-apiBaseURL http://127.0.0.1:9/` points at an unreachable host to see the offline states. Debug builds only.
+  - `-forcePushFeatures YES` shows the notification screens (alert offer, permission prompt, settings, alert history) before the server switches push types on. Debug builds only.
 - **Deep links:** `fpltoolkit://today`, `team`, `watch`, `watch/alerts`, `player/{id}` (contract §5). Try one in the simulator with `xcrun simctl openurl booted fpltoolkit://player/154`.
+
+## Push notifications
+
+Built and waiting for the paid Apple Developer team (see `docs/mobile/push-launch.md` in the workspace):
+- `Push/PushManager.swift`: permission, the APNs token (sent to the server as `apnsToken` + `apnsEnvironment`: `sandbox` for Xcode builds, `production` for TestFlight/App Store), foreground presentation, and opening a notification's `deepLink`.
+- `Features/Notifications`: the offer card on Today, the primer (S04) and "notifications off" (S28), and settings (S15). `Features/Watch/AlertHistoryView.swift`: alert history (S11).
+- Everything appears only for push types `bootstrap.config.features` reports as live.
+- `Config/FPLToolkit.entitlements` holds `aps-environment`. It's wired in (`CODE_SIGN_ENTITLEMENTS`) on membership day, with the paid team and the real bundle ID for Debug; the free Personal Team can't sign with it.
 
 ## Fixtures
 

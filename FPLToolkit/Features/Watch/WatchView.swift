@@ -28,6 +28,12 @@ struct WatchView: View {
         }
         .task(id: query) { await search?.run(query) }
         .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
+        .navigationDestination(isPresented: Binding(
+            get: { appModel.router.showingAlerts && appModel.alerts != nil },
+            set: { appModel.router.showingAlerts = $0 }
+        )) {
+            if let alerts = appModel.alerts { AlertHistoryView(resource: alerts) }
+        }
         .toolkitScreen()
         .navigationTitle("Watch")
         .settingsButton(entryId: entryId)
@@ -293,15 +299,19 @@ private struct WatchContent: View {
             .listRowBackground(ToolkitColor.surface)
 
             Section {
-                VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                    Label("No alerts yet", systemImage: "bell.badge")
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Text("Price, availability and deadline alerts for these players aren't switched on yet. Once they are, every alert we send will be listed here.")
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+                if appModel.anyPushFeature, let alerts = appModel.alerts {
+                    RecentAlerts(resource: alerts)
+                } else {
+                    VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+                        Label("No alerts yet", systemImage: "bell.badge")
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        Text("Price, availability and deadline alerts for these players aren't switched on yet. Once they are, every alert we send will be listed here.")
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    .padding(.vertical, ToolkitSpace.xs)
                 }
-                .padding(.vertical, ToolkitSpace.xs)
             } header: {
                 SectionLabel(text: "Alerts")
             }
@@ -382,5 +392,37 @@ private struct WatchRow: View {
         parts.append(player.position.rawValue)
         parts.append(Format.price(player.price))
         return parts.joined(separator: " · ")
+    }
+}
+
+/// The latest few alerts on the Watch tab, with a link to the full history (S11).
+private struct RecentAlerts: View {
+    @Environment(AppModel.self) private var appModel
+    let resource: Resource<AlertHistory>
+
+    var body: some View {
+        Group {
+            switch resource.phase {
+            case .loading:
+                ProgressView()
+            case .failed(let copy):
+                Text("\(copy.title). \(copy.message)")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            case .loaded(let loaded):
+                if loaded.value.alerts.isEmpty {
+                    Text("No alerts yet. When something changes for these players, it'll be listed here.")
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                } else {
+                    ForEach(loaded.value.alerts.prefix(3)) { alert in
+                        AlertRow(alert: alert)
+                    }
+                    Button("See all alerts") { appModel.router.showingAlerts = true }
+                        .frame(minHeight: 44)
+                }
+            }
+        }
+        .task { if case .loading = resource.phase { await resource.load() } }
     }
 }

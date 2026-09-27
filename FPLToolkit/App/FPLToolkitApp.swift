@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct FPLToolkitApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appModel = AppModel()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -12,12 +13,14 @@ struct FPLToolkitApp: App {
                 .tint(ToolkitColor.link)
                 .task {
                     await appModel.refreshBootstrap()
+                    await appModel.push.refresh()
                     await appModel.syncDevice()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         Task {
                             await appModel.refreshBootstrap()
+                            await appModel.push.refresh()
                             await appModel.syncDevice()
                         }
                     }
@@ -70,7 +73,7 @@ struct MainView: View {
             .tag(AppTab.watch)
         }
         .sheet(item: $router.presentedPlayer) { ref in
-            PlayerSheetView(playerId: ref.id)
+            PlayerSheetView(playerId: ref.id, fromAlert: ref.fromAlert)
         }
         // A new team gets fresh screens and models.
         .id(entryId)

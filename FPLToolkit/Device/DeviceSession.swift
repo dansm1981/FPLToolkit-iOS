@@ -10,7 +10,19 @@ actor DeviceSession {
     private var credentials: DeviceCredentials?
     private var registering: Task<DeviceCredentials, Error>?
 
-    private enum Keys { static let lastSync = "device.lastSync" }
+    private enum Keys {
+        static let lastSync = "device.lastSync"
+        static let apnsToken = "device.apnsToken"
+    }
+
+    /// Xcode builds talk to Apple's sandbox push servers; TestFlight and App Store builds to production.
+    static let apnsEnvironment: String = {
+        #if DEBUG
+        return "sandbox"
+        #else
+        return "production"
+        #endif
+    }()
 
     init(client: APIClient, store: DeviceCredentialsStore = DeviceCredentialsStore(), defaults: UserDefaults = .standard) {
         self.client = client
@@ -42,8 +54,14 @@ actor DeviceSession {
     func sync(entryId: Int?) async {
         // Never register a device just to say "no team" (e.g. straight after Reset app data).
         if entryId == nil && credentials == nil { return }
-        let update = DeviceUpdate(entryId: .some(entryId), timeZone: TimeZone.current.identifier, appVersion: Self.appVersion)
-        let signature = "\(entryId.map(String.init) ?? "none")|\(update.timeZone ?? "")|\(update.appVersion ?? "")"
+        let token = defaults.string(forKey: Keys.apnsToken)
+        let update = DeviceUpdate(
+            entryId: .some(entryId),
+            timeZone: TimeZone.current.identifier,
+            appVersion: Self.appVersion,
+            apnsToken: .some(token),
+            apnsEnvironment: token == nil ? nil : Self.apnsEnvironment)
+        let signature = "\(entryId.map(String.init) ?? "none")|\(update.timeZone ?? "")|\(update.appVersion ?? "")|\(token ?? "no-token")"
         guard credentials == nil || defaults.string(forKey: Keys.lastSync) != signature else { return }
         do {
             _ = try await send("PUT", "devices/me", body: update, as: DeviceInfo.self)
@@ -51,6 +69,24 @@ actor DeviceSession {
         } catch {
             // Tried again on the next launch or foreground.
         }
+    }
+
+    /// The push token iOS handed us (hex), or nil when notifications are off. Sent on the next sync,
+    /// which happens straight away. The server only accepts it with a team connected.
+    func setPushToken(_ token: String?, entryId: Int?) async {
+        if defaults.string(forKey: Keys.apnsToken) == token { return }
+        if let token { defaults.set(token, forKey: Keys.apnsToken) } else { defaults.removeObject(forKey: Keys.apnsToken) }
+        await sync(entryId: entryId)
+    }
+
+    /// This device's settings on the server (notification preferences).
+    func device() async throws -> DeviceInfo {
+        try await send("GET", "devices/me", as: DeviceInfo.self).envelope.data
+    }
+
+    /// Changes notification preferences; returns what the server saved.
+    func updatePrefs(_ patch: DeviceUpdate.PrefsPatch) async throws -> DeviceInfo {
+        try await send("PUT", "devices/me", body: DeviceUpdate(prefs: patch), as: DeviceInfo.self).envelope.data
     }
 
     /// "Reset app data": deletes the device and everything tied to it on the server, then locally.
@@ -85,6 +121,7 @@ actor DeviceSession {
         store.delete()
         credentials = nil
         defaults.removeObject(forKey: Keys.lastSync)
+        defaults.removeObject(forKey: Keys.apnsToken)
     }
 
     private static let appVersion: String = {

@@ -5,6 +5,7 @@ struct TodayView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Today>?
+    @State private var showingAlertsPrimer = false
 
     var body: some View {
         Group {
@@ -23,9 +24,12 @@ struct TodayView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
-                            TodayContent(loaded: loaded, isCurrent: resource.isCurrent, isRefreshing: resource.isRefreshing) {
-                                appModel.router.openPlayer($0)
-                            }
+                            TodayContent(
+                                loaded: loaded,
+                                isCurrent: resource.isCurrent,
+                                isRefreshing: resource.isRefreshing,
+                                onSelectPlayer: { appModel.router.openPlayer($0) },
+                                onOfferAlerts: { showingAlertsPrimer = true })
                         }
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.bottom, ToolkitSpace.section)
@@ -37,6 +41,7 @@ struct TodayView: View {
         .toolkitScreen()
         .navigationTitle("Today")
         .settingsButton(entryId: entryId)
+        .sheet(isPresented: $showingAlertsPrimer) { NotificationPrimerView() }
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.today(entryId: entryId))
@@ -53,6 +58,7 @@ struct TodayContent: View {
     var isCurrent = true
     var isRefreshing = false
     var onSelectPlayer: ((Int) -> Void)?
+    var onOfferAlerts: (() -> Void)?
 
     private var today: Today { loaded.value }
 
@@ -63,6 +69,10 @@ struct TodayContent: View {
             }
 
             StatusCard(today: today, isCurrent: isCurrent, isRefreshing: isRefreshing)
+
+            if let onOfferAlerts {
+                AlertsOfferCard(open: onOfferAlerts)
+            }
 
             if today.status == .attention {
                 ForEach(today.attentionInsights) { insight in

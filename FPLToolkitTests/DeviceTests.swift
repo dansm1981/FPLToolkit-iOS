@@ -98,6 +98,7 @@ struct DeepLinkTests {
         ("fpltoolkit://watch/alerts", DeepLink.alerts),
         ("fpltoolkit://player/154", DeepLink.player(154)),
         ("fpltoolkit://player/593?insight=593-availability-Availability%3Agw5", DeepLink.player(593)),
+        ("fpltoolkit://player/154?event=avail%3A154%3Ad%3A50%3A1790374210", DeepLink.player(154, event: "avail:154:d:50:1790374210")),
         ("fpltoolkit://player/abc", DeepLink.today),
         ("fpltoolkit://something-new", DeepLink.today),
     ])
@@ -121,3 +122,63 @@ struct SearchTests {
 }
 
 private final class SearchBundleToken {}
+
+struct PushContractTests {
+    @Test func devicePrefsDecodeFromTheLiveShape() throws {
+        let url = try #require(Bundle(for: PushBundleToken.self).url(forResource: "device-me", withExtension: "json"))
+        let info = try APIClient.decode(Envelope<DeviceInfo>.self, from: Data(contentsOf: url)).data
+        let prefs = try #require(info.prefs)
+        #expect(prefs.notifications.price)
+        #expect(prefs.notifications.deadline3h)
+        #expect(!prefs.notifications.deadline24h)
+        #expect(prefs.quietHours == .init(start: "22:30", end: "07:30"))
+    }
+
+    @Test func pushTokenAndPrefsEncode() throws {
+        let clear = try JSONSerialization.jsonObject(with: JSONEncoder().encode(DeviceUpdate(apnsToken: .some(nil)))) as? [String: Any]
+        #expect(clear?["apnsToken"] is NSNull)
+        let set = try JSONSerialization.jsonObject(with: JSONEncoder().encode(
+            DeviceUpdate(apnsToken: .some("abcd"), apnsEnvironment: "sandbox",
+                         prefs: .init(notifications: nil, quietHours: .init(start: "23:00", end: "07:00"))))) as? [String: Any]
+        #expect(set?["apnsToken"] as? String == "abcd")
+        #expect(set?["apnsEnvironment"] as? String == "sandbox")
+        let prefs = set?["prefs"] as? [String: Any]
+        #expect(prefs?.keys.contains("autoTrackSquad") == false)
+        #expect((prefs?["quietHours"] as? [String: String])?["start"] == "23:00")
+    }
+
+    @Test func alertHistoryDecodesAndToleratesNewValues() throws {
+        let json = """
+        {"data":{"alerts":[
+          {"eventKey":"price:417:2026-09-27:up","category":"price","playerId":417,"gameweek":null,
+           "title":"Hall may rise tonight","body":"104% of the rise threshold. A projection, not a guarantee.",
+           "status":"sent","reason":null,"detectedAt":"2026-09-27T17:00:00.000Z","sentAt":"2026-09-27T17:00:03.000Z",
+           "expiresAt":"2026-09-28T00:30:00.000Z","deepLink":"fpltoolkit://player/417?event=price%3A417%3A2026-09-27%3Aup"},
+          {"eventKey":"moved:1:2026-09-28","category":"moved","playerId":1,"gameweek":null,"title":"t","body":"b",
+           "status":"archived","reason":"something_new","detectedAt":"2026-09-28T07:30:00Z","sentAt":null,
+           "expiresAt":"2026-09-28T12:00:00Z","deepLink":"fpltoolkit://player/1"}
+        ]},"meta":{"apiVersion":"1","generatedAt":"2026-09-28T08:00:00Z","freshness":[]}}
+        """
+        let history = try APIClient.decode(Envelope<AlertHistory>.self, from: Data(json.utf8)).data
+        #expect(history.alerts.count == 2)
+        #expect(history.alerts[0].category == .price)
+        #expect(history.alerts[0].status == .sent)
+        #expect(history.alerts[1].category == .other)
+        #expect(history.alerts[1].status == .unknown)
+        #expect(AlertRow.statusText(history.alerts[0]) == "Sent")
+    }
+
+    @Test func notSentReasonsReadPlainly() {
+        func alert(_ status: AlertItem.Status, _ reason: String?) -> AlertItem {
+            AlertItem(eventKey: "k", category: .availability, playerId: 1, gameweek: nil, title: "t", body: "b",
+                      status: status, reason: reason, detectedAt: .now, sentAt: nil, expiresAt: .now, deepLink: "fpltoolkit://today")
+        }
+        #expect(AlertRow.statusText(alert(.suppressed, "quiet_hours")) == "Not sent: found during quiet hours")
+        #expect(AlertRow.statusText(alert(.suppressed, "daily_cap")) == "Not sent: daily alert limit reached")
+        #expect(AlertRow.statusText(alert(.deferred, "quiet_hours")) == "Held until quiet hours end")
+        #expect(AlertRow.statusText(alert(.suppressed, "notifications_off")) == "Not sent: notifications are off on this iPhone")
+        #expect(AlertRow.statusText(alert(.superseded, "status_changed")).hasPrefix("Not sent: the status changed back"))
+    }
+}
+
+private final class PushBundleToken {}

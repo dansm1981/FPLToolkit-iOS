@@ -28,3 +28,25 @@ struct WatchRepository: LoadableEndpoint {
         CachedEndpoint<Watch>(client: .production, cache: cache, path: path).cached()
     }
 }
+
+/// This device's alert history (contract §12.4): what was sent, held or not sent, and why.
+struct AlertsRepository: LoadableEndpoint {
+    let session: DeviceSession
+    let cache: ResponseCache
+    private let path = "devices/me/alerts"
+
+    init(session: DeviceSession, cache: ResponseCache) {
+        self.session = session
+        self.cache = cache
+    }
+
+    func fetch(bypassCache: Bool = false) async throws -> Loaded<AlertHistory> {
+        let fetched = try await session.send("GET", path, as: AlertHistory.self)
+        cache.write(fetched.raw, for: path)
+        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    }
+
+    func cached() -> Loaded<AlertHistory>? {
+        CachedEndpoint<AlertHistory>(client: .production, cache: cache, path: path).cached()
+    }
+}

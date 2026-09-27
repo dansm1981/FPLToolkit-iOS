@@ -12,7 +12,10 @@ final class AppModel {
     private(set) var bootstrap: Loaded<Bootstrap>?
     /// The watch list for the connected team's device; nil when no team is connected.
     private(set) var watch: WatchStore?
+    /// Alert history for the connected device; nil when no team is connected.
+    private(set) var alerts: Resource<AlertHistory>?
     let router = Router()
+    let push = PushManager()
 
     let bootstrapRepository: BootstrapRepository
     let teamRepository: TeamRepository
@@ -34,6 +37,27 @@ final class AppModel {
         self.entryId = stored > 0 ? stored : nil
         self.bootstrap = bootstrapRepository.bootstrap.cached()
         if entryId != nil { makeWatchStore() }
+        push.openLink = { [weak self] link in self?.router.open(link) }
+        push.tokenChanged = { [weak self] token in
+            guard let self else { return }
+            Task { await self.deviceSession.setPushToken(token, entryId: self.entryId) }
+        }
+    }
+
+    /// The push types the server says are live (bootstrap features). Nothing is offered otherwise.
+    var pushFeatures: Bootstrap.Config.Features? {
+        #if DEBUG
+        // `-forcePushFeatures YES` shows the notification screens before the server switches them on.
+        if UserDefaults.standard.bool(forKey: "forcePushFeatures") {
+            return .init(priceAlerts: true, availabilityAlerts: true, deadlineReminders: true)
+        }
+        #endif
+        return bootstrap?.value.config.features
+    }
+
+    var anyPushFeature: Bool {
+        guard let f = pushFeatures else { return false }
+        return f.priceAlerts || f.availabilityAlerts || f.deadlineReminders
     }
 
     func connect(entryId: Int) {
@@ -50,6 +74,7 @@ final class AppModel {
         cache.removeAll()
         entryId = nil
         watch = nil
+        alerts = nil
         Task { await deviceSession.sync(entryId: nil) }
     }
 
@@ -69,6 +94,7 @@ final class AppModel {
         watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache)) { [weak self] in
             await self?.syncDevice()
         }
+        alerts = Resource(AlertsRepository(session: deviceSession, cache: cache))
     }
 
     /// Called at launch and on foreground (§3.1). A failure keeps whatever we had.

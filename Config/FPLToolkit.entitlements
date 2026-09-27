@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Push notifications. Not referenced by the project until the paid Apple Developer team is set:
+	     the free Personal Team can't sign with it. See docs/mobile/push-launch.md (workspace), step 2. -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

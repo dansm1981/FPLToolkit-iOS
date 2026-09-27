@@ -4,6 +4,8 @@ import SwiftUI
 /// Identifies which player sheet to open.
 struct PlayerRef: Identifiable, Hashable {
     let id: Int
+    /// Opened from a notification: the sheet says the facts may have moved on since.
+    var fromAlert = false
 }
 
 /// S08 (availability), S09 (price) and S29 (research): the compact player sheet (§3.4).
@@ -13,6 +15,7 @@ struct PlayerSheetView: View {
     let playerId: Int
     /// The name we already know, shown while loading.
     var knownName: String?
+    var fromAlert = false
     @State private var resource: Resource<PlayerSheet>?
 
     var body: some View {
@@ -33,6 +36,14 @@ struct PlayerSheetView: View {
                         ScrollView {
                             VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
                                 SavedDataBanner(resource: resource)
+                                if fromAlert {
+                                    Label("You opened an alert. This is the latest information, which may have changed since it was sent.", systemImage: "bell.badge")
+                                        .font(.footnote)
+                                        .foregroundStyle(ToolkitColor.information)
+                                        .padding(ToolkitSpace.md)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: ToolkitRadius.pill))
+                                }
                                 PlayerSheetContent(loaded: loaded)
                             }
                             .padding(.horizontal, ToolkitSpace.page)
