@@ -192,9 +192,16 @@ final class ScreenAuditTests: XCTestCase {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Planner"].tap()
         let newDraft = app.buttons["New draft"].firstMatch
-        waitFor(newDraft, "New draft menu", timeout: 30)
+        waitFor(newDraft, "New draft button", timeout: 30)
         newDraft.tap()
+        // The sheet opens on import, with the connected Team ID filled in.
+        let teamField = app.textFields["FPL Team ID"].firstMatch
+        waitFor(teamField, "New draft sheet")
+        XCTAssertEqual(teamField.value as? String, team)
+        settle()
+        check(app, "14-new-draft-sheet")
         app.buttons["Start from scratch"].firstMatch.tap()
+        app.buttons["Create"].firstMatch.tap()
 
         let addKeeper = app.buttons["Add a goalkeeper"].firstMatch
         waitFor(addKeeper, "Blank draft", timeout: 40)

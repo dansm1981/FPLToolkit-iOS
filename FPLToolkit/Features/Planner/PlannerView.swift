@@ -13,6 +13,7 @@ struct PlannerView: View {
     @State private var pendingDelete: PlannerDraftSummary?
     /// Drafts being deleted: hidden straight away, shown again if the delete fails.
     @State private var deleting: Set<String> = []
+    @State private var showingNewDraft = false
 
     init(entryId: Int?, repository: PlannerRepository) {
         self.entryId = entryId
@@ -44,12 +45,15 @@ struct PlannerView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    newDraftButtons
-                } label: {
+                Button { showingNewDraft = true } label: {
                     Label("New draft", systemImage: "plus")
                 }
                 .disabled(creating != nil)
+            }
+        }
+        .sheet(isPresented: $showingNewDraft) {
+            NewDraftSheet(entryId: entryId, drafts: list.loaded?.value.drafts ?? []) { request, label in
+                Task { await create(request, label: label) }
             }
         }
         .confirmationDialog(
@@ -65,18 +69,6 @@ struct PlannerView: View {
         .toolkitScreen()
         .navigationTitle("Planner")
         .settingsButton(entryId: entryId)
-    }
-
-    @ViewBuilder
-    private var newDraftButtons: some View {
-        if let entryId {
-            Button { Task { await create(.import(entryId), label: "Importing your team from FPL…") } } label: {
-                Label("Import my FPL team", systemImage: "square.and.arrow.down")
-            }
-        }
-        Button { Task { await create(.blank, label: "Starting a blank draft…") } } label: {
-            Label("Start from scratch", systemImage: "square.dashed")
-        }
     }
 
     private func content(_ loaded: Loaded<PlannerDraftList>, list: Resource<PlannerDraftList>) -> some View {
@@ -106,6 +98,8 @@ struct PlannerView: View {
                 Section {
                     EmptyPlanner(entryId: entryId, busy: creating != nil) { request, label in
                         Task { await create(request, label: label) }
+                    } more: {
+                        showingNewDraft = true
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
@@ -202,6 +196,8 @@ private struct EmptyPlanner: View {
     let entryId: Int?
     let busy: Bool
     let start: (PlannerNewDraft, String) -> Void
+    /// Opens the full new-draft sheet (another team's ID).
+    let more: () -> Void
 
     var body: some View {
         ToolkitCard {
@@ -223,6 +219,11 @@ private struct EmptyPlanner: View {
                 }
                 Button("Start from scratch") { start(.blank, "Starting a blank draft…") }
                     .buttonStyle(ToolkitSecondaryButtonStyle())
+                    .disabled(busy)
+                Button("Import another team’s ID…", action: more)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.link)
+                    .frame(minHeight: 44)
                     .disabled(busy)
             }
         }
