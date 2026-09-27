@@ -1,0 +1,226 @@
+{
+  "data": {
+    "league": {
+      "id": 783382,
+      "name": "LEAGUE OF EXPERTS",
+      "isElite": false,
+      "managers": 21,
+      "tracked": 21,
+      "syncedGw": 5,
+      "lastSyncedAt": "2026-09-27T16:00:05.982+00:00"
+    },
+    "gw": 5,
+    "gws": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "report": {
+      "managers": 21,
+      "average": 51,
+      "winner": {
+        "manager": {
+          "entryId": 7409161,
+          "name": "Paul Mcbride",
+          "team": "Spasmeno Paramythi"
+        },
+        "points": 78
+      },
+      "lowest": {
+        "manager": {
+          "entryId": 4459886,
+          "name": "Jamie McBride",
+          "team": "PoissonGoalModel Utd"
+        },
+        "points": 27
+      },
+      "leader": {
+        "manager": {
+          "entryId": 1699334,
+          "name": "Andy McBride",
+          "team": "Andiletic BilBride"
+        },
+        "total": 392
+      },
+      "climber": {
+        "manager": {
+          "entryId": 7409161,
+          "name": "Paul Mcbride",
+          "team": "Spasmeno Paramythi"
+        },
+        "places": 9
+      },
+      "faller": {
+        "manager": {
+          "entryId": 2335246,
+          "name": "Des McBride",
+          "team": "MOTO"
+        },
+        "places": -7
+      },
+      "bestCaptain": {
+        "manager": {
+          "entryId": 22615,
+          "name": "Dan Smyth",
+          "team": "All priced in"
+        },
+        "playerId": 411,
+        "points": 12
+      },
+      "worstCaptain": {
+        "manager": {
+          "entryId": 6619530,
+          "name": "Chris Bone",
+          "team": "Double The Water"
+        },
+        "playerId": 165,
+        "points": 0
+      },
+      "worstBench": {
+        "manager": {
+          "entryId": 3737441,
+          "name": "HUGH MCBRIDE",
+          "team": "Eddieswayanyhowe"
+        },
+        "points": 21
+      },
+      "biggestHit": null,
+      "bestDifferential": {
+        "playerId": 397,
+        "points": 17,
+        "owners": 2,
+        "ownedPct": 9.5
+      },
+      "chips": [
+        {
+          "manager": {
+            "entryId": 397489,
+            "name": "Joe Logan",
+            "team": "Shaken, Not Steur'd"
+          },
+          "chip": "wildcard",
+          "label": "WC"
+        },
+        {
+          "manager": {
+            "entryId": 6110474,
+            "name": "Ron White",
+            "team": "Barrysangermain"
+          },
+          "chip": "freehit",
+          "label": "FH"
+        },
+        {
+          "manager": {
+            "entryId": 7409161,
+            "name": "Paul Mcbride",
+            "team": "Spasmeno Paramythi"
+          },
+          "chip": "wildcard",
+          "label": "WC"
+        }
+      ],
+      "you": {
+        "manager": {
+          "entryId": 22615,
+          "name": "Dan Smyth",
+          "team": "All priced in"
+        },
+        "points": 45,
+        "rank": 2,
+        "gapToLeader": 30
+      }
+    },
+    "text": "LEAGUE OF EXPERTS — GW5\n\n🏆 GW winner: Paul Mcbride — 78 pts\n📊 League average: 51.0 pts\n👑 Overall leader: Andy McBride — 392 pts\n📈 Biggest climber: Paul Mcbride +9\n📉 Biggest faller: Des McBride -7\n🎯 Best captain: Haaland (Dan Smyth) — 12 pts\n😬 Worst captain: João Pedro (Chris Bone) — 0 pts\n💀 Worst bench call: HUGH MCBRIDE left 21 pts on the bench\n🔥 Best differential: Semenyo — 17 pts, started by 2/21\n🃏 Chips: Joe Logan Wildcard, Ron White Free Hit, Paul Mcbride Wildcard\n🥄 Wooden spoon: Jamie McBride — 27 pts\n\nYou: 45 pts · 2 of 21 · 30 pts behind 1st\n\nvia fpltoolkit.co.uk",
+    "players": {
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "397": {
+        "id": 397,
+        "webName": "Semenyo",
+        "clubId": 15,
+        "position": "MID",
+        "price": 8.4,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Ankle injury - 75% chance of playing"
+        },
+        "selectedByPct": 15.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T20:10:00.905Z",
+    "freshness": []
+  }
+}

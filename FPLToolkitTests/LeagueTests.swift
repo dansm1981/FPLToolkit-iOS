@@ -41,6 +41,25 @@ struct LeagueTests {
         #expect(vs.them.starting.count == 11 && vs.headToHead != nil)
     }
 
+    /// The remaining tabs, live (27 Sep, after happy-backend-pal#23): as on the website's screenshots.
+    @Test func liveTabs() throws {
+        let rivals = try fixture("league-rivals-783382", as: LeagueRivals.self)
+        #expect(rivals.mostSimilar.first?.manager.managerName == "HUGH MCBRIDE" && rivals.mostSimilar.first?.similarity == 67)
+        let players = try fixture("league-players-783382", as: LeaguePlayers.self)
+        #expect(players.template.xi.count == 11 && players.ownership.count <= 40)
+        let captains = try fixture("league-captains-783382", as: LeagueCaptains.self)
+        let andy = try #require(captains.rows.first { $0.manager.managerName == "Andy McBride" })
+        #expect(andy.captains.map(captains.name) == ["Haaland", "B.Fernandes", "Haaland", "João Pedro", "Haaland"])
+        let chips = try fixture("league-chips-783382", as: LeagueChips.self)
+        #expect(chips.usage.map(\.label) == ["WC", "FH", "BB", "TC"])
+        let transfers = try fixture("league-transfers-783382", as: LeagueTransfers.self)
+        #expect(transfers.scope == "recent" && transfers.total > 0)
+        let history = try fixture("league-history-783382", as: LeagueHistory.self)
+        #expect(history.positions.count == 12)
+        let report = try fixture("league-report-783382", as: LeagueReport.self)
+        #expect(report.report.winner?.manager.name == "Paul Mcbride" && report.text.hasPrefix("LEAGUE OF EXPERTS — GW5"))
+    }
+
     private func fixture<T: Decodable & Sendable>(_ name: String, as type: T.Type) throws -> T {
         let bundle = Bundle(for: LeagueBundleToken.self)
         let url = try #require(

@@ -1,0 +1,3039 @@
+{
+  "data": {
+    "league": {
+      "id": 783382,
+      "name": "LEAGUE OF EXPERTS",
+      "isElite": false,
+      "managers": 21,
+      "tracked": 21,
+      "syncedGw": 5,
+      "lastSyncedAt": "2026-09-27T16:00:05.982+00:00"
+    },
+    "scope": "recent",
+    "gws": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "total": 136,
+    "bought": [
+      {
+        "playerId": 115,
+        "count": 8,
+        "pct": 38.1,
+        "counterparts": [
+          {
+            "playerId": 418,
+            "count": 2
+          },
+          {
+            "playerId": 423,
+            "count": 2
+          },
+          {
+            "playerId": 356,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 4612627,
+            "name": "Dominic McBride"
+          }
+        ]
+      },
+      {
+        "playerId": 40,
+        "count": 7,
+        "pct": 33.3,
+        "counterparts": [
+          {
+            "playerId": 480,
+            "count": 1
+          },
+          {
+            "playerId": 366,
+            "count": 1
+          },
+          {
+            "playerId": 454,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 6110474,
+            "name": "Ron White"
+          },
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 6105838,
+            "name": "Colin McBride"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          }
+        ]
+      },
+      {
+        "playerId": 399,
+        "count": 7,
+        "pct": 33.3,
+        "counterparts": [
+          {
+            "playerId": 368,
+            "count": 3
+          },
+          {
+            "playerId": 427,
+            "count": 3
+          },
+          {
+            "playerId": 40,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 1778504,
+            "name": "Matt Logan"
+          },
+          {
+            "entryId": 2307689,
+            "name": "Chris Logan"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 6105838,
+            "name": "Colin McBride"
+          },
+          {
+            "entryId": 6110474,
+            "name": "Ron White"
+          }
+        ]
+      },
+      {
+        "playerId": 31,
+        "count": 6,
+        "pct": 28.6,
+        "counterparts": [
+          {
+            "playerId": 10,
+            "count": 2
+          },
+          {
+            "playerId": 112,
+            "count": 1
+          },
+          {
+            "playerId": 259,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 4612627,
+            "name": "Dominic McBride"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 6105838,
+            "name": "Colin McBride"
+          }
+        ]
+      },
+      {
+        "playerId": 449,
+        "count": 6,
+        "pct": 28.6,
+        "counterparts": [
+          {
+            "playerId": 418,
+            "count": 2
+          },
+          {
+            "playerId": 445,
+            "count": 1
+          },
+          {
+            "playerId": 469,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 7409161,
+            "name": "Paul Mcbride"
+          },
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 1778504,
+            "name": "Matt Logan"
+          },
+          {
+            "entryId": 2307689,
+            "name": "Chris Logan"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          }
+        ]
+      },
+      {
+        "playerId": 154,
+        "count": 6,
+        "pct": 28.6,
+        "counterparts": [
+          {
+            "playerId": 427,
+            "count": 3
+          },
+          {
+            "playerId": 426,
+            "count": 2
+          },
+          {
+            "playerId": 399,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 3432605,
+            "name": "Simon Moiani"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          }
+        ]
+      },
+      {
+        "playerId": 109,
+        "count": 4,
+        "pct": 19,
+        "counterparts": [
+          {
+            "playerId": 496,
+            "count": 2
+          },
+          {
+            "playerId": 567,
+            "count": 1
+          },
+          {
+            "playerId": 412,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 1097988,
+            "name": "Aidan Bone"
+          }
+        ]
+      },
+      {
+        "playerId": 565,
+        "count": 4,
+        "pct": 19,
+        "counterparts": [
+          {
+            "playerId": 557,
+            "count": 2
+          },
+          {
+            "playerId": 426,
+            "count": 1
+          },
+          {
+            "playerId": 455,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 325305,
+            "name": "Kris McBride"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          }
+        ]
+      },
+      {
+        "playerId": 94,
+        "count": 4,
+        "pct": 19,
+        "counterparts": [
+          {
+            "playerId": 426,
+            "count": 1
+          },
+          {
+            "playerId": 427,
+            "count": 1
+          },
+          {
+            "playerId": 366,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 6110474,
+            "name": "Ron White"
+          },
+          {
+            "entryId": 6737676,
+            "name": "Steve Smyth"
+          },
+          {
+            "entryId": 7409161,
+            "name": "Paul Mcbride"
+          }
+        ]
+      },
+      {
+        "playerId": 165,
+        "count": 3,
+        "pct": 14.3,
+        "counterparts": [
+          {
+            "playerId": 55,
+            "count": 1
+          },
+          {
+            "playerId": 222,
+            "count": 1
+          },
+          {
+            "playerId": 552,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 7203835,
+            "name": "James Berryman"
+          },
+          {
+            "entryId": 4612627,
+            "name": "Dominic McBride"
+          },
+          {
+            "entryId": 6619530,
+            "name": "Chris Bone"
+          }
+        ]
+      }
+    ],
+    "sold": [
+      {
+        "playerId": 427,
+        "count": 10,
+        "pct": 47.6,
+        "counterparts": [
+          {
+            "playerId": 154,
+            "count": 3
+          },
+          {
+            "playerId": 399,
+            "count": 3
+          },
+          {
+            "playerId": 124,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 1778504,
+            "name": "Matt Logan"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 4836394,
+            "name": "Nick Bone"
+          },
+          {
+            "entryId": 6105838,
+            "name": "Colin McBride"
+          }
+        ]
+      },
+      {
+        "playerId": 418,
+        "count": 7,
+        "pct": 33.3,
+        "counterparts": [
+          {
+            "playerId": 449,
+            "count": 2
+          },
+          {
+            "playerId": 115,
+            "count": 2
+          },
+          {
+            "playerId": 445,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 7409161,
+            "name": "Paul Mcbride"
+          },
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 1778504,
+            "name": "Matt Logan"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          }
+        ]
+      },
+      {
+        "playerId": 481,
+        "count": 6,
+        "pct": 28.6,
+        "counterparts": [
+          {
+            "playerId": 290,
+            "count": 1
+          },
+          {
+            "playerId": 12,
+            "count": 1
+          },
+          {
+            "playerId": 454,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 6619530,
+            "name": "Chris Bone"
+          },
+          {
+            "entryId": 7203835,
+            "name": "James Berryman"
+          },
+          {
+            "entryId": 6110474,
+            "name": "Ron White"
+          }
+        ]
+      },
+      {
+        "playerId": 426,
+        "count": 6,
+        "pct": 28.6,
+        "counterparts": [
+          {
+            "playerId": 154,
+            "count": 2
+          },
+          {
+            "playerId": 565,
+            "count": 1
+          },
+          {
+            "playerId": 605,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 3432605,
+            "name": "Simon Moiani"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          }
+        ]
+      },
+      {
+        "playerId": 496,
+        "count": 5,
+        "pct": 23.8,
+        "counterparts": [
+          {
+            "playerId": 109,
+            "count": 2
+          },
+          {
+            "playerId": 1,
+            "count": 2
+          },
+          {
+            "playerId": 82,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 7409161,
+            "name": "Paul Mcbride"
+          }
+        ]
+      },
+      {
+        "playerId": 366,
+        "count": 5,
+        "pct": 23.8,
+        "counterparts": [
+          {
+            "playerId": 398,
+            "count": 1
+          },
+          {
+            "playerId": 40,
+            "count": 1
+          },
+          {
+            "playerId": 377,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 4612627,
+            "name": "Dominic McBride"
+          },
+          {
+            "entryId": 6105838,
+            "name": "Colin McBride"
+          },
+          {
+            "entryId": 6737676,
+            "name": "Steve Smyth"
+          }
+        ]
+      },
+      {
+        "playerId": 165,
+        "count": 5,
+        "pct": 23.8,
+        "counterparts": [
+          {
+            "playerId": 167,
+            "count": 2
+          },
+          {
+            "playerId": 411,
+            "count": 1
+          },
+          {
+            "playerId": 136,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 4459886,
+            "name": "Jamie McBride"
+          },
+          {
+            "entryId": 325305,
+            "name": "Kris McBride"
+          },
+          {
+            "entryId": 1097988,
+            "name": "Aidan Bone"
+          },
+          {
+            "entryId": 6110474,
+            "name": "Ron White"
+          }
+        ]
+      },
+      {
+        "playerId": 237,
+        "count": 4,
+        "pct": 19,
+        "counterparts": [
+          {
+            "playerId": 43,
+            "count": 1
+          },
+          {
+            "playerId": 454,
+            "count": 1
+          },
+          {
+            "playerId": 68,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 7277503,
+            "name": "Joseph Smyth"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 2307689,
+            "name": "Chris Logan"
+          },
+          {
+            "entryId": 7409161,
+            "name": "Paul Mcbride"
+          }
+        ]
+      },
+      {
+        "playerId": 259,
+        "count": 4,
+        "pct": 19,
+        "counterparts": [
+          {
+            "playerId": 31,
+            "count": 1
+          },
+          {
+            "playerId": 334,
+            "count": 1
+          },
+          {
+            "playerId": 449,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 1699334,
+            "name": "Andy McBride"
+          },
+          {
+            "entryId": 3737441,
+            "name": "HUGH MCBRIDE"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          }
+        ]
+      },
+      {
+        "playerId": 109,
+        "count": 4,
+        "pct": 19,
+        "counterparts": [
+          {
+            "playerId": 497,
+            "count": 1
+          },
+          {
+            "playerId": 567,
+            "count": 1
+          },
+          {
+            "playerId": 1,
+            "count": 1
+          }
+        ],
+        "managers": [
+          {
+            "entryId": 22615,
+            "name": "Dan Smyth"
+          },
+          {
+            "entryId": 397489,
+            "name": "Joe Logan"
+          },
+          {
+            "entryId": 7409161,
+            "name": "Paul Mcbride"
+          }
+        ]
+      }
+    ],
+    "trend": [
+      {
+        "gw": 2,
+        "transfers": 8,
+        "managersActive": 8,
+        "hits": 0
+      },
+      {
+        "gw": 3,
+        "transfers": 56,
+        "managersActive": 16,
+        "hits": 16
+      },
+      {
+        "gw": 4,
+        "transfers": 36,
+        "managersActive": 16,
+        "hits": 4
+      },
+      {
+        "gw": 5,
+        "transfers": 36,
+        "managersActive": 14,
+        "hits": 0
+      }
+    ],
+    "feed": [
+      {
+        "manager": {
+          "entryId": 1699334,
+          "teamName": "Andiletic BilBride",
+          "managerName": "Andy McBride",
+          "rank": 1,
+          "total": 392
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 22615,
+          "teamName": "All priced in",
+          "managerName": "Dan Smyth",
+          "rank": 2,
+          "total": 362
+        },
+        "transfers": [
+          {
+            "out": 379,
+            "in": 249
+          },
+          {
+            "out": 481,
+            "in": 480
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 7409161,
+          "teamName": "Spasmeno Paramythi",
+          "managerName": "Paul Mcbride",
+          "rank": 3,
+          "total": 351
+        },
+        "transfers": [
+          {
+            "out": 496,
+            "in": 1
+          },
+          {
+            "out": 368,
+            "in": 40
+          },
+          {
+            "out": 627,
+            "in": 94
+          },
+          {
+            "out": 109,
+            "in": 111
+          },
+          {
+            "out": 237,
+            "in": 124
+          },
+          {
+            "out": 593,
+            "in": 229
+          },
+          {
+            "out": 11,
+            "in": 469
+          }
+        ],
+        "cost": 0,
+        "chip": {
+          "chip": "wildcard",
+          "label": "WC"
+        }
+      },
+      {
+        "manager": {
+          "entryId": 6105838,
+          "teamName": "Stamp On A Spider",
+          "managerName": "Colin McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "transfers": [
+          {
+            "out": 10,
+            "in": 31
+          },
+          {
+            "out": 366,
+            "in": 480
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 4612627,
+          "teamName": "Murphy's Law 2.0",
+          "managerName": "Dominic McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "transfers": [
+          {
+            "out": 423,
+            "in": 115
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 397489,
+          "teamName": "Shaken, Not Steur'd",
+          "managerName": "Joe Logan",
+          "rank": 6,
+          "total": 350
+        },
+        "transfers": [
+          {
+            "out": 109,
+            "in": 1
+          },
+          {
+            "out": 449,
+            "in": 31
+          },
+          {
+            "out": 565,
+            "in": 40
+          },
+          {
+            "out": 426,
+            "in": 94
+          },
+          {
+            "out": 259,
+            "in": 115
+          },
+          {
+            "out": 427,
+            "in": 154
+          }
+        ],
+        "cost": 0,
+        "chip": {
+          "chip": "wildcard",
+          "label": "WC"
+        }
+      },
+      {
+        "manager": {
+          "entryId": 1778504,
+          "teamName": "xG Merchants",
+          "managerName": "Matt Logan",
+          "rank": 7,
+          "total": 347
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 6737676,
+          "teamName": "SKBB's",
+          "managerName": "Steve Smyth",
+          "rank": 8,
+          "total": 343
+        },
+        "transfers": [
+          {
+            "out": 366,
+            "in": 94
+          },
+          {
+            "out": 368,
+            "in": 399
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 4459886,
+          "teamName": "PoissonGoalModel Utd",
+          "managerName": "Jamie McBride",
+          "rank": 9,
+          "total": 343
+        },
+        "transfers": [
+          {
+            "out": 165,
+            "in": 167
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 3737441,
+          "teamName": "Eddieswayanyhowe",
+          "managerName": "HUGH MCBRIDE",
+          "rank": 10,
+          "total": 342
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 7277503,
+          "teamName": "Black Cats",
+          "managerName": "Joseph Smyth",
+          "rank": 11,
+          "total": 337
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 1097988,
+          "teamName": "It's Coming Bone",
+          "managerName": "Aidan Bone",
+          "rank": 12,
+          "total": 328
+        },
+        "transfers": [
+          {
+            "out": 454,
+            "in": 70
+          },
+          {
+            "out": 165,
+            "in": 136
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 6110474,
+          "teamName": "Barrysangermain",
+          "managerName": "Ron White",
+          "rank": 13,
+          "total": 320
+        },
+        "transfers": [
+          {
+            "out": 160,
+            "in": 69
+          },
+          {
+            "out": 427,
+            "in": 94
+          },
+          {
+            "out": 418,
+            "in": 115
+          },
+          {
+            "out": 481,
+            "in": 212
+          },
+          {
+            "out": 142,
+            "in": 391
+          },
+          {
+            "out": 379,
+            "in": 411
+          },
+          {
+            "out": 572,
+            "in": 497
+          },
+          {
+            "out": 165,
+            "in": 651
+          }
+        ],
+        "cost": 0,
+        "chip": {
+          "chip": "freehit",
+          "label": "FH"
+        }
+      },
+      {
+        "manager": {
+          "entryId": 4836394,
+          "teamName": "Nicky Two Bags",
+          "managerName": "Nick Bone",
+          "rank": 14,
+          "total": 318
+        },
+        "transfers": [
+          {
+            "out": 423,
+            "in": 115
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 3432605,
+          "teamName": "moyesiahs",
+          "managerName": "Simon Moiani",
+          "rank": 15,
+          "total": 317
+        },
+        "transfers": [
+          {
+            "out": 249,
+            "in": 346
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 2335246,
+          "teamName": "MOTO",
+          "managerName": "Des McBride",
+          "rank": 16,
+          "total": 311
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 6619530,
+          "teamName": "Double The Water",
+          "managerName": "Chris Bone",
+          "rank": 17,
+          "total": 311
+        },
+        "transfers": [
+          {
+            "out": 454,
+            "in": 124
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 7203835,
+          "teamName": "Hew Yewerkusen",
+          "managerName": "James Berryman",
+          "rank": 18,
+          "total": 308
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 2307689,
+          "teamName": "Claudes on a roll",
+          "managerName": "Chris Logan",
+          "rank": 19,
+          "total": 294
+        },
+        "transfers": [
+          {
+            "out": 237,
+            "in": 68
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 325305,
+          "teamName": "GoodCattleBadCowboy",
+          "managerName": "Kris McBride",
+          "rank": 20,
+          "total": 282
+        },
+        "transfers": [
+          {
+            "out": 165,
+            "in": 167
+          }
+        ],
+        "cost": 0,
+        "chip": null
+      },
+      {
+        "manager": {
+          "entryId": 9153429,
+          "teamName": "sæla fc",
+          "managerName": "Tom McBride",
+          "rank": 21,
+          "total": 237
+        },
+        "transfers": [],
+        "cost": 0,
+        "chip": null
+      }
+    ],
+    "players": {
+      "1": {
+        "id": 1,
+        "webName": "Raya",
+        "clubId": 1,
+        "position": "GK",
+        "price": 6.1,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 42.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "10": {
+        "id": 10,
+        "webName": "White",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 5.5,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Groin injury - 75% chance of playing"
+        },
+        "selectedByPct": 4.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "11": {
+        "id": 11,
+        "webName": "Mosquera",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 1.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "12": {
+        "id": 12,
+        "webName": "Saka",
+        "clubId": 1,
+        "position": "MID",
+        "price": 9.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 13.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "31": {
+        "id": 31,
+        "webName": "Konsa",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 4.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 19.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "40": {
+        "id": 40,
+        "webName": "Rogers",
+        "clubId": 6,
+        "position": "MID",
+        "price": 7.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 40.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "43": {
+        "id": 43,
+        "webName": "Tielemans",
+        "clubId": 16,
+        "position": "MID",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 1.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 2.66,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "55": {
+        "id": 55,
+        "webName": "Watkins",
+        "clubId": 2,
+        "position": "FWD",
+        "price": 7.8,
+        "availability": {
+          "code": "u",
+          "level": "out",
+          "chanceNext": 0,
+          "news": "Has joined Al Hilal permanently"
+        },
+        "selectedByPct": 2.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 4,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.77,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "68": {
+        "id": 68,
+        "webName": "Tavernier",
+        "clubId": 3,
+        "position": "MID",
+        "price": 6.1,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 6.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 6,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "69": {
+        "id": 69,
+        "webName": "Scott",
+        "clubId": 3,
+        "position": "MID",
+        "price": 6.1,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 5.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 6,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "70": {
+        "id": 70,
+        "webName": "Kluivert",
+        "clubId": 3,
+        "position": "MID",
+        "price": 6,
+        "availability": {
+          "code": "i",
+          "level": "out",
+          "chanceNext": 0,
+          "news": "Unspecified injury - Unknown return date"
+        },
+        "selectedByPct": 0.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 6,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "82": {
+        "id": 82,
+        "webName": "Kelleher",
+        "clubId": 4,
+        "position": "GK",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 6.1,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.44,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "94": {
+        "id": 94,
+        "webName": "Schade",
+        "clubId": 4,
+        "position": "MID",
+        "price": 6.2,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 11.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "109": {
+        "id": 109,
+        "webName": "Verbruggen",
+        "clubId": 5,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 21.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "111": {
+        "id": 111,
+        "webName": "Steele",
+        "clubId": 5,
+        "position": "GK",
+        "price": 4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 4.1,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "112": {
+        "id": 112,
+        "webName": "Van Hecke",
+        "clubId": 19,
+        "position": "DEF",
+        "price": 4.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 6.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "115": {
+        "id": 115,
+        "webName": "De Cuyper",
+        "clubId": 5,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 27.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "124": {
+        "id": 124,
+        "webName": "Groß",
+        "clubId": 5,
+        "position": "MID",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 28.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.99,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "136": {
+        "id": 136,
+        "webName": "Welbeck",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 5.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 1,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "142": {
+        "id": 142,
+        "webName": "James",
+        "clubId": 6,
+        "position": "DEF",
+        "price": 5.4,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Hamstring injury - 75% chance of playing"
+        },
+        "selectedByPct": 5.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.7,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "160": {
+        "id": 160,
+        "webName": "Garnacho",
+        "clubId": 2,
+        "position": "MID",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 4,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.77,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "167": {
+        "id": 167,
+        "webName": "Delap",
+        "clubId": 18,
+        "position": "FWD",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 2.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "212": {
+        "id": 212,
+        "webName": "Hughes",
+        "clubId": 8,
+        "position": "MID",
+        "price": 4.4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 7.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 18,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.91,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "222": {
+        "id": 222,
+        "webName": "Strand Larsen",
+        "clubId": 8,
+        "position": "FWD",
+        "price": 6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 18,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.91,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "229": {
+        "id": 229,
+        "webName": "Tarkowski",
+        "clubId": 9,
+        "position": "DEF",
+        "price": 6.1,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 16.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "237": {
+        "id": 237,
+        "webName": "Ndiaye",
+        "clubId": 15,
+        "position": "MID",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 6.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "249": {
+        "id": 249,
+        "webName": "Barry",
+        "clubId": 9,
+        "position": "FWD",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 8.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "259": {
+        "id": 259,
+        "webName": "Diop",
+        "clubId": 12,
+        "position": "DEF",
+        "price": 4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 12.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 10,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.15,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "290": {
+        "id": 290,
+        "webName": "Slater",
+        "clubId": 11,
+        "position": "MID",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 5.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.81,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "334": {
+        "id": 334,
+        "webName": "Muharemović",
+        "clubId": 13,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 4.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 1,
+          "home": false,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 4.45,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "346": {
+        "id": 346,
+        "webName": "Calvert-Lewin",
+        "clubId": 13,
+        "position": "FWD",
+        "price": 6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 24.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 1,
+          "home": false,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 4.65,
+            "lens": "attack",
+            "source": "market",
+            "band": 5
+          }
+        }
+      },
+      "356": {
+        "id": 356,
+        "webName": "Virgil",
+        "clubId": 14,
+        "position": "DEF",
+        "price": 6.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 16.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "366": {
+        "id": 366,
+        "webName": "Wirtz",
+        "clubId": 14,
+        "position": "MID",
+        "price": 7.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 5.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "368": {
+        "id": 368,
+        "webName": "Szoboszlai",
+        "clubId": 14,
+        "position": "MID",
+        "price": 7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 32.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "377": {
+        "id": 377,
+        "webName": "Munoz",
+        "clubId": 14,
+        "position": "MID",
+        "price": 6.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "379": {
+        "id": 379,
+        "webName": "Isak",
+        "clubId": 14,
+        "position": "FWD",
+        "price": 9.1,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Foot injury - 75% chance of playing"
+        },
+        "selectedByPct": 22.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "391": {
+        "id": 391,
+        "webName": "Gvardiol",
+        "clubId": 15,
+        "position": "DEF",
+        "price": 5.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 26.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.12,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "398": {
+        "id": 398,
+        "webName": "Foden",
+        "clubId": 15,
+        "position": "MID",
+        "price": 6.9,
+        "availability": {
+          "code": "s",
+          "level": "out",
+          "chanceNext": 0,
+          "news": "Suspended until 17 Oct"
+        },
+        "selectedByPct": 1.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "399": {
+        "id": 399,
+        "webName": "Cherki",
+        "clubId": 15,
+        "position": "MID",
+        "price": 7.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 28.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "412": {
+        "id": 412,
+        "webName": "Lammens",
+        "clubId": 16,
+        "position": "GK",
+        "price": 4.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 9.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 1.94,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "418": {
+        "id": 418,
+        "webName": "Maguire",
+        "clubId": 16,
+        "position": "DEF",
+        "price": 4.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 8.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 1.94,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "423": {
+        "id": 423,
+        "webName": "Shaw",
+        "clubId": 16,
+        "position": "DEF",
+        "price": 4.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 7.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 1.94,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "426": {
+        "id": 426,
+        "webName": "B.Fernandes",
+        "clubId": 16,
+        "position": "MID",
+        "price": 11.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 38.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 2.66,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "427": {
+        "id": 427,
+        "webName": "Mbeumo",
+        "clubId": 16,
+        "position": "MID",
+        "price": 7.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 20.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 2.66,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "445": {
+        "id": 445,
+        "webName": "Thiaw",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 2.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "449": {
+        "id": 449,
+        "webName": "Hall",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "454": {
+        "id": 454,
+        "webName": "Elanga",
+        "clubId": 17,
+        "position": "MID",
+        "price": 6.1,
+        "availability": {
+          "code": "i",
+          "level": "out",
+          "chanceNext": 0,
+          "news": "Unspecified injury - Unknown return date"
+        },
+        "selectedByPct": 4.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.21,
+            "lens": "attack",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "455": {
+        "id": 455,
+        "webName": "Tonali",
+        "clubId": 19,
+        "position": "MID",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 1.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.95,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "469": {
+        "id": 469,
+        "webName": "N.Williams",
+        "clubId": 18,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 8.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.3,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "480": {
+        "id": 480,
+        "webName": "Gibbs-White",
+        "clubId": 18,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 15.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "481": {
+        "id": 481,
+        "webName": "Anderson",
+        "clubId": 15,
+        "position": "MID",
+        "price": 6.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "496": {
+        "id": 496,
+        "webName": "Kinsky",
+        "clubId": 19,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "497": {
+        "id": 497,
+        "webName": "Dubravka",
+        "clubId": 19,
+        "position": "GK",
+        "price": 4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.1,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "552": {
+        "id": 552,
+        "webName": "Brobbey",
+        "clubId": 20,
+        "position": "FWD",
+        "price": 5.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Hamstring injury - 75% chance of playing"
+        },
+        "selectedByPct": 7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 5,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.53,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "557": {
+        "id": 557,
+        "webName": "Tzolis",
+        "clubId": 1,
+        "position": "MID",
+        "price": 6.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 12.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "565": {
+        "id": 565,
+        "webName": "M.Sangaré",
+        "clubId": 4,
+        "position": "MID",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 10,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "567": {
+        "id": 567,
+        "webName": "Horníček",
+        "clubId": 17,
+        "position": "GK",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 1.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "572": {
+        "id": 572,
+        "webName": "Tzolakis",
+        "clubId": 11,
+        "position": "GK",
+        "price": 4.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 12.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.38,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "593": {
+        "id": 593,
+        "webName": "Dedić",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 4.5,
+        "availability": {
+          "code": "i",
+          "level": "out",
+          "chanceNext": 0,
+          "news": "Unspecified injury - Unknown return date"
+        },
+        "selectedByPct": 1.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "605": {
+        "id": 605,
+        "webName": "Yalcouyé",
+        "clubId": 5,
+        "position": "MID",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.99,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "627": {
+        "id": 627,
+        "webName": "Barcola",
+        "clubId": 14,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 1.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "651": {
+        "id": 651,
+        "webName": "J.Angulo",
+        "clubId": 20,
+        "position": "FWD",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 5,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.53,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T20:09:58.445Z",
+    "freshness": []
+  }
+}

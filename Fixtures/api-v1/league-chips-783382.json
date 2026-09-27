@@ -1,0 +1,504 @@
+{
+  "data": {
+    "league": {
+      "id": 783382,
+      "name": "LEAGUE OF EXPERTS",
+      "isElite": false,
+      "managers": 21,
+      "tracked": 21,
+      "syncedGw": 5,
+      "lastSyncedAt": "2026-09-27T16:00:05.982+00:00"
+    },
+    "rows": [
+      {
+        "manager": {
+          "entryId": 1699334,
+          "teamName": "Andiletic BilBride",
+          "managerName": "Andy McBride",
+          "rank": 1,
+          "total": 392
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 1,
+          "bboost": 1,
+          "3xc": 1
+        },
+        "used": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 4
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 22615,
+          "teamName": "All priced in",
+          "managerName": "Dan Smyth",
+          "rank": 2,
+          "total": 362
+        },
+        "remaining": {
+          "wildcard": 1,
+          "freehit": 2,
+          "bboost": 1,
+          "3xc": 1
+        },
+        "used": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 3
+          },
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 4
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7409161,
+          "teamName": "Spasmeno Paramythi",
+          "managerName": "Paul Mcbride",
+          "rank": 3,
+          "total": 351
+        },
+        "remaining": {
+          "wildcard": 1,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": [
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 5
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6105838,
+          "teamName": "Stamp On A Spider",
+          "managerName": "Colin McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 1
+        },
+        "used": [
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4612627,
+          "teamName": "Murphy's Law 2.0",
+          "managerName": "Dominic McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 397489,
+          "teamName": "Shaken, Not Steur'd",
+          "managerName": "Joe Logan",
+          "rank": 6,
+          "total": 350
+        },
+        "remaining": {
+          "wildcard": 1,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 1
+        },
+        "used": [
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          },
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 5
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 1778504,
+          "teamName": "xG Merchants",
+          "managerName": "Matt Logan",
+          "rank": 7,
+          "total": 347
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 6737676,
+          "teamName": "SKBB's",
+          "managerName": "Steve Smyth",
+          "rank": 8,
+          "total": 343
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 1,
+          "3xc": 1
+        },
+        "used": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4459886,
+          "teamName": "PoissonGoalModel Utd",
+          "managerName": "Jamie McBride",
+          "rank": 9,
+          "total": 343
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 1,
+          "bboost": 1,
+          "3xc": 2
+        },
+        "used": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 3
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 3737441,
+          "teamName": "Eddieswayanyhowe",
+          "managerName": "HUGH MCBRIDE",
+          "rank": 10,
+          "total": 342
+        },
+        "remaining": {
+          "wildcard": 1,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": [
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 4
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7277503,
+          "teamName": "Black Cats",
+          "managerName": "Joseph Smyth",
+          "rank": 11,
+          "total": 337
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 1097988,
+          "teamName": "It's Coming Bone",
+          "managerName": "Aidan Bone",
+          "rank": 12,
+          "total": 328
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 1
+        },
+        "used": [
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6110474,
+          "teamName": "Barrysangermain",
+          "managerName": "Ron White",
+          "rank": 13,
+          "total": 320
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 1,
+          "bboost": 1,
+          "3xc": 2
+        },
+        "used": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 3
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 5
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4836394,
+          "teamName": "Nicky Two Bags",
+          "managerName": "Nick Bone",
+          "rank": 14,
+          "total": 318
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 3432605,
+          "teamName": "moyesiahs",
+          "managerName": "Simon Moiani",
+          "rank": 15,
+          "total": 317
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 2335246,
+          "teamName": "MOTO",
+          "managerName": "Des McBride",
+          "rank": 16,
+          "total": 311
+        },
+        "remaining": {
+          "wildcard": 1,
+          "freehit": 1,
+          "bboost": 1,
+          "3xc": 2
+        },
+        "used": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 2
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 3
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6619530,
+          "teamName": "Double The Water",
+          "managerName": "Chris Bone",
+          "rank": 17,
+          "total": 311
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 7203835,
+          "teamName": "Hew Yewerkusen",
+          "managerName": "James Berryman",
+          "rank": 18,
+          "total": 308
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 1,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": [
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 4
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 2307689,
+          "teamName": "Claudes on a roll",
+          "managerName": "Chris Logan",
+          "rank": 19,
+          "total": 294
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 325305,
+          "teamName": "GoodCattleBadCowboy",
+          "managerName": "Kris McBride",
+          "rank": 20,
+          "total": 282
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      },
+      {
+        "manager": {
+          "entryId": 9153429,
+          "teamName": "sæla fc",
+          "managerName": "Tom McBride",
+          "rank": 21,
+          "total": 237
+        },
+        "remaining": {
+          "wildcard": 2,
+          "freehit": 2,
+          "bboost": 2,
+          "3xc": 2
+        },
+        "used": []
+      }
+    ],
+    "usage": [
+      {
+        "chip": "wildcard",
+        "used": 5,
+        "left": 37,
+        "label": "WC"
+      },
+      {
+        "chip": "freehit",
+        "used": 5,
+        "left": 37,
+        "label": "FH"
+      },
+      {
+        "chip": "bboost",
+        "used": 6,
+        "left": 36,
+        "label": "BB"
+      },
+      {
+        "chip": "3xc",
+        "used": 6,
+        "left": 36,
+        "label": "TC"
+      }
+    ]
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T20:09:57.136Z",
+    "freshness": []
+  }
+}

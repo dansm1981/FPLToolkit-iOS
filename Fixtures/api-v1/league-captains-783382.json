@@ -1,0 +1,755 @@
+{
+  "data": {
+    "league": {
+      "id": 783382,
+      "name": "LEAGUE OF EXPERTS",
+      "isElite": false,
+      "managers": 21,
+      "tracked": 21,
+      "syncedGw": 5,
+      "lastSyncedAt": "2026-09-27T16:00:05.982+00:00"
+    },
+    "gws": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "rows": [
+      {
+        "manager": {
+          "entryId": 1699334,
+          "teamName": "Andiletic BilBride",
+          "managerName": "Andy McBride",
+          "rank": 1,
+          "total": 392
+        },
+        "captains": [
+          411,
+          426,
+          411,
+          165,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 22615,
+          "teamName": "All priced in",
+          "managerName": "Dan Smyth",
+          "rank": 2,
+          "total": 362
+        },
+        "captains": [
+          426,
+          426,
+          411,
+          154,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7409161,
+          "teamName": "Spasmeno Paramythi",
+          "managerName": "Paul Mcbride",
+          "rank": 3,
+          "total": 351
+        },
+        "captains": [
+          165,
+          379,
+          411,
+          379,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6105838,
+          "teamName": "Stamp On A Spider",
+          "managerName": "Colin McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "captains": [
+          411,
+          426,
+          411,
+          165,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4612627,
+          "teamName": "Murphy's Law 2.0",
+          "managerName": "Dominic McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          379,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 397489,
+          "teamName": "Shaken, Not Steur'd",
+          "managerName": "Joe Logan",
+          "rank": 6,
+          "total": 350
+        },
+        "captains": [
+          426,
+          426,
+          411,
+          411,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 1778504,
+          "teamName": "xG Merchants",
+          "managerName": "Matt Logan",
+          "rank": 7,
+          "total": 347
+        },
+        "captains": [
+          426,
+          426,
+          411,
+          411,
+          426
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6737676,
+          "teamName": "SKBB's",
+          "managerName": "Steve Smyth",
+          "rank": 8,
+          "total": 343
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          411,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4459886,
+          "teamName": "PoissonGoalModel Utd",
+          "managerName": "Jamie McBride",
+          "rank": 9,
+          "total": 343
+        },
+        "captains": [
+          426,
+          426,
+          411,
+          165,
+          426
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 3737441,
+          "teamName": "Eddieswayanyhowe",
+          "managerName": "HUGH MCBRIDE",
+          "rank": 10,
+          "total": 342
+        },
+        "captains": [
+          426,
+          426,
+          411,
+          154,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7277503,
+          "teamName": "Black Cats",
+          "managerName": "Joseph Smyth",
+          "rank": 11,
+          "total": 337
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          411,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 1097988,
+          "teamName": "It's Coming Bone",
+          "managerName": "Aidan Bone",
+          "rank": 12,
+          "total": 328
+        },
+        "captains": [
+          426,
+          426,
+          411,
+          426,
+          426
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6110474,
+          "teamName": "Barrysangermain",
+          "managerName": "Ron White",
+          "rank": 13,
+          "total": 320
+        },
+        "captains": [
+          426,
+          426,
+          426,
+          379,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4836394,
+          "teamName": "Nicky Two Bags",
+          "managerName": "Nick Bone",
+          "rank": 14,
+          "total": 318
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          165,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 3432605,
+          "teamName": "moyesiahs",
+          "managerName": "Simon Moiani",
+          "rank": 15,
+          "total": 317
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          411,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 2335246,
+          "teamName": "MOTO",
+          "managerName": "Des McBride",
+          "rank": 16,
+          "total": 311
+        },
+        "captains": [
+          426,
+          154,
+          411,
+          154,
+          426
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6619530,
+          "teamName": "Double The Water",
+          "managerName": "Chris Bone",
+          "rank": 17,
+          "total": 311
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          165,
+          165
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7203835,
+          "teamName": "Hew Yewerkusen",
+          "managerName": "James Berryman",
+          "rank": 18,
+          "total": 308
+        },
+        "captains": [
+          55,
+          165,
+          464,
+          165,
+          480
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 2307689,
+          "teamName": "Claudes on a roll",
+          "managerName": "Chris Logan",
+          "rank": 19,
+          "total": 294
+        },
+        "captains": [
+          426,
+          411,
+          411,
+          15,
+          346
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 325305,
+          "teamName": "GoodCattleBadCowboy",
+          "managerName": "Kris McBride",
+          "rank": 20,
+          "total": 282
+        },
+        "captains": [
+          411,
+          411,
+          411,
+          411,
+          411
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 9153429,
+          "teamName": "sæla fc",
+          "managerName": "Tom McBride",
+          "rank": 21,
+          "total": 237
+        },
+        "captains": [
+          null,
+          411,
+          411,
+          411,
+          411
+        ]
+      }
+    ],
+    "trend": [
+      {
+        "gw": 1,
+        "total": 20,
+        "top": [
+          {
+            "playerId": 411,
+            "pct": 45
+          },
+          {
+            "playerId": 426,
+            "pct": 45
+          },
+          {
+            "playerId": 165,
+            "pct": 5
+          },
+          {
+            "playerId": 55,
+            "pct": 5
+          }
+        ]
+      },
+      {
+        "gw": 2,
+        "total": 21,
+        "top": [
+          {
+            "playerId": 426,
+            "pct": 42.9
+          },
+          {
+            "playerId": 411,
+            "pct": 42.9
+          },
+          {
+            "playerId": 379,
+            "pct": 4.8
+          },
+          {
+            "playerId": 154,
+            "pct": 4.8
+          },
+          {
+            "playerId": 165,
+            "pct": 4.8
+          }
+        ]
+      },
+      {
+        "gw": 3,
+        "total": 21,
+        "top": [
+          {
+            "playerId": 411,
+            "pct": 90.5
+          },
+          {
+            "playerId": 426,
+            "pct": 4.8
+          },
+          {
+            "playerId": 464,
+            "pct": 4.8
+          }
+        ]
+      },
+      {
+        "gw": 4,
+        "total": 21,
+        "top": [
+          {
+            "playerId": 411,
+            "pct": 33.3
+          },
+          {
+            "playerId": 165,
+            "pct": 28.6
+          },
+          {
+            "playerId": 379,
+            "pct": 14.3
+          },
+          {
+            "playerId": 154,
+            "pct": 14.3
+          },
+          {
+            "playerId": 426,
+            "pct": 4.8
+          }
+        ]
+      },
+      {
+        "gw": 5,
+        "total": 21,
+        "top": [
+          {
+            "playerId": 411,
+            "pct": 66.7
+          },
+          {
+            "playerId": 426,
+            "pct": 19
+          },
+          {
+            "playerId": 346,
+            "pct": 4.8
+          },
+          {
+            "playerId": 480,
+            "pct": 4.8
+          },
+          {
+            "playerId": 165,
+            "pct": 4.8
+          }
+        ]
+      }
+    ],
+    "players": {
+      "15": {
+        "id": 15,
+        "webName": "Ødegaard",
+        "clubId": 1,
+        "position": "MID",
+        "price": 6.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 19.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1.42,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "55": {
+        "id": 55,
+        "webName": "Watkins",
+        "clubId": 2,
+        "position": "FWD",
+        "price": 7.8,
+        "availability": {
+          "code": "u",
+          "level": "out",
+          "chanceNext": 0,
+          "news": "Has joined Al Hilal permanently"
+        },
+        "selectedByPct": 2.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 4,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.77,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "346": {
+        "id": 346,
+        "webName": "Calvert-Lewin",
+        "clubId": 13,
+        "position": "FWD",
+        "price": 6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 24.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 1,
+          "home": false,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 4.65,
+            "lens": "attack",
+            "source": "market",
+            "band": 5
+          }
+        }
+      },
+      "379": {
+        "id": 379,
+        "webName": "Isak",
+        "clubId": 14,
+        "position": "FWD",
+        "price": 9.1,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Foot injury - 75% chance of playing"
+        },
+        "selectedByPct": 22.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 15,
+          "home": true,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.08,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "426": {
+        "id": 426,
+        "webName": "B.Fernandes",
+        "clubId": 16,
+        "position": "MID",
+        "price": 11.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 38.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 2.66,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "464": {
+        "id": 464,
+        "webName": "Wissa",
+        "clubId": 17,
+        "position": "FWD",
+        "price": 6.2,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 18.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.21,
+            "lens": "attack",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "480": {
+        "id": 480,
+        "webName": "Gibbs-White",
+        "clubId": 18,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 15.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T20:09:56.097Z",
+    "freshness": []
+  }
+}

@@ -65,7 +65,7 @@ struct LeagueRivalsSection: View {
                             detail: ([rival.teamName].compactMap { $0 } + rival.reasons + ["\(rival.shared)/15 shared"]).joined(separator: " · "),
                             value: rival.pointsDiff == 0 ? "Level" : rival.pointsDiff > 0 ? "\(rival.pointsDiff) ahead" : "\(-rival.pointsDiff) behind"
                         )
-                        .contentShape(Rectangle())
+                        .frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Compares their team with yours")
@@ -82,7 +82,7 @@ struct LeagueRivalsSection: View {
             LeagueCard(title: title) {
                 ForEach(rows, id: \.manager.entryId) { row in
                     Button { onManager(row.manager.entryId) } label: {
-                        LeagueRow(title: row.manager.displayName, value: "\(row.similarity)%").contentShape(Rectangle())
+                        LeagueRow(title: row.manager.displayName, value: "\(row.similarity)%").frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -182,7 +182,7 @@ struct LeagueCaptainsSection: View {
                     Button { onManager(row.manager.entryId) } label: {
                         LeagueRow(title: row.manager.displayName,
                                   detail: zip(data.gws, row.captains).map { "GW\($0) \(data.name($1))" }.joined(separator: " · "))
-                            .contentShape(Rectangle())
+                            .frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -212,7 +212,7 @@ struct LeagueChipsSection: View {
                         LeagueRow(title: row.manager.displayName,
                                   detail: "Left: " + order.map { "\(short[$0] ?? $0) \(row.remaining[$0] ?? 2)" }.joined(separator: " · ")
                                       + " · Played: " + (row.used.isEmpty ? "none" : row.used.map { "\($0.label)\($0.gw)" }.joined(separator: " ")))
-                            .contentShape(Rectangle())
+                            .frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -247,7 +247,7 @@ struct LeagueTransfersSection: View {
             LeagueCard(title: data.league.syncedGw.map { "Manager transfer feed — GW\($0)" } ?? "Manager transfer feed") {
                 ForEach(data.feed, id: \.manager.entryId) { f in
                     Button { onManager(f.manager.entryId) } label: {
-                        LeagueRow(title: f.manager.displayName, detail: feedText(f)).contentShape(Rectangle())
+                        LeagueRow(title: f.manager.displayName, detail: feedText(f)).frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -268,7 +268,7 @@ struct LeagueTransfersSection: View {
             ForEach(rows) { r in
                 LeagueRow(title: data.name(r.playerId),
                           detail: "\(other): " + r.counterparts.map { "\(data.name($0.playerId))\($0.count > 1 ? " ×\($0.count)" : "")" }.joined(separator: ", ")
-                              + " · " + r.managers.map(\.name).joined(separator: ", "),
+                              + (r.managers.isEmpty ? "" : " · by " + r.managers.map(\.name).joined(separator: ", ")),
                           value: "\(sign)\(r.count) (\(pct(r.pct)))")
             }
         }
@@ -292,7 +292,7 @@ struct LeagueHistorySection: View {
                         LeagueRow(title: p.manager.displayName,
                                   detail: p.points.map { "GW\($0.gw) \($0.rank)" }.joined(separator: " · "),
                                   value: p.points.last.map { $0.gapToLeader == 0 ? "leader" : "−\($0.gapToLeader)" })
-                            .contentShape(Rectangle())
+                            .frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

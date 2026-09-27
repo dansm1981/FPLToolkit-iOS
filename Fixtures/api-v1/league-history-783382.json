@@ -1,0 +1,937 @@
+{
+  "data": {
+    "league": {
+      "id": 783382,
+      "name": "LEAGUE OF EXPERTS",
+      "isElite": false,
+      "managers": 21,
+      "tracked": 21,
+      "syncedGw": 5,
+      "lastSyncedAt": "2026-09-27T16:00:05.982+00:00"
+    },
+    "positions": [
+      {
+        "manager": {
+          "entryId": 1699334,
+          "teamName": "Andiletic BilBride",
+          "managerName": "Andy McBride",
+          "rank": 1,
+          "total": 392
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 5,
+            "gapToLeader": 16
+          },
+          {
+            "gw": 2,
+            "rank": 2,
+            "gapToLeader": 7
+          },
+          {
+            "gw": 3,
+            "rank": 2,
+            "gapToLeader": 13
+          },
+          {
+            "gw": 4,
+            "rank": 1,
+            "gapToLeader": 0
+          },
+          {
+            "gw": 5,
+            "rank": 1,
+            "gapToLeader": 0
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 22615,
+          "teamName": "All priced in",
+          "managerName": "Dan Smyth",
+          "rank": 2,
+          "total": 362
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 6,
+            "gapToLeader": 18
+          },
+          {
+            "gw": 2,
+            "rank": 4,
+            "gapToLeader": 20
+          },
+          {
+            "gw": 3,
+            "rank": 3,
+            "gapToLeader": 19
+          },
+          {
+            "gw": 4,
+            "rank": 2,
+            "gapToLeader": 19
+          },
+          {
+            "gw": 5,
+            "rank": 2,
+            "gapToLeader": 30
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7409161,
+          "teamName": "Spasmeno Paramythi",
+          "managerName": "Paul Mcbride",
+          "rank": 3,
+          "total": 351
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 4,
+            "gapToLeader": 12
+          },
+          {
+            "gw": 2,
+            "rank": 3,
+            "gapToLeader": 18
+          },
+          {
+            "gw": 3,
+            "rank": 6,
+            "gapToLeader": 24
+          },
+          {
+            "gw": 4,
+            "rank": 14,
+            "gapToLeader": 63
+          },
+          {
+            "gw": 5,
+            "rank": 5,
+            "gapToLeader": 41
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6105838,
+          "teamName": "Stamp On A Spider",
+          "managerName": "Colin McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 18,
+            "gapToLeader": 35
+          },
+          {
+            "gw": 2,
+            "rank": 9,
+            "gapToLeader": 28
+          },
+          {
+            "gw": 3,
+            "rank": 4,
+            "gapToLeader": 23
+          },
+          {
+            "gw": 4,
+            "rank": 4,
+            "gapToLeader": 32
+          },
+          {
+            "gw": 5,
+            "rank": 4,
+            "gapToLeader": 41
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4612627,
+          "teamName": "Murphy's Law 2.0",
+          "managerName": "Dominic McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 16,
+            "gapToLeader": 33
+          },
+          {
+            "gw": 2,
+            "rank": 16,
+            "gapToLeader": 42
+          },
+          {
+            "gw": 3,
+            "rank": 11,
+            "gapToLeader": 36
+          },
+          {
+            "gw": 4,
+            "rank": 7,
+            "gapToLeader": 51
+          },
+          {
+            "gw": 5,
+            "rank": 3,
+            "gapToLeader": 41
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 397489,
+          "teamName": "Shaken, Not Steur'd",
+          "managerName": "Joe Logan",
+          "rank": 6,
+          "total": 350
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 15,
+            "gapToLeader": 33
+          },
+          {
+            "gw": 2,
+            "rank": 6,
+            "gapToLeader": 24
+          },
+          {
+            "gw": 3,
+            "rank": 5,
+            "gapToLeader": 24
+          },
+          {
+            "gw": 4,
+            "rank": 5,
+            "gapToLeader": 41
+          },
+          {
+            "gw": 5,
+            "rank": 6,
+            "gapToLeader": 42
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 1778504,
+          "teamName": "xG Merchants",
+          "managerName": "Matt Logan",
+          "rank": 7,
+          "total": 347
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 17,
+            "gapToLeader": 35
+          },
+          {
+            "gw": 2,
+            "rank": 7,
+            "gapToLeader": 24
+          },
+          {
+            "gw": 3,
+            "rank": 12,
+            "gapToLeader": 39
+          },
+          {
+            "gw": 4,
+            "rank": 12,
+            "gapToLeader": 55
+          },
+          {
+            "gw": 5,
+            "rank": 7,
+            "gapToLeader": 45
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 6737676,
+          "teamName": "SKBB's",
+          "managerName": "Steve Smyth",
+          "rank": 8,
+          "total": 343
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 8,
+            "gapToLeader": 24
+          },
+          {
+            "gw": 2,
+            "rank": 11,
+            "gapToLeader": 31
+          },
+          {
+            "gw": 3,
+            "rank": 13,
+            "gapToLeader": 39
+          },
+          {
+            "gw": 4,
+            "rank": 10,
+            "gapToLeader": 53
+          },
+          {
+            "gw": 5,
+            "rank": 9,
+            "gapToLeader": 49
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 4459886,
+          "teamName": "PoissonGoalModel Utd",
+          "managerName": "Jamie McBride",
+          "rank": 9,
+          "total": 343
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 1,
+            "gapToLeader": 0
+          },
+          {
+            "gw": 2,
+            "rank": 1,
+            "gapToLeader": 0
+          },
+          {
+            "gw": 3,
+            "rank": 1,
+            "gapToLeader": 0
+          },
+          {
+            "gw": 4,
+            "rank": 3,
+            "gapToLeader": 20
+          },
+          {
+            "gw": 5,
+            "rank": 8,
+            "gapToLeader": 49
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 3737441,
+          "teamName": "Eddieswayanyhowe",
+          "managerName": "HUGH MCBRIDE",
+          "rank": 10,
+          "total": 342
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 12,
+            "gapToLeader": 29
+          },
+          {
+            "gw": 2,
+            "rank": 8,
+            "gapToLeader": 26
+          },
+          {
+            "gw": 3,
+            "rank": 14,
+            "gapToLeader": 40
+          },
+          {
+            "gw": 4,
+            "rank": 6,
+            "gapToLeader": 47
+          },
+          {
+            "gw": 5,
+            "rank": 10,
+            "gapToLeader": 50
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 7277503,
+          "teamName": "Black Cats",
+          "managerName": "Joseph Smyth",
+          "rank": 11,
+          "total": 337
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 3,
+            "gapToLeader": 12
+          },
+          {
+            "gw": 2,
+            "rank": 5,
+            "gapToLeader": 22
+          },
+          {
+            "gw": 3,
+            "rank": 7,
+            "gapToLeader": 29
+          },
+          {
+            "gw": 4,
+            "rank": 8,
+            "gapToLeader": 52
+          },
+          {
+            "gw": 5,
+            "rank": 11,
+            "gapToLeader": 55
+          }
+        ]
+      },
+      {
+        "manager": {
+          "entryId": 1097988,
+          "teamName": "It's Coming Bone",
+          "managerName": "Aidan Bone",
+          "rank": 12,
+          "total": 328
+        },
+        "points": [
+          {
+            "gw": 1,
+            "rank": 13,
+            "gapToLeader": 32
+          },
+          {
+            "gw": 2,
+            "rank": 10,
+            "gapToLeader": 30
+          },
+          {
+            "gw": 3,
+            "rank": 9,
+            "gapToLeader": 33
+          },
+          {
+            "gw": 4,
+            "rank": 11,
+            "gapToLeader": 55
+          },
+          {
+            "gw": 5,
+            "rank": 12,
+            "gapToLeader": 64
+          }
+        ]
+      }
+    ],
+    "performance": [
+      {
+        "manager": {
+          "entryId": 1699334,
+          "teamName": "Andiletic BilBride",
+          "managerName": "Andy McBride",
+          "rank": 1,
+          "total": 392
+        },
+        "entryId": 1699334,
+        "avgPoints": 78.4,
+        "best": {
+          "gw": 2,
+          "points": 113
+        },
+        "worst": {
+          "gw": 3,
+          "points": 52
+        },
+        "transfers": 2,
+        "hitPoints": 0,
+        "benchPoints": 72,
+        "wastage": 72
+      },
+      {
+        "manager": {
+          "entryId": 22615,
+          "teamName": "All priced in",
+          "managerName": "Dan Smyth",
+          "rank": 2,
+          "total": 362
+        },
+        "entryId": 22615,
+        "avgPoints": 72.4,
+        "best": {
+          "gw": 2,
+          "points": 102
+        },
+        "worst": {
+          "gw": 5,
+          "points": 45
+        },
+        "transfers": 3,
+        "hitPoints": 0,
+        "benchPoints": 54,
+        "wastage": 54
+      },
+      {
+        "manager": {
+          "entryId": 397489,
+          "teamName": "Shaken, Not Steur'd",
+          "managerName": "Joe Logan",
+          "rank": 6,
+          "total": 350
+        },
+        "entryId": 397489,
+        "avgPoints": 70.8,
+        "best": {
+          "gw": 2,
+          "points": 113
+        },
+        "worst": {
+          "gw": 1,
+          "points": 48
+        },
+        "transfers": 4,
+        "hitPoints": 4,
+        "benchPoints": 66,
+        "wastage": 70
+      },
+      {
+        "manager": {
+          "entryId": 4612627,
+          "teamName": "Murphy's Law 2.0",
+          "managerName": "Dominic McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "entryId": 4612627,
+        "avgPoints": 70.2,
+        "best": {
+          "gw": 2,
+          "points": 95
+        },
+        "worst": {
+          "gw": 1,
+          "points": 48
+        },
+        "transfers": 4,
+        "hitPoints": 0,
+        "benchPoints": 40,
+        "wastage": 40
+      },
+      {
+        "manager": {
+          "entryId": 6105838,
+          "teamName": "Stamp On A Spider",
+          "managerName": "Colin McBride",
+          "rank": 4,
+          "total": 351
+        },
+        "entryId": 6105838,
+        "avgPoints": 70.2,
+        "best": {
+          "gw": 2,
+          "points": 111
+        },
+        "worst": {
+          "gw": 1,
+          "points": 46
+        },
+        "transfers": 4,
+        "hitPoints": 0,
+        "benchPoints": 15,
+        "wastage": 15
+      },
+      {
+        "manager": {
+          "entryId": 7409161,
+          "teamName": "Spasmeno Paramythi",
+          "managerName": "Paul Mcbride",
+          "rank": 3,
+          "total": 351
+        },
+        "entryId": 7409161,
+        "avgPoints": 70.2,
+        "best": {
+          "gw": 2,
+          "points": 98
+        },
+        "worst": {
+          "gw": 3,
+          "points": 52
+        },
+        "transfers": 3,
+        "hitPoints": 0,
+        "benchPoints": 48,
+        "wastage": 48
+      },
+      {
+        "manager": {
+          "entryId": 1778504,
+          "teamName": "xG Merchants",
+          "managerName": "Matt Logan",
+          "rank": 7,
+          "total": 347
+        },
+        "entryId": 1778504,
+        "avgPoints": 69.4,
+        "best": {
+          "gw": 2,
+          "points": 115
+        },
+        "worst": {
+          "gw": 3,
+          "points": 43
+        },
+        "transfers": 3,
+        "hitPoints": 0,
+        "benchPoints": 36,
+        "wastage": 36
+      },
+      {
+        "manager": {
+          "entryId": 4459886,
+          "teamName": "PoissonGoalModel Utd",
+          "managerName": "Jamie McBride",
+          "rank": 9,
+          "total": 343
+        },
+        "entryId": 4459886,
+        "avgPoints": 68.6,
+        "best": {
+          "gw": 2,
+          "points": 104
+        },
+        "worst": {
+          "gw": 5,
+          "points": 27
+        },
+        "transfers": 3,
+        "hitPoints": 0,
+        "benchPoints": 59,
+        "wastage": 59
+      },
+      {
+        "manager": {
+          "entryId": 6737676,
+          "teamName": "SKBB's",
+          "managerName": "Steve Smyth",
+          "rank": 8,
+          "total": 343
+        },
+        "entryId": 6737676,
+        "avgPoints": 68.6,
+        "best": {
+          "gw": 2,
+          "points": 97
+        },
+        "worst": {
+          "gw": 3,
+          "points": 50
+        },
+        "transfers": 2,
+        "hitPoints": 0,
+        "benchPoints": 69,
+        "wastage": 69
+      },
+      {
+        "manager": {
+          "entryId": 3737441,
+          "teamName": "Eddieswayanyhowe",
+          "managerName": "HUGH MCBRIDE",
+          "rank": 10,
+          "total": 342
+        },
+        "entryId": 3737441,
+        "avgPoints": 68.4,
+        "best": {
+          "gw": 2,
+          "points": 107
+        },
+        "worst": {
+          "gw": 3,
+          "points": 44
+        },
+        "transfers": 2,
+        "hitPoints": 0,
+        "benchPoints": 82,
+        "wastage": 82
+      },
+      {
+        "manager": {
+          "entryId": 7277503,
+          "teamName": "Black Cats",
+          "managerName": "Joseph Smyth",
+          "rank": 11,
+          "total": 337
+        },
+        "entryId": 7277503,
+        "avgPoints": 67.4,
+        "best": {
+          "gw": 2,
+          "points": 94
+        },
+        "worst": {
+          "gw": 3,
+          "points": 51
+        },
+        "transfers": 3,
+        "hitPoints": 0,
+        "benchPoints": 41,
+        "wastage": 41
+      },
+      {
+        "manager": {
+          "entryId": 1097988,
+          "teamName": "It's Coming Bone",
+          "managerName": "Aidan Bone",
+          "rank": 12,
+          "total": 328
+        },
+        "entryId": 1097988,
+        "avgPoints": 65.6,
+        "best": {
+          "gw": 2,
+          "points": 106
+        },
+        "worst": {
+          "gw": 5,
+          "points": 47
+        },
+        "transfers": 4,
+        "hitPoints": 0,
+        "benchPoints": 13,
+        "wastage": 13
+      },
+      {
+        "manager": {
+          "entryId": 6110474,
+          "teamName": "Barrysangermain",
+          "managerName": "Ron White",
+          "rank": 13,
+          "total": 320
+        },
+        "entryId": 6110474,
+        "avgPoints": 64,
+        "best": {
+          "gw": 2,
+          "points": 104
+        },
+        "worst": {
+          "gw": 1,
+          "points": 44
+        },
+        "transfers": 3,
+        "hitPoints": 0,
+        "benchPoints": 43,
+        "wastage": 43
+      },
+      {
+        "manager": {
+          "entryId": 4836394,
+          "teamName": "Nicky Two Bags",
+          "managerName": "Nick Bone",
+          "rank": 14,
+          "total": 318
+        },
+        "entryId": 4836394,
+        "avgPoints": 63.6,
+        "best": {
+          "gw": 2,
+          "points": 79
+        },
+        "worst": {
+          "gw": 5,
+          "points": 45
+        },
+        "transfers": 4,
+        "hitPoints": 0,
+        "benchPoints": 68,
+        "wastage": 68
+      },
+      {
+        "manager": {
+          "entryId": 3432605,
+          "teamName": "moyesiahs",
+          "managerName": "Simon Moiani",
+          "rank": 15,
+          "total": 317
+        },
+        "entryId": 3432605,
+        "avgPoints": 63.4,
+        "best": {
+          "gw": 2,
+          "points": 87
+        },
+        "worst": {
+          "gw": 3,
+          "points": 45
+        },
+        "transfers": 4,
+        "hitPoints": 0,
+        "benchPoints": 44,
+        "wastage": 44
+      },
+      {
+        "manager": {
+          "entryId": 2335246,
+          "teamName": "MOTO",
+          "managerName": "Des McBride",
+          "rank": 16,
+          "total": 311
+        },
+        "entryId": 2335246,
+        "avgPoints": 62.2,
+        "best": {
+          "gw": 2,
+          "points": 80
+        },
+        "worst": {
+          "gw": 5,
+          "points": 28
+        },
+        "transfers": 2,
+        "hitPoints": 0,
+        "benchPoints": 41,
+        "wastage": 41
+      },
+      {
+        "manager": {
+          "entryId": 6619530,
+          "teamName": "Double The Water",
+          "managerName": "Chris Bone",
+          "rank": 17,
+          "total": 311
+        },
+        "entryId": 6619530,
+        "avgPoints": 62.2,
+        "best": {
+          "gw": 4,
+          "points": 87
+        },
+        "worst": {
+          "gw": 5,
+          "points": 46
+        },
+        "transfers": 4,
+        "hitPoints": 0,
+        "benchPoints": 23,
+        "wastage": 23
+      },
+      {
+        "manager": {
+          "entryId": 7203835,
+          "teamName": "Hew Yewerkusen",
+          "managerName": "James Berryman",
+          "rank": 18,
+          "total": 308
+        },
+        "entryId": 7203835,
+        "avgPoints": 61.6,
+        "best": {
+          "gw": 4,
+          "points": 85
+        },
+        "worst": {
+          "gw": 3,
+          "points": 37
+        },
+        "transfers": 1,
+        "hitPoints": 0,
+        "benchPoints": 51,
+        "wastage": 51
+      },
+      {
+        "manager": {
+          "entryId": 2307689,
+          "teamName": "Claudes on a roll",
+          "managerName": "Chris Logan",
+          "rank": 19,
+          "total": 294
+        },
+        "entryId": 2307689,
+        "avgPoints": 60.4,
+        "best": {
+          "gw": 2,
+          "points": 97
+        },
+        "worst": {
+          "gw": 3,
+          "points": 42
+        },
+        "transfers": 6,
+        "hitPoints": 8,
+        "benchPoints": 22,
+        "wastage": 30
+      },
+      {
+        "manager": {
+          "entryId": 325305,
+          "teamName": "GoodCattleBadCowboy",
+          "managerName": "Kris McBride",
+          "rank": 20,
+          "total": 282
+        },
+        "entryId": 325305,
+        "avgPoints": 56.4,
+        "best": {
+          "gw": 2,
+          "points": 95
+        },
+        "worst": {
+          "gw": 5,
+          "points": 27
+        },
+        "transfers": 2,
+        "hitPoints": 0,
+        "benchPoints": 46,
+        "wastage": 46
+      },
+      {
+        "manager": {
+          "entryId": 9153429,
+          "teamName": "sæla fc",
+          "managerName": "Tom McBride",
+          "rank": 21,
+          "total": 237
+        },
+        "entryId": 9153429,
+        "avgPoints": 61.3,
+        "best": {
+          "gw": 2,
+          "points": 88
+        },
+        "worst": {
+          "gw": 3,
+          "points": 49
+        },
+        "transfers": 3,
+        "hitPoints": 8,
+        "benchPoints": 12,
+        "wastage": 20
+      }
+    ]
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T20:09:59.632Z",
+    "freshness": []
+  }
+}
