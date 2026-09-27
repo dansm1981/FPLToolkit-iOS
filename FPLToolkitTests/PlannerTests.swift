@@ -37,6 +37,14 @@ struct PlannerTests {
         #expect(weeks.map(\.isDouble) == [false, true, false])
         #expect(weeks[0].fixtures[0].xfdr?.band == 2)
         #expect(FixtureStrip.spoken(weeks) == "Next 3 gameweeks, difficulty out of 5: GW7 2, GW8 5, two games, GW9 no game")
+        // Live (27 Sep, after #13): every player has six weeks from the shown gameweek, each banded.
+        let live = try fixture("planner-draft-22615-strip", as: PlannerDraft.self)
+        for pick in live.starting + live.bench {
+            let strip = live.strip(for: pick.playerId)
+            #expect(strip.map(\.gw) == Array(live.gw ..< live.gw + 6))
+            #expect(strip.allSatisfy { week in week.band.map { (1...5).contains($0) } ?? true })
+        }
+        #expect(live.player(live.starting[0].playerId)?.nextFixture?.xfdr?.band != nil)
         // Servers before #13 send no strip: the draft still reads, with nothing to draw.
         let older = try fixture("planner-draft-22615", as: PlannerDraft.self)
         #expect(older.fixtureStrip == nil && older.strip(for: older.starting[0].playerId).isEmpty)

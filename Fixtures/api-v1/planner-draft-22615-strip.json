@@ -1,0 +1,2660 @@
+{
+  "data": {
+    "id": "5af1a22b-526a-4a7d-869e-8139a69338e3",
+    "name": "All priced in",
+    "source": "import",
+    "entryId": 22615,
+    "shareUrl": "https://www.fpltoolkit.co.uk/share/2601d5a8-25a7-4720-9931-951133777e93",
+    "gw": 6,
+    "firstEditableGw": 6,
+    "baseGw": 5,
+    "lastGw": 38,
+    "starting": [
+      {
+        "playerId": 496,
+        "slot": 1,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.5,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 391,
+        "slot": 2,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5.5,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 8,
+        "slot": 3,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5.5,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 449,
+        "slot": 4,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5,
+        "sellingPrice": 5.1,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 31,
+        "slot": 5,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.4,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 40,
+        "slot": 6,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 7.5,
+        "sellingPrice": 7.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 480,
+        "slot": 7,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 7.9,
+        "sellingPrice": 7.9,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 565,
+        "slot": 8,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 5.6,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 154,
+        "slot": 9,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 9.5,
+        "sellingPrice": 9.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 411,
+        "slot": 10,
+        "isCaptain": true,
+        "isVice": false,
+        "purchasePrice": 15.5,
+        "sellingPrice": 15.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 249,
+        "slot": 11,
+        "isCaptain": false,
+        "isVice": true,
+        "purchasePrice": 5.6,
+        "sellingPrice": 5.6,
+        "purchaseEstimated": false
+      }
+    ],
+    "bench": [
+      {
+        "playerId": 109,
+        "slot": 12,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.5,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 165,
+        "slot": 13,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 7.5,
+        "sellingPrice": 7.6,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 115,
+        "slot": 14,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.6,
+        "sellingPrice": 4.8,
+        "purchaseEstimated": false
+      },
+      {
+        "playerId": 290,
+        "slot": 15,
+        "isCaptain": false,
+        "isVice": false,
+        "purchasePrice": 4.5,
+        "sellingPrice": 4.5,
+        "purchaseEstimated": false
+      }
+    ],
+    "formation": "4-4-2",
+    "emptySlots": {
+      "starting": {
+        "GK": 0,
+        "DEF": 0,
+        "MID": 0,
+        "FWD": 0
+      },
+      "bench": {
+        "GK": 0,
+        "DEF": 0,
+        "MID": 0,
+        "FWD": 0
+      }
+    },
+    "players": {
+      "8": {
+        "id": 8,
+        "webName": "Calafiori",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 5.8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 50.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "31": {
+        "id": 31,
+        "webName": "Konsa",
+        "clubId": 1,
+        "position": "DEF",
+        "price": 4.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 19.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "40": {
+        "id": 40,
+        "webName": "Rogers",
+        "clubId": 6,
+        "position": "MID",
+        "price": 7.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 40.4,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "109": {
+        "id": 109,
+        "webName": "Verbruggen",
+        "clubId": 5,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 21.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "115": {
+        "id": 115,
+        "webName": "De Cuyper",
+        "clubId": 5,
+        "position": "DEF",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 27.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "249": {
+        "id": 249,
+        "webName": "Barry",
+        "clubId": 9,
+        "position": "FWD",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 8.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "290": {
+        "id": 290,
+        "webName": "Slater",
+        "clubId": 11,
+        "position": "MID",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 5.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.81,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "391": {
+        "id": 391,
+        "webName": "Gvardiol",
+        "clubId": 15,
+        "position": "DEF",
+        "price": 5.7,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 26.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.12,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "449": {
+        "id": 449,
+        "webName": "Hall",
+        "clubId": 17,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      },
+      "480": {
+        "id": 480,
+        "webName": "Gibbs-White",
+        "clubId": 18,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 15.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "496": {
+        "id": 496,
+        "webName": "Kinsky",
+        "clubId": 19,
+        "position": "GK",
+        "price": 4.5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 17.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      },
+      "565": {
+        "id": 565,
+        "webName": "M.Sangaré",
+        "clubId": 4,
+        "position": "MID",
+        "price": 5.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 10,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      }
+    },
+    "fixtures": {
+      "8": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      ],
+      "31": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 13,
+          "home": true,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 1
+          }
+        }
+      ],
+      "40": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      ],
+      "109": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      ],
+      "115": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 20,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.57,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      ],
+      "154": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      ],
+      "165": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      ],
+      "249": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 11,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 2.83,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      ],
+      "290": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 9,
+          "home": true,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.81,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      ],
+      "391": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.12,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 3
+          }
+        }
+      ],
+      "411": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      ],
+      "449": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 7,
+          "home": false,
+          "kickoff": "2026-10-12T19:00:00.000Z",
+          "xfdr": {
+            "value": 2.16,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 2
+          }
+        }
+      ],
+      "480": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      ],
+      "496": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 16,
+          "home": false,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "clean_sheet",
+            "source": "market",
+            "band": 4
+          }
+        }
+      ],
+      "565": [
+        {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 2,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.54,
+            "lens": "attack",
+            "source": "market",
+            "band": 4
+          }
+        }
+      ]
+    },
+    "fixtureStrip": {
+      "8": [
+        {
+          "gw": 6,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 13,
+              "home": true,
+              "kickoff": "2026-10-10T11:30:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 18,
+              "home": false,
+              "kickoff": "2026-10-18T15:30:00.000Z",
+              "xfdr": {
+                "value": 1.13,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": true,
+              "kickoff": "2026-10-24T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": false,
+              "kickoff": "2026-11-01T16:30:00.000Z",
+              "xfdr": {
+                "value": 2.33,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 11,
+              "home": true,
+              "kickoff": "2026-11-07T15:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 17,
+              "home": false,
+              "kickoff": "2026-11-21T17:30:00.000Z",
+              "xfdr": {
+                "value": 1.88,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        }
+      ],
+      "31": [
+        {
+          "gw": 6,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 13,
+              "home": true,
+              "kickoff": "2026-10-10T11:30:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 18,
+              "home": false,
+              "kickoff": "2026-10-18T15:30:00.000Z",
+              "xfdr": {
+                "value": 1.13,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": true,
+              "kickoff": "2026-10-24T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": false,
+              "kickoff": "2026-11-01T16:30:00.000Z",
+              "xfdr": {
+                "value": 2.33,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 11,
+              "home": true,
+              "kickoff": "2026-11-07T15:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 17,
+              "home": false,
+              "kickoff": "2026-11-21T17:30:00.000Z",
+              "xfdr": {
+                "value": 1.88,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        }
+      ],
+      "40": [
+        {
+          "gw": 6,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 3,
+              "home": true,
+              "kickoff": "2026-10-10T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": false,
+              "kickoff": "2026-10-17T11:30:00.000Z",
+              "xfdr": {
+                "value": 2.54,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 19,
+              "home": true,
+              "kickoff": "2026-10-24T16:30:00.000Z",
+              "xfdr": {
+                "value": 2.44,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 16,
+              "home": true,
+              "kickoff": "2026-10-31T12:30:00.000Z",
+              "xfdr": {
+                "value": 2.03,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 20,
+              "home": false,
+              "kickoff": "2026-11-08T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.22,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 13,
+              "home": true,
+              "kickoff": "2026-11-21T15:00:00.000Z",
+              "xfdr": {
+                "value": 1.36,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        }
+      ],
+      "109": [
+        {
+          "gw": 6,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 20,
+              "home": false,
+              "kickoff": "2026-10-10T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.57,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 8,
+              "home": true,
+              "kickoff": "2026-10-18T13:00:00.000Z",
+              "xfdr": {
+                "value": 2.49,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": false,
+              "kickoff": "2026-10-25T14:00:00.000Z",
+              "xfdr": {
+                "value": 4.07,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 5,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 15,
+              "home": false,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 4.5,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 5
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 4,
+              "home": true,
+              "kickoff": "2026-11-08T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.76,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 11,
+              "home": false,
+              "kickoff": "2026-11-22T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.25,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        }
+      ],
+      "115": [
+        {
+          "gw": 6,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 20,
+              "home": false,
+              "kickoff": "2026-10-10T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.57,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 8,
+              "home": true,
+              "kickoff": "2026-10-18T13:00:00.000Z",
+              "xfdr": {
+                "value": 2.49,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": false,
+              "kickoff": "2026-10-25T14:00:00.000Z",
+              "xfdr": {
+                "value": 4.07,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 5,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 15,
+              "home": false,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 4.5,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 5
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 4,
+              "home": true,
+              "kickoff": "2026-11-08T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.76,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 11,
+              "home": false,
+              "kickoff": "2026-11-22T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.25,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        }
+      ],
+      "154": [
+        {
+          "gw": 6,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 3,
+              "home": true,
+              "kickoff": "2026-10-10T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": false,
+              "kickoff": "2026-10-17T11:30:00.000Z",
+              "xfdr": {
+                "value": 2.54,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 19,
+              "home": true,
+              "kickoff": "2026-10-24T16:30:00.000Z",
+              "xfdr": {
+                "value": 2.44,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 16,
+              "home": true,
+              "kickoff": "2026-10-31T12:30:00.000Z",
+              "xfdr": {
+                "value": 2.03,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 20,
+              "home": false,
+              "kickoff": "2026-11-08T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.22,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 13,
+              "home": true,
+              "kickoff": "2026-11-21T15:00:00.000Z",
+              "xfdr": {
+                "value": 1.36,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        }
+      ],
+      "165": [
+        {
+          "gw": 6,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 3,
+              "home": true,
+              "kickoff": "2026-10-10T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": false,
+              "kickoff": "2026-10-17T11:30:00.000Z",
+              "xfdr": {
+                "value": 2.54,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 19,
+              "home": true,
+              "kickoff": "2026-10-24T16:30:00.000Z",
+              "xfdr": {
+                "value": 2.44,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 16,
+              "home": true,
+              "kickoff": "2026-10-31T12:30:00.000Z",
+              "xfdr": {
+                "value": 2.03,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 20,
+              "home": false,
+              "kickoff": "2026-11-08T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.22,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 13,
+              "home": true,
+              "kickoff": "2026-11-21T15:00:00.000Z",
+              "xfdr": {
+                "value": 1.36,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        }
+      ],
+      "249": [
+        {
+          "gw": 6,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 11,
+              "home": false,
+              "kickoff": "2026-10-11T13:00:00.000Z",
+              "xfdr": {
+                "value": 2.83,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 6,
+              "home": true,
+              "kickoff": "2026-10-17T11:30:00.000Z",
+              "xfdr": {
+                "value": 3.15,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 5,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 1,
+              "home": false,
+              "kickoff": "2026-10-24T14:00:00.000Z",
+              "xfdr": {
+                "value": 4.66,
+                "lens": "attack",
+                "source": "market",
+                "band": 5
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 17,
+              "home": false,
+              "kickoff": "2026-11-02T20:00:00.000Z",
+              "xfdr": {
+                "value": 3.6,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 7,
+              "home": true,
+              "kickoff": "2026-11-06T20:00:00.000Z",
+              "xfdr": {
+                "value": 1.99,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 4,
+              "home": false,
+              "kickoff": "2026-11-23T20:00:00.000Z",
+              "xfdr": {
+                "value": 3.43,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        }
+      ],
+      "290": [
+        {
+          "gw": 6,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": true,
+              "kickoff": "2026-10-11T13:00:00.000Z",
+              "xfdr": {
+                "value": 3.81,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 10,
+              "home": false,
+              "kickoff": "2026-10-17T14:00:00.000Z",
+              "xfdr": {
+                "value": 4.01,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 4,
+              "home": true,
+              "kickoff": "2026-10-25T14:00:00.000Z",
+              "xfdr": {
+                "value": 3.58,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 12,
+              "home": true,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 2.96,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 5,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 1,
+              "home": false,
+              "kickoff": "2026-11-07T15:00:00.000Z",
+              "xfdr": {
+                "value": 5,
+                "lens": "attack",
+                "source": "market",
+                "band": 5
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 5,
+              "home": true,
+              "kickoff": "2026-11-22T14:00:00.000Z",
+              "xfdr": {
+                "value": 3.76,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        }
+      ],
+      "391": [
+        {
+          "gw": 6,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": false,
+              "kickoff": "2026-10-11T15:30:00.000Z",
+              "xfdr": {
+                "value": 3.12,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 12,
+              "home": true,
+              "kickoff": "2026-10-17T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 2,
+              "home": false,
+              "kickoff": "2026-10-24T11:30:00.000Z",
+              "xfdr": {
+                "value": 2.16,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 5,
+              "home": true,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 1.95,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 18,
+              "home": false,
+              "kickoff": "2026-11-07T17:30:00.000Z",
+              "xfdr": {
+                "value": 1.92,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 10,
+              "home": true,
+              "kickoff": "2026-11-21T12:30:00.000Z",
+              "xfdr": {
+                "value": 1.09,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        }
+      ],
+      "411": [
+        {
+          "gw": 6,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": false,
+              "kickoff": "2026-10-11T15:30:00.000Z",
+              "xfdr": {
+                "value": 3.09,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 12,
+              "home": true,
+              "kickoff": "2026-10-17T14:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 2,
+              "home": false,
+              "kickoff": "2026-10-24T11:30:00.000Z",
+              "xfdr": {
+                "value": 2.46,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 5,
+              "home": true,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 1.33,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 18,
+              "home": false,
+              "kickoff": "2026-11-07T17:30:00.000Z",
+              "xfdr": {
+                "value": 2.13,
+                "lens": "attack",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 10,
+              "home": true,
+              "kickoff": "2026-11-21T12:30:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "attack",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        }
+      ],
+      "449": [
+        {
+          "gw": 6,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 7,
+              "home": false,
+              "kickoff": "2026-10-12T19:00:00.000Z",
+              "xfdr": {
+                "value": 2.16,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 2,
+              "home": true,
+              "kickoff": "2026-10-17T16:30:00.000Z",
+              "xfdr": {
+                "value": 2.49,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 8,
+              "home": false,
+              "kickoff": "2026-10-25T14:00:00.000Z",
+              "xfdr": {
+                "value": 3.23,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": true,
+              "kickoff": "2026-11-02T20:00:00.000Z",
+              "xfdr": {
+                "value": 2.46,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 10,
+              "home": false,
+              "kickoff": "2026-11-07T15:00:00.000Z",
+              "xfdr": {
+                "value": 2.89,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 1,
+              "home": true,
+              "kickoff": "2026-11-21T17:30:00.000Z",
+              "xfdr": {
+                "value": 3.7,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        }
+      ],
+      "480": [
+        {
+          "gw": 6,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 8,
+              "home": false,
+              "kickoff": "2026-10-11T13:00:00.000Z",
+              "xfdr": {
+                "value": 3.17,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 1,
+              "home": true,
+              "kickoff": "2026-10-18T15:30:00.000Z",
+              "xfdr": {
+                "value": 4.41,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 12,
+              "home": false,
+              "kickoff": "2026-10-23T19:00:00.000Z",
+              "xfdr": {
+                "value": 2.97,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 4,
+              "home": false,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 3.58,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 15,
+              "home": true,
+              "kickoff": "2026-11-07T17:30:00.000Z",
+              "xfdr": {
+                "value": 3.97,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 3,
+              "home": false,
+              "kickoff": "2026-11-21T15:00:00.000Z",
+              "xfdr": {
+                "value": 3.42,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        }
+      ],
+      "496": [
+        {
+          "gw": 6,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 16,
+              "home": false,
+              "kickoff": "2026-10-10T16:30:00.000Z",
+              "xfdr": {
+                "value": 3.54,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 7,
+              "home": true,
+              "kickoff": "2026-10-19T19:00:00.000Z",
+              "xfdr": {
+                "value": 1,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 6,
+              "home": false,
+              "kickoff": "2026-10-24T16:30:00.000Z",
+              "xfdr": {
+                "value": 3.74,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 8,
+              "home": true,
+              "kickoff": "2026-10-31T17:30:00.000Z",
+              "xfdr": {
+                "value": 1.76,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 2,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 13,
+              "home": false,
+              "kickoff": "2026-11-07T12:30:00.000Z",
+              "xfdr": {
+                "value": 2.48,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 2
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 1,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 12,
+              "home": true,
+              "kickoff": "2026-11-21T15:00:00.000Z",
+              "xfdr": {
+                "value": 1.08,
+                "lens": "clean_sheet",
+                "source": "market",
+                "band": 1
+              }
+            }
+          ]
+        }
+      ],
+      "565": [
+        {
+          "gw": 6,
+          "band": 4,
+          "fixtures": [
+            {
+              "gw": 6,
+              "blank": false,
+              "opponentClubId": 2,
+              "home": false,
+              "kickoff": "2026-10-10T14:00:00.000Z",
+              "xfdr": {
+                "value": 3.54,
+                "lens": "attack",
+                "source": "market",
+                "band": 4
+              }
+            }
+          ]
+        },
+        {
+          "gw": 7,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 7,
+              "blank": false,
+              "opponentClubId": 14,
+              "home": true,
+              "kickoff": "2026-10-17T14:00:00.000Z",
+              "xfdr": {
+                "value": 3.49,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 8,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 8,
+              "blank": false,
+              "opponentClubId": 11,
+              "home": false,
+              "kickoff": "2026-10-25T14:00:00.000Z",
+              "xfdr": {
+                "value": 2.51,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 9,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 9,
+              "blank": false,
+              "opponentClubId": 18,
+              "home": true,
+              "kickoff": "2026-10-31T15:00:00.000Z",
+              "xfdr": {
+                "value": 2.65,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 10,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 10,
+              "blank": false,
+              "opponentClubId": 5,
+              "home": false,
+              "kickoff": "2026-11-08T14:00:00.000Z",
+              "xfdr": {
+                "value": 3.38,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        },
+        {
+          "gw": 11,
+          "band": 3,
+          "fixtures": [
+            {
+              "gw": 11,
+              "blank": false,
+              "opponentClubId": 9,
+              "home": true,
+              "kickoff": "2026-11-23T20:00:00.000Z",
+              "xfdr": {
+                "value": 2.81,
+                "lens": "attack",
+                "source": "market",
+                "band": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "money": {
+      "bank": 2.2,
+      "squadValue": 99.8,
+      "sellValue": 98.5,
+      "profitToDate": 0,
+      "startBudget": 99.8
+    },
+    "check": {
+      "ok": true,
+      "issues": [],
+      "players": 15
+    },
+    "chips": [
+      {
+        "key": "wildcard1",
+        "label": "Wildcard 1",
+        "window": {
+          "start": 2,
+          "end": 19
+        },
+        "state": "played",
+        "gw": 3,
+        "note": "Played in GW3"
+      },
+      {
+        "key": "freehit1",
+        "label": "Free Hit 1",
+        "window": {
+          "start": 2,
+          "end": 19
+        },
+        "state": "available",
+        "gw": null,
+        "note": null
+      },
+      {
+        "key": "bboost1",
+        "label": "Bench Boost 1",
+        "window": {
+          "start": 1,
+          "end": 19
+        },
+        "state": "played",
+        "gw": 1,
+        "note": "Played in GW1"
+      },
+      {
+        "key": "3xc1",
+        "label": "Triple Captain 1",
+        "window": {
+          "start": 1,
+          "end": 19
+        },
+        "state": "played",
+        "gw": 4,
+        "note": "Played in GW4"
+      },
+      {
+        "key": "wildcard2",
+        "label": "Wildcard 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      },
+      {
+        "key": "freehit2",
+        "label": "Free Hit 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      },
+      {
+        "key": "bboost2",
+        "label": "Bench Boost 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      },
+      {
+        "key": "3xc2",
+        "label": "Triple Captain 2",
+        "window": {
+          "start": 20,
+          "end": 38
+        },
+        "state": "outside",
+        "gw": null,
+        "note": "Only playable GW20–38"
+      }
+    ],
+    "transfers": {
+      "out": [],
+      "in": []
+    },
+    "ledger": [],
+    "freeTransfers": {
+      "starting": 2,
+      "estimated": true
+    },
+    "estimatedPurchasePrices": false
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T17:13:19.466Z",
+    "freshness": []
+  }
+}
