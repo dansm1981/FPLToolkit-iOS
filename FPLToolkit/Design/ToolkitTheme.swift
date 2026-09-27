@@ -58,13 +58,14 @@ struct ToolkitPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .foregroundStyle(ToolkitColor.onAccent)
+            // Disabled: a muted but still readable button, not a faded gold one (contrast).
+            .foregroundStyle(isEnabled ? ToolkitColor.onAccent : ToolkitColor.secondaryText)
             .padding(.horizontal, ToolkitSpace.page)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: 52)
-            .background(ToolkitColor.accent)
+            .background(isEnabled ? ToolkitColor.accent : ToolkitColor.raised)
             .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.button))
-            .opacity(!isEnabled ? 0.45 : configuration.isPressed ? 0.82 : 1)
+            .opacity(configuration.isPressed ? 0.82 : 1)
     }
 }
 
@@ -95,6 +96,7 @@ struct Pill: View {
         Text(text.uppercased())
             .font(.caption.weight(.bold))
             .tracking(0.6)
+            .fixedSize(horizontal: false, vertical: true)
             .foregroundStyle(foreground)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -111,6 +113,8 @@ struct SectionLabel: View {
             .font(.footnote.weight(.semibold))
             .tracking(1.2)
             .foregroundStyle(ToolkitColor.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityLabel(text)
             .accessibilityAddTraits(.isHeader)
     }
 }

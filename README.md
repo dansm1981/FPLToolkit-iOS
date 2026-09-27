@@ -60,6 +60,19 @@ FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (S
   - `-forcePushFeatures YES` shows the notification screens (alert offer, permission prompt, settings, alert history) before the server switches push types on. Debug builds only.
 - **Deep links:** `fpltoolkit://today`, `team`, `watch`, `watch/alerts`, `player/{id}` (contract §5). Try one in the simulator with `xcrun simctl openurl booted fpltoolkit://player/154`.
 
+## UI tests and screenshots
+
+`FPLToolkitUITests` (its own scheme, so the unit tests stay fast) opens each main screen against the live API, attaches a screenshot, and runs Apple's accessibility audit: VoiceOver labels, contrast, hit areas, Dynamic Type and clipped text. Known false alarms are listed in `ScreenAuditTests.check`.
+
+```sh
+xcodebuild test -project FPLToolkit.xcodeproj -scheme FPLToolkitUITests \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO \
+  -resultBundlePath /tmp/audit.xcresult
+xcrun xcresulttool export attachments --path /tmp/audit.xcresult --output-path /tmp/audit-shots
+```
+
+For App Store screenshots, run the same tests on the iPhone 17 Pro Max simulator (6.9", 1320 × 2868) after `xcrun simctl status_bar booted override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3`, with `-auditTeam <Team ID>` passed through `TEST_RUNNER_auditTeam`. See `scripts/app-store-screenshots.sh`.
+
 ## Push notifications
 
 Built and waiting for the paid Apple Developer team (see `docs/mobile/push-launch.md` in the workspace):

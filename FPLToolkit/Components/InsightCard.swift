@@ -31,6 +31,9 @@ struct InsightCard: View {
                 Text(insight.title.uppercased())
                     .font(.caption.weight(.bold))
                     .tracking(0.6)
+                    // Usually one long word ("AVAILABILITY"): shrink a little rather than cut off.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             } icon: {
                 Image(systemName: insight.symbol)
                     .font(.caption.weight(.bold))

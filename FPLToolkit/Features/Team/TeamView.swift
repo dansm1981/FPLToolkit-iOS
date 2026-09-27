@@ -47,6 +47,7 @@ struct TeamView: View {
 
 struct TeamContent: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     let loaded: Loaded<Team>
     var onSelectPlayer: ((Int) -> Void)?
 
@@ -105,16 +106,13 @@ struct TeamContent: View {
             Text(team.entry.name)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(ToolkitColor.primaryText)
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: ToolkitSpace.sm) {
-                    Pill(text: "Published snapshot").fixedSize()
-                    Spacer()
-                    readOnly
-                }
-                VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                    Pill(text: "Published snapshot")
-                    readOnly
-                }
+            let layout = typeSize >= .xxxLarge
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: ToolkitSpace.sm))
+                : AnyLayout(HStackLayout(spacing: ToolkitSpace.sm))
+            layout {
+                Pill(text: "Published snapshot")
+                if typeSize < .xxxLarge { Spacer() }
+                readOnly
             }
             Text("Squad as of the GW\(snapshot.gw) deadline, \(Format.deadline(snapshot.deadline)). Changes you've made since then won't show until the next deadline passes.")
                 .font(.subheadline)

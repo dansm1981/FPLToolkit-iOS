@@ -382,6 +382,7 @@ private struct FixturesSection: View {
 }
 
 private struct PriceSection: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let prediction: PlayerSheet.PricePrediction
     let source: FreshnessSource?
 
@@ -394,11 +395,15 @@ private struct PriceSection: View {
                     Text(prediction.tonightPct != nil ? "Tonight's price projection" : "Price-change progress")
                         .font(.headline)
                         .foregroundStyle(ToolkitColor.primaryText)
-                    Text(Self.signed(headline))
-                        .font(.system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit())
-                        .foregroundStyle(ToolkitColor.link)
-                    Text("of the \(headline < 0 ? "fall" : "rise") threshold")
-                        .foregroundStyle(ToolkitColor.secondaryText)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Self.signed(headline))
+                            .font(.system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit())
+                            .foregroundStyle(ToolkitColor.link)
+                        Text("of the \(headline < 0 ? "fall" : "rise") threshold")
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(Self.spoken(headline)) of the \(headline < 0 ? "fall" : "rise") threshold")
                     ThresholdBar(value: headline)
                     VStack(alignment: .leading, spacing: 4) {
                         if prediction.tonightPct != nil {
@@ -412,6 +417,8 @@ private struct PriceSection: View {
                             detail("Net transfers per hour", rate.formatted(.number.precision(.fractionLength(0)).sign(strategy: .always())))
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(projectionSummary)
                     if prediction.calibrating {
                         Label("The model is still calibrating for this player.", systemImage: "info.circle")
                             .font(.footnote)
@@ -440,12 +447,35 @@ private struct PriceSection: View {
     }
 
     private func detail(_ label: String, _ value: String) -> some View {
-        HStack {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+            : AnyLayout(HStackLayout())
+        return layout {
             Text(label).foregroundStyle(ToolkitColor.secondaryText)
-            Spacer()
+                .fixedSize(horizontal: false, vertical: true)
+            if !typeSize.isAccessibilitySize { Spacer() }
             Text(value).monospacedDigit().foregroundStyle(ToolkitColor.primaryText)
         }
         .font(.subheadline)
+    }
+
+    /// The projection rows read as one item: "Now: up 1 percent. Tomorrow night: up 1.3 percent. …"
+    private var projectionSummary: String {
+        var parts: [String] = []
+        if prediction.tonightPct != nil { parts.append("Now: \(Self.spoken(prediction.progressPct))") }
+        for p in prediction.projections where p.offset > 0 {
+            parts.append("\(p.offset == 1 ? "Tomorrow night" : "In \(p.offset) nights"): \(Self.spoken(p.projectedPct))")
+        }
+        if let rate = prediction.hourlyRate {
+            parts.append("Net transfers per hour: \(rate.formatted(.number.precision(.fractionLength(0))))")
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    /// "+1.2%" read aloud as "up 1.2 percent".
+    static func spoken(_ value: Double) -> String {
+        let magnitude = abs(value).formatted(.number.precision(.fractionLength(0...1)))
+        return value == 0 ? "0 percent" : "\(value > 0 ? "up" : "down") \(magnitude) percent"
     }
 
     static func signed(_ value: Double) -> String {
