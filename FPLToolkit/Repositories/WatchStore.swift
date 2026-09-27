@@ -38,6 +38,14 @@ final class WatchStore {
         await apply { try await self.repository.update(manual: manual) }
     }
 
+    /// Adds several players at once (the shortlist's "Watch all"), keeping the ones already watched.
+    func watchAll(_ playerIds: [Int]) async {
+        guard let watch else { return }
+        let new = playerIds.filter { !watch.manual.contains($0) }
+        guard !new.isEmpty else { return }
+        await apply { try await self.repository.update(manual: watch.manual + new) }
+    }
+
     func setAutoTrackSquad(_ on: Bool) async {
         guard let watch else { return }
         await apply { try await self.repository.update(manual: watch.manual, autoTrackSquad: on) }

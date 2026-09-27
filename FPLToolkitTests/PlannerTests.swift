@@ -139,6 +139,17 @@ struct PlannerTests {
         #expect(plan.ledger.first?.freeTransfers == 2 && plan.totals.hits == 0)
     }
 
+    /// The shortlist (happy-backend-pal#17): items with the vibe flag; a save sends only what changes.
+    @Test func shortlist() throws {
+        let json = #"{"items":[{"playerId":5,"vibe":true,"addedAt":"2026-09-27T18:10:00.123456+00:00"},{"playerId":7,"vibe":false,"addedAt":null}],"players":{},"max":100}"#
+        let list = try JSONDecoder().decode(PlannerShortlist.self, from: Data(json.utf8))
+        #expect(list.items.map(\.playerId) == [5, 7] && list.items.first?.vibe == true && list.max == 100)
+        let add = try JSONEncoder().encode(PlannerShortlistSave())
+        #expect(String(decoding: add, as: UTF8.self) == "{}")
+        let vibe = try JSONEncoder().encode(PlannerShortlistSave(vibe: true))
+        #expect(String(decoding: vibe, as: UTF8.self) == #"{"vibe":true}"#)
+    }
+
     @Test func afterATransfer() throws {
         let draft = try fixture("planner-draft-22615-transfer", as: PlannerDraft.self)
         #expect(draft.transfers.out == [290] && draft.transfers.in == [12])

@@ -153,6 +153,7 @@ private struct DraftContent: View {
             DraftNewsSheet(gw: draft.gw, model: model) { newsPlayer = $0 }
         }
         // A new fixture model or lens: the server re-rates this gameweek.
+        .task { await appModel.shortlist.loadIfNeeded() }
         .onChange(of: fixtureModel) { Task { await model.reload() } }
         .onChange(of: fixtureLens) { Task { await model.reload() } }
         .confirmationDialog("Reset to your FPL squad?", isPresented: $confirmingReset, titleVisibility: .visible) {
@@ -258,6 +259,10 @@ private struct DraftContent: View {
             Button(watched ? "Stop watching" : "Watch for alerts") {
                 Task { await store.setWatched(!watched, playerId: pick.playerId) }
             }
+        }
+        let shortlisted = appModel.shortlist.contains(pick.playerId)
+        Button(shortlisted ? "Remove from shortlist" : "Add to shortlist") {
+            Task { await appModel.shortlist.toggle(pick.playerId) }
         }
         Button("View player") { appModel.router.openPlayer(pick.playerId) }
         Button("Remove from squad", role: .destructive) {
@@ -889,6 +894,18 @@ private struct DraftTools: View {
                     timelineLink
                 }
             }
+            shortlistLink
+        }
+    }
+
+    private var shortlistLink: some View {
+        NavigationLink {
+            ShortlistView(draftModel: draftModel)
+        } label: {
+            Label("Shortlist", systemImage: "star")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
+                .frame(minHeight: 44)
         }
     }
 

@@ -24,6 +24,8 @@ final class AppModel {
     let playerRepository: PlayerRepository
     let deviceSession: DeviceSession
     let plannerRepository: PlannerRepository
+    /// The device's shortlist (the planner's star and Shortlist screen).
+    let shortlist: ShortlistStore
 
     private let cache: ResponseCache
     private let defaults: UserDefaults
@@ -38,7 +40,9 @@ final class AppModel {
         self.playerRepository = PlayerRepository(client: client, cache: cache)
         let session = DeviceSession(client: client)
         self.deviceSession = session
-        self.plannerRepository = PlannerRepository(session: session, cache: cache)
+        let planner = PlannerRepository(session: session, cache: cache)
+        self.plannerRepository = planner
+        self.shortlist = ShortlistStore(repository: planner)
         self.cache = cache
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)
@@ -104,6 +108,7 @@ final class AppModel {
     /// "Reset app data": deletes this device on the server (watch list included), then everything local.
     func resetAppData() async throws {
         try await deviceSession.reset()
+        shortlist.reset()
         disconnect()
     }
 

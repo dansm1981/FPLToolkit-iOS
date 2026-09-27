@@ -41,6 +41,7 @@ enum APIErrorCode: String, FallbackDecodable {
     /// Planner: a rule refused the edit; the message says why.
     case invalidAction = "invalid_action"
     case tooManyDrafts = "too_many_drafts"
+    case shortlistFull = "shortlist_full"
     case `internal`
     case unknown
     static let fallback = Self.unknown

@@ -55,6 +55,21 @@ struct PlannerRepository: Sendable {
         try await session.send("GET", "\(Self.base)/\(id)/plan", query: Self.view, as: PlannerPlan.self).envelope.data
     }
 
+    /// This device's shortlist.
+    func shortlist() async throws -> PlannerShortlist {
+        try await session.send("GET", "planner/shortlist", query: Self.view, as: PlannerShortlist.self).envelope.data
+    }
+
+    /// Adds a player to the shortlist, or sets his vibe flag; answers with the whole list.
+    func saveShortlisted(_ playerId: Int, vibe: Bool? = nil) async throws -> PlannerShortlist {
+        try await session.send("PUT", "planner/shortlist/\(playerId)", query: Self.view,
+                               body: PlannerShortlistSave(vibe: vibe), as: PlannerShortlist.self).envelope.data
+    }
+
+    func removeShortlisted(_ playerId: Int) async throws -> PlannerShortlist {
+        try await session.send("DELETE", "planner/shortlist/\(playerId)", query: Self.view, as: PlannerShortlist.self).envelope.data
+    }
+
     /// The fixture model and lens chosen on this device, sent with every request.
     fileprivate static var view: [URLQueryItem] { FixtureView.current.queryItems }
 

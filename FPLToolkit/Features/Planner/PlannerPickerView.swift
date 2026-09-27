@@ -45,6 +45,13 @@ struct PlannerPickerView: View {
     @State private var loadError: ErrorCopy?
     @State private var picking: Int?
 
+    /// When replacing: every player, or the website's Explore (shortlist first, then the rest by price).
+    enum Mode: Hashable { case all, explore }
+    @State private var mode: Mode = .all
+    @State private var affordableOnly = false
+    @State private var cheapestFirst = false
+    @State private var explore: (shortlist: PlannerPicker, more: PlannerPicker)?
+
     private var replacedName: String? {
         slot.replacing.flatMap { draft.player($0.playerId)?.webName }
     }
@@ -71,10 +78,40 @@ struct PlannerPickerView: View {
         return items
     }
 
+    /// Explore's two lists: shortlisted players, then everyone else, by price, with four weeks of fixtures.
+    private func exploreItems(shortlisted: Bool) -> [URLQueryItem] {
+        var items = [
+            URLQueryItem(name: "gw", value: String(draft.gw)),
+            URLQueryItem(name: "position", value: slot.position.rawValue),
+            URLQueryItem(name: "sort", value: "price"),
+            URLQueryItem(name: "dir", value: cheapestFirst ? "asc" : "desc"),
+            URLQueryItem(name: "limit", value: shortlisted ? "40" : "60"),
+            URLQueryItem(name: "shortlist", value: shortlisted ? "only" : "exclude"),
+            URLQueryItem(name: "strip", value: "4"),
+        ]
+        if let replacing = slot.replacing { items.append(URLQueryItem(name: "replace", value: String(replacing.playerId))) }
+        if let club { items.append(URLQueryItem(name: "club", value: String(club))) }
+        if affordableOnly && !shortlisted { items.append(URLQueryItem(name: "affordable", value: "1")) }
+        let q = query.trimmingCharacters(in: .whitespaces)
+        if !q.isEmpty { items.append(URLQueryItem(name: "q", value: q)) }
+        return items
+    }
+
+    private var taskKey: [URLQueryItem] {
+        mode == .explore ? exploreItems(shortlisted: true) + exploreItems(shortlisted: false) : queryItems
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 Section {
+                    if slot.replacing != nil {
+                        Picker("View", selection: $mode) {
+                            Text("All players").tag(Mode.all)
+                            Text("Explore").tag(Mode.explore)
+                        }
+                        .pickerStyle(.segmented)
+                    }
                     summary
                     if let error = model.actionError {
                         ErrorBanner(copy: error)
@@ -89,6 +126,15 @@ struct PlannerPickerView: View {
                             .foregroundStyle(ToolkitColor.secondaryText)
                     }
                     .listRowBackground(ToolkitColor.surface)
+                } else if mode == .explore {
+                    if let explore {
+                        exploreSection("Your shortlist", explore.shortlist,
+                                       empty: "No shortlisted \(slot.position.spokenName)s. Tap a star to add one.")
+                        exploreSection(affordableOnly ? "More players you can afford" : "More players", explore.more,
+                                       empty: "No players match these filters.")
+                    } else {
+                        loadingSection
+                    }
                 } else if let result {
                     Section {
                         if result.candidates.isEmpty {
@@ -96,10 +142,7 @@ struct PlannerPickerView: View {
                                 .foregroundStyle(ToolkitColor.secondaryText)
                         }
                         ForEach(result.candidates) { candidate in
-                            CandidateRow(candidate: candidate, replacing: slot.replacing != nil, busy: picking == candidate.id) {
-                                Task { await pick(candidate) }
-                            }
-                            .disabled(candidate.reason != nil || picking != nil)
+                            candidateRow(candidate)
                         }
                     } header: {
                         SectionLabel(text: result.total > result.candidates.count
@@ -108,13 +151,7 @@ struct PlannerPickerView: View {
                     }
                     .listRowBackground(ToolkitColor.surface)
                 } else {
-                    Section {
-                        HStack(spacing: ToolkitSpace.sm) {
-                            ProgressView()
-                            Text("Finding players…").foregroundStyle(ToolkitColor.secondaryText)
-                        }
-                    }
-                    .listRowBackground(ToolkitColor.surface)
+                    loadingSection
                 }
             }
             .listStyle(.insetGrouped)
@@ -129,13 +166,52 @@ struct PlannerPickerView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) { filterMenu }
             }
-            .task(id: queryItems) {
+            .task(id: taskKey) {
                 // A short pause while typing; a newer query cancels this one.
-                try? await Task.sleep(for: .milliseconds(result == nil ? 0 : 300))
+                try? await Task.sleep(for: .milliseconds(result == nil && explore == nil ? 0 : 300))
                 if Task.isCancelled { return }
                 await load()
             }
             .onAppear { model.clearActionError() }
+            .task { await appModel.shortlist.loadIfNeeded() }
+        }
+    }
+
+    private var loadingSection: some View {
+        Section {
+            HStack(spacing: ToolkitSpace.sm) {
+                ProgressView()
+                Text("Finding players…").foregroundStyle(ToolkitColor.secondaryText)
+            }
+        }
+        .listRowBackground(ToolkitColor.surface)
+    }
+
+    private func exploreSection(_ title: String, _ list: PlannerPicker, empty: String) -> some View {
+        Section {
+            if list.candidates.isEmpty {
+                Text(empty).foregroundStyle(ToolkitColor.secondaryText)
+            }
+            ForEach(list.candidates) { candidate in
+                candidateRow(candidate)
+            }
+        } header: {
+            SectionLabel(text: "\(title) · \(cheapestFirst ? "cheapest" : "dearest") first")
+        }
+        .listRowBackground(ToolkitColor.surface)
+    }
+
+    private func candidateRow(_ candidate: PlannerPicker.Candidate) -> some View {
+        CandidateRow(
+            candidate: candidate,
+            replacing: slot.replacing != nil,
+            busy: picking == candidate.id,
+            pickable: candidate.reason == nil && picking == nil,
+            shortlisted: appModel.shortlist.list == nil ? (candidate.shortlisted ?? false) : appModel.shortlist.contains(candidate.id)
+        ) {
+            Task { await pick(candidate) }
+        } toggleShortlist: {
+            Task { await appModel.shortlist.toggle(candidate.id) }
         }
     }
 
@@ -163,8 +239,16 @@ struct PlannerPickerView: View {
 
     private var filterMenu: some View {
         Menu {
-            Picker("Sort by", selection: $sort) {
-                ForEach(Sort.allCases) { Text($0.label).tag($0) }
+            if mode == .explore {
+                Picker("Price", selection: $cheapestFirst) {
+                    Text("Dearest first").tag(false)
+                    Text("Cheapest first").tag(true)
+                }
+                Toggle("Affordable only", isOn: $affordableOnly)
+            } else {
+                Picker("Sort by", selection: $sort) {
+                    ForEach(Sort.allCases) { Text($0.label).tag($0) }
+                }
             }
             Picker("Club", selection: $club) {
                 Text("All clubs").tag(Int?.none)
@@ -172,13 +256,15 @@ struct PlannerPickerView: View {
                     Text(club.shortName).tag(Int?.some(club.id))
                 }
             }
-            Picker("Max price", selection: $maxPrice) {
-                Text("Any price").tag(Double?.none)
-                ForEach(Array(stride(from: 4.5, through: 15.0, by: 0.5)), id: \.self) { price in
-                    Text("Up to \(Format.price(price))").tag(Double?.some(price))
+            if mode == .all {
+                Picker("Max price", selection: $maxPrice) {
+                    Text("Any price").tag(Double?.none)
+                    ForEach(Array(stride(from: 4.5, through: 15.0, by: 0.5)), id: \.self) { price in
+                        Text("Up to \(Format.price(price))").tag(Double?.some(price))
+                    }
                 }
+                Toggle("Available only", isOn: $availableOnly)
             }
-            Toggle("Available only", isOn: $availableOnly)
         } label: {
             Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
         }
@@ -190,7 +276,13 @@ struct PlannerPickerView: View {
 
     private func load() async {
         do {
-            result = try await model.candidates(queryItems)
+            if mode == .explore {
+                async let shortlisted = model.candidates(exploreItems(shortlisted: true))
+                async let more = model.candidates(exploreItems(shortlisted: false))
+                explore = try await (shortlisted, more)
+            } else {
+                result = try await model.candidates(queryItems)
+            }
             loadError = nil
         } catch let error as APIError {
             loadError = ErrorCopy(error)
@@ -210,54 +302,72 @@ private struct CandidateRow: View {
     let candidate: PlannerPicker.Candidate
     let replacing: Bool
     let busy: Bool
+    let pickable: Bool
+    let shortlisted: Bool
     let pick: () -> Void
+    let toggleShortlist: () -> Void
 
     var body: some View {
         let player = candidate.player
-        Button(action: pick) {
-            HStack(alignment: .top, spacing: ToolkitSpace.md) {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: ToolkitSpace.sm) {
-                        Text(player.webName)
-                            .font(.headline)
-                            .foregroundStyle(candidate.reason == nil ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
-                        AvailabilityBadge(availability: player.availability)
-                    }
-                    Text(details)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                    if let reason = candidate.reason {
-                        Text(reason)
-                            .font(.footnote)
+        HStack(alignment: .top, spacing: ToolkitSpace.sm) {
+            Button(action: pick) {
+                HStack(alignment: .top, spacing: ToolkitSpace.md) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: ToolkitSpace.sm) {
+                            Text(player.webName)
+                                .font(.headline)
+                                .foregroundStyle(candidate.reason == nil ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
+                            AvailabilityBadge(availability: player.availability)
+                        }
+                        Text(details)
+                            .font(.subheadline)
                             .foregroundStyle(ToolkitColor.secondaryText)
-                    } else if candidate.inSquad {
-                        Text("In your squad: swaps places")
-                            .font(.footnote)
-                            .foregroundStyle(ToolkitColor.link)
-                    }
-                }
-                Spacer(minLength: ToolkitSpace.sm)
-                VStack(alignment: .trailing, spacing: 3) {
-                    if busy {
-                        ProgressView()
-                    } else {
-                        Text("\(candidate.totalPoints) pts")
-                            .font(.subheadline.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        if let form = candidate.form {
-                            Text("Form \(form.formatted(.number.precision(.fractionLength(1))))")
-                                .font(.footnote.monospacedDigit())
+                        if let strip = candidate.fixtureStrip, !strip.isEmpty {
+                            FixtureStrip(weeks: strip, roomy: true)
+                                .padding(.top, 2)
+                        }
+                        if let reason = candidate.reason {
+                            Text(reason)
+                                .font(.footnote)
                                 .foregroundStyle(ToolkitColor.secondaryText)
+                        } else if candidate.inSquad {
+                            Text("In your squad: swaps places")
+                                .font(.footnote)
+                                .foregroundStyle(ToolkitColor.link)
+                        }
+                    }
+                    Spacer(minLength: ToolkitSpace.sm)
+                    VStack(alignment: .trailing, spacing: 3) {
+                        if busy {
+                            ProgressView()
+                        } else {
+                            Text("\(candidate.totalPoints) pts")
+                                .font(.subheadline.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            if let form = candidate.form {
+                                Text("Form \(form.formatted(.number.precision(.fractionLength(1))))")
+                                    .font(.footnote.monospacedDigit())
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                            }
                         }
                     }
                 }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            .buttonStyle(.borderless)
+            .disabled(!pickable)
+            .accessibilityElement(children: .combine)
+            .accessibilityHint(candidate.reason == nil ? (candidate.inSquad ? "Swaps places with this player" : (replacing ? "Transfers this player in" : "Adds this player")) : "")
+
+            Button(action: toggleShortlist) {
+                Image(systemName: shortlisted ? "star.fill" : "star")
+                    .foregroundStyle(shortlisted ? ToolkitColor.accent : ToolkitColor.secondaryText)
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(shortlisted ? "Remove \(player.webName) from the shortlist" : "Add \(player.webName) to the shortlist")
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(candidate.reason == nil ? (candidate.inSquad ? "Swaps places with this player" : (replacing ? "Transfers this player in" : "Adds this player")) : "")
     }
 
     private var details: String {

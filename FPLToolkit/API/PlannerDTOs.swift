@@ -223,6 +223,10 @@ struct PlannerPicker: Decodable, Sendable {
         let expectedGoalInvolvements: Double?
         let fdrNext6: Double?
         let inSquad: Bool
+        /// On this device's shortlist (absent from servers before happy-backend-pal#17).
+        let shortlisted: Bool?
+        /// The next few gameweeks, when asked for (Explore).
+        let fixtureStrip: [PlannerDraft.StripWeek]?
         /// Why he can't be chosen for this slot, or nil.
         let reason: String?
         var id: Int { player.id }
@@ -298,4 +302,23 @@ struct PlannerPlan: Decodable, Sendable {
     let totals: Totals
     let players: [String: PlayerSummary]
     func name(_ id: Int) -> String { players[String(id)]?.webName ?? "Player \(id)" }
+}
+
+/// `GET /planner/shortlist`: the website's Shortlist, kept per device.
+struct PlannerShortlist: Decodable, Sendable {
+    struct Item: Decodable, Sendable, Hashable, Identifiable {
+        let playerId: Int
+        /// The website's "vibe" flag: a short-shortlist of favourites.
+        let vibe: Bool
+        let addedAt: String?
+        var id: Int { playerId }
+    }
+    let items: [Item]
+    let players: [String: PlayerSummary]
+    let max: Int
+    func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
+}
+
+struct PlannerShortlistSave: Encodable, Sendable {
+    var vibe: Bool?
 }

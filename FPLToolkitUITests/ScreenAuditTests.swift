@@ -266,9 +266,38 @@ final class ScreenAuditTests: XCTestCase {
 
         let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
         waitFor(tile, "\(name) on the pitch")
+
+        // Explore (replacing him): star another keeper for the shortlist.
+        tile.tap()
+        app.buttons["Replace…"].firstMatch.tap()
+        let exploreTab = app.buttons["Explore"].firstMatch
+        waitFor(exploreTab, "Explore tab")
+        exploreTab.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Your shortlist'")).firstMatch, "Explore", timeout: 40)
+        settle()
+        check(app, "19-picker-explore", sizesAndLists: false)
+        let star = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Add ' AND label ENDSWITH ' to the shortlist'")).firstMatch
+        waitFor(star, "A star")
+        let starred = star.label.replacingOccurrences(of: "Add ", with: "").replacingOccurrences(of: " to the shortlist", with: "")
+        star.tap()
+        waitFor(app.buttons["Remove \(starred) from the shortlist"].firstMatch, "Starred", timeout: 20)
+        app.buttons["Close"].firstMatch.tap()
+
         tile.tap()
         app.buttons["Remove from squad"].firstMatch.tap()
         waitFor(empty, "Squad empty again", timeout: 40)
+
+        // The shortlist has him (audited); swipe him off again.
+        app.buttons["Shortlist"].firstMatch.tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", starred)).firstMatch
+        waitFor(row, "\(starred) on the shortlist", timeout: 40)
+        settle()
+        check(app, "20-shortlist")
+        row.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
+        waitForExpectations(timeout: 20)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
 
         // A chip plays, then cancels.
         let wildcard = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1'")).firstMatch
