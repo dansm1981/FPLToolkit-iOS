@@ -92,8 +92,9 @@ struct TeamContent: View {
                 noSnapshot
             }
 
-            if let freshness = loaded.meta.freshness, !freshness.isEmpty {
-                WhatWeCheckedSection(sources: freshness, savedAt: loaded.savedAt)
+            let sources = (loaded.meta.freshness ?? []).filter { team.snapshot != nil || $0.source != .picks }
+            if !sources.isEmpty {
+                WhatWeCheckedSection(sources: sources, savedAt: loaded.savedAt)
                     .padding(.top, ToolkitSpace.sm)
             }
         }

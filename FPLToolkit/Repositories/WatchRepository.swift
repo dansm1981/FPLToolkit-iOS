@@ -5,27 +5,30 @@ struct WatchRepository: LoadableEndpoint {
     let session: DeviceSession
     let cache: ResponseCache
     private let path = "devices/me/watch"
+    /// Saved per team, so a saved list can never show another team's squad.
+    private let cacheKey: String
 
-    init(session: DeviceSession, cache: ResponseCache) {
+    init(session: DeviceSession, cache: ResponseCache, entryId: Int) {
         self.session = session
         self.cache = cache
+        self.cacheKey = "devices/me/watch-\(entryId)"
     }
 
     func fetch(bypassCache: Bool = false) async throws -> Loaded<Watch> {
         let fetched = try await session.send("GET", path, as: Watch.self)
-        cache.write(fetched.raw, for: path)
+        cache.write(fetched.raw, for: cacheKey)
         return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
     }
 
     /// Sends the full manual list (and optionally the squad toggle); returns the new watch set.
     func update(manual: [Int], autoTrackSquad: Bool? = nil) async throws -> Loaded<Watch> {
         let fetched = try await session.send("PUT", path, body: WatchUpdate(manual: manual, autoTrackSquad: autoTrackSquad), as: Watch.self)
-        cache.write(fetched.raw, for: path)
+        cache.write(fetched.raw, for: cacheKey)
         return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
     }
 
     func cached() -> Loaded<Watch>? {
-        CachedEndpoint<Watch>(client: .production, cache: cache, path: path).cached()
+        CachedEndpoint<Watch>(client: .production, cache: cache, path: cacheKey).cached()
     }
 }
 

@@ -81,7 +81,7 @@ struct AlertRow: View {
         }
     }
 
-    static func statusText(_ alert: AlertItem) -> String {
+    nonisolated static func statusText(_ alert: AlertItem) -> String {
         switch alert.status {
         case .sent: return "Sent"
         case .queued: return "Sending…"

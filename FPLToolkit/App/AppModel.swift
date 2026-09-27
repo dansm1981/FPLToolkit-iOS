@@ -91,7 +91,8 @@ final class AppModel {
     }
 
     private func makeWatchStore() {
-        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache)) { [weak self] in
+        guard let entryId else { return }
+        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache, entryId: entryId)) { [weak self] in
             await self?.syncDevice()
         }
         alerts = Resource(AlertsRepository(session: deviceSession, cache: cache))
@@ -105,6 +106,12 @@ final class AppModel {
     }
 
     var disclosure: String { bootstrap?.value.config.disclosure ?? Self.fallbackDisclosure }
+
+    /// The server can require a newer app (bootstrap.config.minSupportedAppVersion, contract §2.4).
+    var updateRequired: Bool {
+        guard let minimum = bootstrap?.value.config.minSupportedAppVersion else { return false }
+        return AppVersion.current < AppVersion(minimum)
+    }
 
     func club(_ id: Int?) -> Bootstrap.Club? {
         guard let id else { return nil }

@@ -37,7 +37,9 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if let entryId = appModel.entryId {
+            if appModel.updateRequired {
+                UpdateRequiredView()
+            } else if let entryId = appModel.entryId {
                 MainView(entryId: entryId)
             } else {
                 OnboardingFlow()
@@ -77,5 +79,29 @@ struct MainView: View {
         }
         // A new team gets fresh screens and models.
         .id(entryId)
+    }
+}
+
+/// Shown when this version is older than the server supports.
+struct UpdateRequiredView: View {
+    var body: some View {
+        VStack(spacing: ToolkitSpace.xl) {
+            Spacer()
+            Image("BrandMark")
+                .resizable()
+                .frame(width: 64, height: 64)
+                .accessibilityHidden(true)
+            Text("Please update FPLToolkit")
+                .font(.title.weight(.bold))
+                .foregroundStyle(ToolkitColor.primaryText)
+                .multilineTextAlignment(.center)
+            Text("This version can no longer read the latest data. Update from the App Store to carry on.")
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .multilineTextAlignment(.center)
+            Spacer()
+        }
+        .padding(ToolkitSpace.page)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ToolkitColor.canvas.ignoresSafeArea())
     }
 }

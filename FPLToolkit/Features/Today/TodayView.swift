@@ -86,8 +86,8 @@ struct TodayContent: View {
                 }
             }
 
-            if let freshness = loaded.meta.freshness, !freshness.isEmpty {
-                WhatWeCheckedSection(sources: freshness, savedAt: loaded.savedAt)
+            if !checkedSources.isEmpty {
+                WhatWeCheckedSection(sources: checkedSources, savedAt: loaded.savedAt)
                     .padding(.top, ToolkitSpace.sm)
             }
 
@@ -96,6 +96,12 @@ struct TodayContent: View {
                 .foregroundStyle(ToolkitColor.secondaryText)
                 .padding(.top, ToolkitSpace.sm)
         }
+    }
+
+    /// With no published squad there's no squad to have checked, whatever the label says.
+    private var checkedSources: [FreshnessSource] {
+        let all = loaded.meta.freshness ?? []
+        return today.snapshot == nil ? all.filter { $0.source != .picks } : all
     }
 
     private var footer: String {
