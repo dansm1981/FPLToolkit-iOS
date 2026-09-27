@@ -47,6 +47,11 @@ private struct DraftContent: View {
     @State private var confirmingDelete = false
     /// A line to confirm something done off-screen, e.g. a copy saved.
     @State private var notice: String?
+    @State private var showingNews = false
+    /// The player tapped in Team news, opened once the sheet has closed.
+    @State private var newsPlayer: Int?
+    @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr
+    @AppStorage(FixtureView.lensKey) private var fixtureLens = FixtureView.Lens.position
 
     private var actions: TileActions {
         TileActions(
@@ -84,6 +89,7 @@ private struct DraftContent: View {
                 if !draft.transfers.in.isEmpty || !draft.transfers.out.isEmpty {
                     WeekTransfers(draft: draft)
                 }
+                DraftTools(model: $fixtureModel, lens: $fixtureLens) { showingNews = true }
                 if typeSize.isAccessibilitySize {
                     SquadList(draft: draft, actions: actions)
                 } else {
@@ -96,7 +102,7 @@ private struct DraftContent: View {
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
                 ChipsSection(draft: draft, model: model)
-                Footnotes(draft: draft)
+                Footnotes(draft: draft, fixtures: FixtureView(model: fixtureModel, lens: fixtureLens))
             }
             .padding(.horizontal, ToolkitSpace.page)
             .padding(.bottom, ToolkitSpace.section)
@@ -135,6 +141,17 @@ private struct DraftContent: View {
         .sheet(isPresented: $editingMoney) {
             DraftMoneySheet(draft: draft, model: model)
         }
+        .sheet(isPresented: $showingNews, onDismiss: {
+            if let id = newsPlayer {
+                newsPlayer = nil
+                appModel.router.openPlayer(id)
+            }
+        }) {
+            DraftNewsSheet(gw: draft.gw, model: model) { newsPlayer = $0 }
+        }
+        // A new fixture model or lens: the server re-rates this gameweek.
+        .onChange(of: fixtureModel) { Task { await model.reload() } }
+        .onChange(of: fixtureLens) { Task { await model.reload() } }
         .confirmationDialog("Reset to your FPL squad?", isPresented: $confirmingReset, titleVisibility: .visible) {
             Button("Reset draft", role: .destructive) { Task { await model.apply(.reset) } }
         } message: {
@@ -635,7 +652,7 @@ struct PlannerTile: View {
                 for f in fixtures {
                     let name = appModel.club(f.opponentClubId)?.name ?? "opponent to be confirmed"
                     let venue = f.home.map { $0 ? "at home" : "away" } ?? ""
-                    let difficulty = f.xfdr.map { ", difficulty \($0.value.formatted(.number.precision(.fractionLength(1)))) out of 5" } ?? ""
+                    let difficulty = f.xfdr.map { ", difficulty \($0.display) out of 5" } ?? ""
                     parts.append("\(name) \(venue)\(difficulty)")
                 }
             }
@@ -804,6 +821,7 @@ private struct ChipsSection: View {
 
 private struct Footnotes: View {
     let draft: PlannerDraft
+    let fixtures: FixtureView
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
@@ -814,7 +832,7 @@ private struct Footnotes: View {
                 Text("Some purchase prices are estimates, so selling prices may be slightly out.")
             }
             if draft.fixtureStrip != nil {
-                Text("The strip under each player is the next six gameweeks' difficulty, from 1 (easiest) to 5 (hardest). An outlined week has two games.")
+                Text("The strip under each player is the next six gameweeks' difficulty (\(fixtures.summary)), from 1 (easiest) to 5 (hardest). An outlined week has two games.")
             }
             Text("Plans use today's prices and your squad's fixtures. There are no points forecasts.")
         }
@@ -831,6 +849,56 @@ extension Position {
         case .mid: "midfielder"
         case .fwd: "forward"
         case .unknown: "player"
+        }
+    }
+}
+
+/// The website's fixture switches (model and lens) and its Team news button, above the pitch.
+private struct DraftTools: View {
+    @Binding var model: FixtureView.Model
+    @Binding var lens: FixtureView.Lens
+    let onNews: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: ToolkitSpace.md) {
+                fixtureMenu
+                Spacer(minLength: 0)
+                newsButton
+            }
+            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+                fixtureMenu
+                newsButton
+            }
+        }
+    }
+
+    private var fixtureMenu: some View {
+        Menu {
+            Picker("Fixture model", selection: $model) {
+                ForEach(FixtureView.Model.allCases) { Text($0.label).tag($0) }
+            }
+            if model == .xfdr {
+                Picker("View", selection: $lens) {
+                    ForEach(FixtureView.Lens.allCases) { Text($0.label).tag($0) }
+                }
+            }
+        } label: {
+            Label(FixtureView(model: model, lens: lens).summary, systemImage: "slider.horizontal.3")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
+                .frame(minHeight: 44)
+        }
+        .accessibilityLabel("Fixture difficulty: \(FixtureView(model: model, lens: lens).summary)")
+        .accessibilityHint("Chooses FPL's difficulty or xFDR, and the xFDR view")
+    }
+
+    private var newsButton: some View {
+        Button(action: onNews) {
+            Label("Team news", systemImage: "newspaper")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
+                .frame(minHeight: 44)
         }
     }
 }

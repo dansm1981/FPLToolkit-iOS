@@ -15,18 +15,18 @@ struct PlannerRepository: Sendable {
     }
 
     func create(_ request: PlannerNewDraft) async throws -> PlannerDraft {
-        let fetched = try await session.send("POST", Self.base, body: request, as: PlannerDraft.self)
+        let fetched = try await session.send("POST", Self.base, query: Self.view, body: request, as: PlannerDraft.self)
         return saved(fetched).value
     }
 
     /// One edit; the answer is the draft for that gameweek, or `invalid_action` with the reason.
     func apply(_ action: PlannerAction, to id: String) async throws -> Loaded<PlannerDraft> {
-        let fetched = try await session.send("POST", "\(Self.base)/\(id)/actions", body: action, as: PlannerDraft.self)
+        let fetched = try await session.send("POST", "\(Self.base)/\(id)/actions", query: Self.view, body: action, as: PlannerDraft.self)
         return saved(fetched)
     }
 
     func update(_ id: String, _ patch: PlannerDraftPatch) async throws -> Loaded<PlannerDraft> {
-        let fetched = try await session.send("PATCH", "\(Self.base)/\(id)", body: patch, as: PlannerDraft.self)
+        let fetched = try await session.send("PATCH", "\(Self.base)/\(id)", query: Self.view, body: patch, as: PlannerDraft.self)
         return saved(fetched)
     }
 
@@ -35,8 +35,17 @@ struct PlannerRepository: Sendable {
     }
 
     func picker(_ id: String, query: [URLQueryItem]) async throws -> PlannerPicker {
-        try await session.send("GET", "\(Self.base)/\(id)/picker", query: query, as: PlannerPicker.self).envelope.data
+        try await session.send("GET", "\(Self.base)/\(id)/picker", query: query + Self.view, as: PlannerPicker.self).envelope.data
     }
+
+    /// Today's notes for the squad planned in a gameweek (the website's Team news drawer).
+    func news(_ id: String, gw: Int) async throws -> PlannerNews {
+        let query = [URLQueryItem(name: "gw", value: String(gw))] + Self.view
+        return try await session.send("GET", "\(Self.base)/\(id)/news", query: query, as: PlannerNews.self).envelope.data
+    }
+
+    /// The fixture model and lens chosen on this device, sent with every request.
+    fileprivate static var view: [URLQueryItem] { FixtureView.current.queryItems }
 
     /// Keeps the answer as that gameweek's saved copy.
     private func saved(_ fetched: Fetched<PlannerDraft>) -> Loaded<PlannerDraft> {
@@ -74,7 +83,7 @@ struct PlannerDraftEndpoint: LoadableEndpoint {
     }
 
     func fetch(bypassCache: Bool = false) async throws -> Loaded<PlannerDraft> {
-        let query = gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []
+        let query = (gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []) + FixtureView.current.queryItems
         let fetched = try await session.send("GET", "planner/drafts/\(id)", query: query, as: PlannerDraft.self)
         cache.write(fetched.raw, for: Self.cacheKey(id, gw: gw))
         if gw == nil { cache.write(fetched.raw, for: Self.cacheKey(id, gw: fetched.envelope.data.gw)) }
@@ -192,6 +201,16 @@ final class DraftModel {
 
     func load() async {
         if resource.isInitial { await resource.load() }
+    }
+
+    /// The same gameweek again, e.g. after the fixture model or lens changes.
+    func reload() async {
+        await resource.load(bypassCache: true)
+    }
+
+    /// Team news for the squad in the gameweek shown.
+    func news() async throws -> PlannerNews {
+        try await repository.news(id, gw: draft?.gw ?? resource.loaded?.value.gw ?? 1)
     }
 
     /// True while another gameweek loads; the current one stays on screen meanwhile.

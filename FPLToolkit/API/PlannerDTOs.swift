@@ -232,3 +232,12 @@ struct PlannerPicker: Decodable, Sendable {
     let bank: Double
     let outgoingSellingPrice: Double?
 }
+
+/// `GET /planner/drafts/{id}/news`: Today's notes for a draft's squad in one gameweek.
+struct PlannerNews: Decodable, Sendable {
+    let gw: Int
+    /// Attention first, then severity (Today's order).
+    let insights: [TeamInsight]
+    let players: [String: PlayerSummary]
+    func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
+}

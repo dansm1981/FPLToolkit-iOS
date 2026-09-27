@@ -273,7 +273,7 @@ private struct CandidateRow: View {
                 let opponent = appModel.club(f.opponentClubId)?.shortName ?? "TBC"
                 let venue = f.home.map { $0 ? "H" : "A" } ?? ""
                 var text = "\(opponent) (\(venue))"
-                if let x = f.xfdr { text += " \(x.value.formatted(.number.precision(.fractionLength(1))))" }
+                if let x = f.xfdr { text += " \(x.display)" }
                 parts.append(text)
             }
         }

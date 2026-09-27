@@ -141,7 +141,7 @@ struct PlayerSummary: Decodable, Sendable, Identifiable, Hashable {
 struct FixtureDifficulty: Decodable, Sendable, Hashable {
     struct XFDR: Decodable, Sendable, Hashable {
         enum Lens: String, FallbackDecodable {
-            case attack
+            case attack, match
             case cleanSheet = "clean_sheet"
             case unknown
             static let fallback = Self.unknown

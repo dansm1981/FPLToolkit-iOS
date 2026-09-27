@@ -89,6 +89,20 @@ struct PlannerTests {
         #expect(lines.last == "Planned with FPLToolkit: \(draft.shareUrl)")
     }
 
+    /// The website's fixture switches: xFDR by position until chosen, sent as the contract says.
+    @Test func fixtureView() {
+        let fresh = FixtureView()
+        #expect(fresh.summary == "xFDR · By position")
+        #expect(fresh.queryItems.map(\.description) == ["model=xfdr", "lens=position"])
+        let fpl = FixtureView(model: .fpl, lens: .cleanSheet)
+        #expect(fpl.summary == "FPL FDR")
+        #expect(fpl.queryItems.map(\.description) == ["model=fpl", "lens=clean_sheet"])
+        let json = #"[{"value":2.14,"lens":"match","source":"market","band":2},{"value":4,"lens":"attack","source":"fpl","band":4}]"#
+        let values = try? JSONDecoder().decode([FixtureDifficulty.XFDR].self, from: Data(json.utf8))
+        #expect(values?.map(\.display) == ["2.1", "4"])
+        #expect(values?.first?.lens == .match)
+    }
+
     @Test func afterATransfer() throws {
         let draft = try fixture("planner-draft-22615-transfer", as: PlannerDraft.self)
         #expect(draft.transfers.out == [290] && draft.transfers.in == [12])

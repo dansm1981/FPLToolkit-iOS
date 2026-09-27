@@ -178,6 +178,27 @@ final class ScreenAuditTests: XCTestCase {
         app.scrollViews.firstMatch.swipeUp(velocity: .slow)
         settle()
         check(app, "11b-planner-draft-bench", combinedTiles: true)
+
+        // Team news for the draft's squad (audited), then FPL's own difficulty and back.
+        app.scrollViews.firstMatch.swipeDown(velocity: .fast)
+        app.scrollViews.firstMatch.swipeDown(velocity: .fast)
+        let news = app.buttons["Team news"].firstMatch
+        waitFor(news, "Team news button")
+        news.tap()
+        let headline = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'GW' OR label BEGINSWITH 'No news'")).firstMatch
+        waitFor(headline, "Team news loaded", timeout: 40)
+        settle()
+        check(app, "16-draft-news")
+        app.buttons["Done"].firstMatch.tap()
+        let fixtures = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Fixture difficulty'")).firstMatch
+        waitFor(fixtures, "Fixture switch")
+        fixtures.tap()
+        app.buttons["FPL FDR"].firstMatch.tap()
+        waitFor(app.buttons["Fixture difficulty: FPL FDR"].firstMatch, "FPL model chosen")
+        fixtures.tap()
+        app.buttons["xFDR"].firstMatch.tap()
+        waitFor(app.buttons["Fixture difficulty: xFDR · By position"].firstMatch, "Back to xFDR")
+
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(firstDraft, "Drafts list")
         // Audit only once the draft has finished sliding away.
