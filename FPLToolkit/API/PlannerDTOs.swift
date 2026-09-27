@@ -241,3 +241,61 @@ struct PlannerNews: Decodable, Sendable {
     let players: [String: PlayerSummary]
     func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
 }
+
+/// `GET /planner/drafts/{id}/evolution`: the website's Squad Evolution grid.
+struct PlannerEvolution: Decodable, Sendable {
+    struct Week: Decodable, Sendable, Hashable, Identifiable {
+        let gw: Int
+        /// The suggested XI's formation, or "—" when no legal XI exists.
+        let formation: String
+        var id: Int { gw }
+    }
+    struct Group: Decodable, Sendable, Hashable, Identifiable {
+        let position: Position
+        let playerIds: [Int]
+        var id: Position { position }
+    }
+    struct Cell: Decodable, Sendable, Hashable {
+        let gw: Int
+        let inSquad: Bool
+        /// In that week's suggested XI.
+        let suggested: Bool
+        let blank: Bool
+        /// Average FPL difficulty that week.
+        let fdr: Double?
+        let band: Int?
+        let opponentClubId: Int?
+        let home: Bool?
+        let games: Int
+    }
+    let weeks: [Week]
+    let groups: [Group]
+    let cells: [String: [Cell]]
+    let players: [String: PlayerSummary]
+    func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
+    func cells(for id: Int) -> [Cell] { cells[String(id)] ?? [] }
+}
+
+/// `GET /planner/drafts/{id}/plan`: the website's Transfer & chip timeline.
+struct PlannerPlan: Decodable, Sendable {
+    struct Event: Decodable, Sendable, Hashable, Identifiable {
+        struct ChipPlayed: Decodable, Sendable, Hashable {
+            let key: String
+            let label: String
+        }
+        let gw: Int
+        let out: [Int]
+        let `in`: [Int]
+        let chips: [ChipPlayed]
+        var id: Int { gw }
+    }
+    struct Totals: Decodable, Sendable, Hashable {
+        let hits: Int
+        let hitPoints: Int
+    }
+    let events: [Event]
+    let ledger: [PlannerDraft.LedgerRow]
+    let totals: Totals
+    let players: [String: PlayerSummary]
+    func name(_ id: Int) -> String { players[String(id)]?.webName ?? "Player \(id)" }
+}

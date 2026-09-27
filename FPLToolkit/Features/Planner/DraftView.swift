@@ -89,7 +89,10 @@ private struct DraftContent: View {
                 if !draft.transfers.in.isEmpty || !draft.transfers.out.isEmpty {
                     WeekTransfers(draft: draft)
                 }
-                DraftTools(model: $fixtureModel, lens: $fixtureLens) { showingNews = true }
+                DraftTools(model: $fixtureModel, lens: $fixtureLens, draftModel: model,
+                           chipLabels: Dictionary(uniqueKeysWithValues: draft.chips.map { ($0.key, $0.label) })) {
+                    showingNews = true
+                }
                 if typeSize.isAccessibilitySize {
                     SquadList(draft: draft, actions: actions)
                 } else {
@@ -853,23 +856,61 @@ extension Position {
     }
 }
 
-/// The website's fixture switches (model and lens) and its Team news button, above the pitch.
+/// The website's fixture switches (model and lens), Team news, Squad evolution and the transfer
+/// timeline, above the pitch.
 private struct DraftTools: View {
     @Binding var model: FixtureView.Model
     @Binding var lens: FixtureView.Lens
+    let draftModel: DraftModel
+    let chipLabels: [String: String]
     let onNews: () -> Void
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: ToolkitSpace.md) {
-                fixtureMenu
-                Spacer(minLength: 0)
-                newsButton
+        VStack(alignment: .leading, spacing: 0) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: ToolkitSpace.md) {
+                    fixtureMenu
+                    Spacer(minLength: 0)
+                    newsButton
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    fixtureMenu
+                    newsButton
+                }
             }
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                fixtureMenu
-                newsButton
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: ToolkitSpace.md) {
+                    evolutionLink
+                    Spacer(minLength: 0)
+                    timelineLink
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    evolutionLink
+                    timelineLink
+                }
             }
+        }
+    }
+
+    private var evolutionLink: some View {
+        NavigationLink {
+            SquadEvolutionView(model: draftModel)
+        } label: {
+            Label("Squad evolution", systemImage: "square.grid.3x3")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
+                .frame(minHeight: 44)
+        }
+    }
+
+    private var timelineLink: some View {
+        NavigationLink {
+            DraftPlanView(model: draftModel, chipLabels: chipLabels)
+        } label: {
+            Label("Transfer timeline", systemImage: "calendar")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
+                .frame(minHeight: 44)
         }
     }
 

@@ -199,6 +199,19 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["xFDR"].firstMatch.tap()
         waitFor(app.buttons["Fixture difficulty: xFDR · By position"].firstMatch, "Back to xFDR")
 
+        // Squad evolution and the transfer timeline (both audited).
+        app.buttons["Squad evolution"].firstMatch.tap()
+        waitFor(app.staticTexts["Goalkeepers"].firstMatch, "Squad evolution grid", timeout: 40)
+        settle()
+        check(app, "17-squad-evolution", combinedTiles: true)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["Transfer timeline"].firstMatch.tap()
+        let timeline = app.staticTexts.matching(NSPredicate(format: "label == 'Timeline' OR label BEGINSWITH 'No changes yet'")).firstMatch
+        waitFor(timeline, "Transfer timeline", timeout: 40)
+        settle()
+        check(app, "18-transfer-timeline")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(firstDraft, "Drafts list")
         // Audit only once the draft has finished sliding away.

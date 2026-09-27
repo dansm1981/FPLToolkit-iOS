@@ -44,6 +44,17 @@ struct PlannerRepository: Sendable {
         return try await session.send("GET", "\(Self.base)/\(id)/news", query: query, as: PlannerNews.self).envelope.data
     }
 
+    /// The website's Squad Evolution grid from a gameweek.
+    func evolution(_ id: String, gw: Int) async throws -> PlannerEvolution {
+        let query = [URLQueryItem(name: "gw", value: String(gw))] + Self.view
+        return try await session.send("GET", "\(Self.base)/\(id)/evolution", query: query, as: PlannerEvolution.self).envelope.data
+    }
+
+    /// The website's Transfer & chip timeline.
+    func plan(_ id: String) async throws -> PlannerPlan {
+        try await session.send("GET", "\(Self.base)/\(id)/plan", query: Self.view, as: PlannerPlan.self).envelope.data
+    }
+
     /// The fixture model and lens chosen on this device, sent with every request.
     fileprivate static var view: [URLQueryItem] { FixtureView.current.queryItems }
 
@@ -206,6 +217,16 @@ final class DraftModel {
     /// The same gameweek again, e.g. after the fixture model or lens changes.
     func reload() async {
         await resource.load(bypassCache: true)
+    }
+
+    /// Squad Evolution from the gameweek shown.
+    func evolution() async throws -> PlannerEvolution {
+        try await repository.evolution(id, gw: draft?.gw ?? 1)
+    }
+
+    /// The Transfer & chip timeline.
+    func plan() async throws -> PlannerPlan {
+        try await repository.plan(id)
     }
 
     /// Team news for the squad in the gameweek shown.
