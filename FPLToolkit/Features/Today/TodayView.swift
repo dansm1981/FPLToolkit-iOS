@@ -5,6 +5,8 @@ struct TodayView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Today>?
+    /// The published squad (picks order, captaincy) for the squad strip.
+    @State private var team: Resource<Team>?
     @State private var showingAlertsPrimer = false
 
     var body: some View {
@@ -28,13 +30,18 @@ struct TodayView: View {
                                 loaded: loaded,
                                 isCurrent: resource.isCurrent,
                                 isRefreshing: resource.isRefreshing,
+                                squad: team?.loaded?.value,
                                 onSelectPlayer: { appModel.router.openPlayer($0) },
                                 onOfferAlerts: { showingAlertsPrimer = true })
                         }
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.bottom, ToolkitSpace.section)
                     }
-                    .refreshable { await resource.load(bypassCache: true) }
+                    .refreshable {
+                        async let squad: Void = team?.load(bypassCache: true) ?? ()
+                        await resource.load(bypassCache: true)
+                        await squad
+                    }
                 }
             }
         }
@@ -45,8 +52,12 @@ struct TodayView: View {
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.today(entryId: entryId))
+                let team = Resource(appModel.teamRepository.team(entryId: entryId))
                 self.resource = resource
+                self.team = team
+                async let squad: Void = team.load()
                 await resource.load()
+                await squad
             }
         }
     }
@@ -57,6 +68,8 @@ struct TodayContent: View {
     /// False while showing a saved copy or after a failed refresh: never claim "good shape" then.
     var isCurrent = true
     var isRefreshing = false
+    /// The published squad, for the strip; nil until loaded (the strip is simply left out).
+    var squad: Team?
     var onSelectPlayer: ((Int) -> Void)?
     var onOfferAlerts: (() -> Void)?
 
@@ -84,6 +97,10 @@ struct TodayContent: View {
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens the player")
                 }
+            }
+
+            if let squad, let snapshot = squad.snapshot {
+                SquadStrip(team: squad, snapshot: snapshot, onSelectPlayer: onSelectPlayer)
             }
 
             if !checkedSources.isEmpty {
