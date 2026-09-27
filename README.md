@@ -71,6 +71,8 @@ xcodebuild test -project FPLToolkit.xcodeproj -scheme FPLToolkitUITests \
 xcrun xcresulttool export attachments --path /tmp/audit.xcresult --output-path /tmp/audit-shots
 ```
 
+To try screens before their endpoints are deployed, run the backend branch locally and pass its address through `TEST_RUNNER_auditApiBaseURL` (for example `http://127.0.0.1:5199/api/mobile/v1/`). The Research test uses it; the others always use the live API.
+
 For App Store screenshots, run the same tests on the iPhone 17 Pro Max simulator (6.9", 1320 × 2868) after `xcrun simctl status_bar booted override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3`, with `-auditTeam <Team ID>` passed through `TEST_RUNNER_auditTeam`. See `scripts/app-store-screenshots.sh`.
 
 ## Push notifications

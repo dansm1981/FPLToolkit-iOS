@@ -48,6 +48,10 @@ final class ScreenAuditTests: XCTestCase {
     /// (even for white-on-surface text in plain view, and under the bars with no element to place).
     /// So contrast and element detection are skipped there; labels, hit areas, text sizes,
     /// clipping and traits are still audited. The tiles use the app's standard colour pairs.
+    /// The Research grids (ticker, rotation, congestion) are the same: each row is one element that
+    /// reads the whole row, and the cells' colour pairs were checked by hand (all 4.5:1 or better).
+    /// With the keyboard up, Apple's suggestion bar ("no description") and the search field's
+    /// "Clear text" button are system components too.
     private func check(_ app: XCUIApplication, _ name: String, sizesAndLists: Bool = true, combinedTiles: Bool = false) {
         screenshot(app, name)
         let tabBar = app.tabBars.firstMatch
@@ -80,6 +84,11 @@ final class ScreenAuditTests: XCTestCase {
                 if [.searchField, .textField].contains(element.elementType),
                    [.contrast, .textClipped].contains(issue.auditType) { return true }
                 if issue.auditType == .dynamicType && navBarFrames.contains(where: { $0.intersects(frame) }) { return true }
+                if !keyboardFrame.isNull && keyboardFrame.intersects(frame) { return true }
+                // The keyboard's suggestion strip sits just above the frame reported for the keyboard.
+                if !keyboardFrame.isNull && element.label.isEmpty
+                    && frame.minY >= keyboardFrame.minY - 60 && frame.maxY <= keyboardFrame.minY + 1 { return true }
+                if issue.auditType == .hitRegion && element.label == "Clear text" { return true }
                 // Say which element failed: the audit's own message doesn't.
                 let note = XCTAttachment(string: "\(issue.compactDescription) | type \(element.elementType.rawValue) '\(element.label)' \(frame)")
                 note.name = "AUDIT \(name)"
@@ -418,6 +427,60 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Remove league"].firstMatch.tap()
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: league)
         waitForExpectations(timeout: 30)
+    }
+
+    /// The Research tab. `auditApiBaseURL` points it at another server (a branch running locally
+    /// before its endpoints are deployed).
+    func test11Research() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let ticker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Fixture ticker'")).firstMatch
+        waitFor(ticker, "Research hub")
+        settle()
+        check(app, "32-research-hub", sizesAndLists: false)
+
+        ticker.tap()
+        let clubRow = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ', run total '")).firstMatch
+        waitFor(clubRow, "Fixture ticker", timeout: 60)
+        settle()
+        check(app, "33-research-ticker", combinedTiles: true)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Rotation planner'")).firstMatch.tap()
+        let add = app.buttons["Add player"].firstMatch
+        waitFor(add, "Rotation planner")
+        // Start from no players, so the run is the same each time.
+        while let remove = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Remove '")).allElementsBoundByIndex.first {
+            remove.tap()
+        }
+        for name in ["Cherki", "Schade"] {
+            add.tap()
+            let field = app.searchFields.firstMatch
+            waitFor(field, "Add player")
+            field.tap()
+            field.typeText(name)
+            let result = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+            waitFor(result, "\(name) in search", timeout: 30)
+            if name == "Schade" {
+                settle()
+                check(app, "34-research-add-player", sizesAndLists: false)
+            }
+            result.tap()
+        }
+        let figure = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] 'Rotation FDR'")).firstMatch
+        waitFor(figure, "Rotation", timeout: 60)
+        settle()
+        check(app, "35-research-rotation", combinedTiles: true)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Congestion'")).firstMatch.tap()
+        let club = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ' in the window'")).firstMatch
+        waitFor(club, "Congestion", timeout: 60)
+        settle()
+        check(app, "36-research-congestion", combinedTiles: true)
     }
 
     func test07ExploreWithoutATeam() {

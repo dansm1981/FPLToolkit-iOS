@@ -22,18 +22,24 @@ struct CachedEndpoint<T: Decodable & Sendable>: LoadableEndpoint {
     let client: APIClient
     let cache: ResponseCache
     let path: String
+    /// Saved separately for each set of options.
+    var query: [URLQueryItem] = []
+
+    private var cacheKey: String {
+        query.isEmpty ? path : path + "?" + query.map { "\($0.name)=\($0.value ?? "")" }.joined(separator: "&")
+    }
 
     func fetch(bypassCache: Bool = false) async throws -> Loaded<T> {
-        let fetched = try await client.get(path, as: T.self, bypassCache: bypassCache)
-        cache.write(fetched.raw, for: path)
+        let fetched = try await client.get(path, query: query, as: T.self, bypassCache: bypassCache)
+        cache.write(fetched.raw, for: cacheKey)
         return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
     }
 
     func cached() -> Loaded<T>? {
-        guard let (data, savedAt) = cache.read(path) else { return nil }
+        guard let (data, savedAt) = cache.read(cacheKey) else { return nil }
         guard let envelope = try? APIClient.decode(Envelope<T>.self, from: data) else {
             // Saved by an older build with a different shape: drop it.
-            cache.remove(path)
+            cache.remove(cacheKey)
             return nil
         }
         return Loaded(value: envelope.data, meta: envelope.meta, savedAt: savedAt)
@@ -85,5 +91,42 @@ struct PlayerRepository: Sendable {
         } catch {
             return true
         }
+    }
+}
+
+/// The Research tab (contract §15): public data, saved offline like Team and Today.
+struct ResearchRepository: Sendable {
+    let client: APIClient
+    let cache: ResponseCache
+
+    func ticker(horizon: Int, fuzzy: Bool, sort: ResearchTicker.SortKey, hardestFirst: Bool,
+                clubs: [Int]?, view: FixtureView) -> CachedEndpoint<ResearchTicker> {
+        var query = view.queryItems + [
+            URLQueryItem(name: "horizon", value: String(horizon)),
+            URLQueryItem(name: "sort", value: sort.queryValue),
+            URLQueryItem(name: "dir", value: hardestFirst ? "desc" : "asc"),
+        ]
+        if fuzzy { query.append(URLQueryItem(name: "fuzzy", value: "1")) }
+        if let clubs, !clubs.isEmpty {
+            query.append(URLQueryItem(name: "clubs", value: clubs.sorted().map(String.init).joined(separator: ",")))
+        }
+        return .init(client: client, cache: cache, path: "research/fixtures", query: query)
+    }
+
+    func rotation(playerIds: [Int], horizon: Int, start: Int?, starters: Int, view: FixtureView) -> CachedEndpoint<ResearchRotation> {
+        var query = view.queryItems + [
+            URLQueryItem(name: "players", value: playerIds.map(String.init).joined(separator: ",")),
+            URLQueryItem(name: "horizon", value: String(horizon)),
+            URLQueryItem(name: "starters", value: String(starters)),
+        ]
+        if let start { query.append(URLQueryItem(name: "start", value: String(start))) }
+        return .init(client: client, cache: cache, path: "research/rotation", query: query)
+    }
+
+    func congestion(days: Int, shortestRestFirst: Bool) -> CachedEndpoint<ResearchCongestion> {
+        .init(client: client, cache: cache, path: "research/congestion", query: [
+            URLQueryItem(name: "days", value: String(days)),
+            URLQueryItem(name: "sort", value: shortestRestFirst ? "rest" : "matches"),
+        ])
     }
 }

@@ -85,6 +85,12 @@ struct MainView: View {
             .tag(AppTab.planner)
 
             NavigationStack {
+                ResearchView(entryId: entryId)
+            }
+            .tabItem { Label("Research", systemImage: "chart.bar.xaxis") }
+            .tag(AppTab.research)
+
+            NavigationStack {
                 WatchView(entryId: entryId)
             }
             .tabItem { Label("Watch", systemImage: "bell") }

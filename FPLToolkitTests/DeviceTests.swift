@@ -114,6 +114,7 @@ struct DeepLinkTests {
     @Test(arguments: [
         ("fpltoolkit://today", DeepLink.today),
         ("fpltoolkit://team", DeepLink.team),
+        ("fpltoolkit://research", DeepLink.research),
         ("fpltoolkit://watch", DeepLink.watch),
         ("fpltoolkit://watch/alerts", DeepLink.alerts),
         ("fpltoolkit://player/154", DeepLink.player(154)),
