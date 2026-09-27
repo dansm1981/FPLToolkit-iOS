@@ -22,6 +22,26 @@ struct PlannerTests {
         for pick in draft.starting + draft.bench { #expect(draft.player(pick.playerId) != nil) }
     }
 
+    /// The six-week strip (happy-backend-pal#13): a single, a double coloured by its harder game, a blank.
+    @Test func fixtureStrip() throws {
+        let json = """
+        [{"gw":7,"band":2,"fixtures":[{"gw":7,"blank":false,"opponentClubId":2,"home":true,"kickoff":null,
+           "xfdr":{"value":2.14,"lens":"attack","source":"market","band":2}}]},
+         {"gw":8,"band":5,"fixtures":[
+           {"gw":8,"blank":false,"opponentClubId":3,"home":true,"kickoff":null,"xfdr":{"value":2,"lens":"attack","source":"fpl","band":2}},
+           {"gw":8,"blank":false,"opponentClubId":4,"home":false,"kickoff":null,"xfdr":{"value":5,"lens":"attack","source":"fpl","band":5}}]},
+         {"gw":9,"band":null,"fixtures":[{"gw":9,"blank":true,"opponentClubId":null,"home":null,"kickoff":null,"xfdr":null}]}]
+        """
+        let weeks = try JSONDecoder().decode([PlannerDraft.StripWeek].self, from: Data(json.utf8))
+        #expect(weeks.map(\.band) == [2, 5, nil])
+        #expect(weeks.map(\.isDouble) == [false, true, false])
+        #expect(weeks[0].fixtures[0].xfdr?.band == 2)
+        #expect(FixtureStrip.spoken(weeks) == "Next 3 gameweeks, difficulty out of 5: GW7 2, GW8 5, two games, GW9 no game")
+        // Servers before #13 send no strip: the draft still reads, with nothing to draw.
+        let older = try fixture("planner-draft-22615", as: PlannerDraft.self)
+        #expect(older.fixtureStrip == nil && older.strip(for: older.starting[0].playerId).isEmpty)
+    }
+
     @Test func afterATransfer() throws {
         let draft = try fixture("planner-draft-22615-transfer", as: PlannerDraft.self)
         #expect(draft.transfers.out == [290] && draft.transfers.in == [12])

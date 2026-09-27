@@ -168,3 +168,22 @@ extension View {
             .toolbarBackground(ToolkitColor.canvas, for: .navigationBar)
     }
 }
+
+/// Fixture difficulty colours: the website's five bands (its `--fdr-1` … `--fdr-5`), the same in
+/// light and dark. The number drawn on them is dark on the two greens and white on the rest, which
+/// keeps every band above 4.5:1 (the website's white on dark green is 3.2:1).
+enum DifficultyColor {
+    static func fill(_ band: Int) -> Color {
+        switch band {
+        case ...1: Color(red: 0.000, green: 0.634, blue: 0.308)
+        case 2: Color(red: 0.251, green: 0.802, blue: 0.427)
+        case 3: Color(red: 0.412, green: 0.450, blue: 0.491)
+        case 4: Color(red: 0.831, green: 0.047, blue: 0.103)
+        default: Color(red: 0.565, green: 0.000, blue: 0.000)
+        }
+    }
+
+    static func text(_ band: Int) -> Color {
+        band <= 2 ? Color(red: 0.011, green: 0.057, blue: 0.020) : .white
+    }
+}

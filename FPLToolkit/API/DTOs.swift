@@ -154,6 +154,8 @@ struct FixtureDifficulty: Decodable, Sendable, Hashable {
         let value: Double
         let lens: Lens
         let source: Source
+        /// The website's colour band, 1 (easiest) to 5 (hardest). Absent from older servers.
+        let band: Int?
     }
 
     let gw: Int

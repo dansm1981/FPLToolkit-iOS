@@ -457,6 +457,7 @@ struct PlannerTile: View {
                         Text(fixtureText)
                             .font(.subheadline)
                             .foregroundStyle(ToolkitColor.secondaryText)
+                        FixtureStrip(weeks: strip, roomy: true)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
@@ -477,6 +478,7 @@ struct PlannerTile: View {
                         .foregroundStyle(ToolkitColor.primaryText)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
+                    FixtureStrip(weeks: strip)
                 }
                 .frame(maxWidth: max(76, circle + 24))
                 .frame(minHeight: 44)
@@ -523,6 +525,7 @@ struct PlannerTile: View {
     }
 
     private var fixtures: [FixtureDifficulty] { draft.fixtures(for: pick.playerId) }
+    private var strip: [PlannerDraft.StripWeek] { draft.strip(for: pick.playerId) }
 
     private var fixtureText: String {
         guard let first = fixtures.first else { return "" }
@@ -555,6 +558,7 @@ struct PlannerTile: View {
                 }
             }
         }
+        if let upcoming = FixtureStrip.spoken(strip) { parts.append(upcoming) }
         return parts.joined(separator: ", ")
     }
 }
@@ -690,6 +694,9 @@ private struct Footnotes: View {
             }
             if draft.estimatedPurchasePrices {
                 Text("Some purchase prices are estimates, so selling prices may be slightly out.")
+            }
+            if draft.fixtureStrip != nil {
+                Text("The strip under each player is the next six gameweeks' difficulty, from 1 (easiest) to 5 (hardest). An outlined week has two games.")
             }
             Text("Plans use today's prices and your squad's fixtures. There are no points forecasts.")
         }

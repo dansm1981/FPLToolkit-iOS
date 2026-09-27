@@ -99,6 +99,16 @@ struct PlannerDraft: Decodable, Sendable {
         let bench: [String: Int]
     }
 
+    /// One gameweek of a player's fixture strip (the website's pitch card).
+    struct StripWeek: Decodable, Sendable, Hashable {
+        let gw: Int
+        /// The hardest fixture's band, 1 (easiest) to 5 (hardest); nil in a blank.
+        let band: Int?
+        /// Two in a double, a blank marker in a blank.
+        let fixtures: [FixtureDifficulty]
+        var isDouble: Bool { fixtures.filter { !$0.blank }.count > 1 }
+    }
+
     let id: String
     let name: String
     let source: PlannerDraftSummary.Source
@@ -115,6 +125,8 @@ struct PlannerDraft: Decodable, Sendable {
     let emptySlots: EmptySlots
     let players: [String: PlayerSummary]
     let fixtures: [String: [FixtureDifficulty]]
+    /// The next six gameweeks per player; absent from servers before happy-backend-pal#13.
+    let fixtureStrip: [String: [StripWeek]]?
     let money: Money
     let check: Check
     let chips: [Chip]
@@ -125,6 +137,7 @@ struct PlannerDraft: Decodable, Sendable {
 
     func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
     func fixtures(for id: Int) -> [FixtureDifficulty] { fixtures[String(id)] ?? [] }
+    func strip(for id: Int) -> [StripWeek] { fixtureStrip?[String(id)] ?? [] }
     var isEditable: Bool { gw >= firstEditableGw }
     static let pitchOrder: [Position] = [.gk, .def, .mid, .fwd]
     /// The starters grouped into pitch rows, goalkeeper first, with the empty places to show.
