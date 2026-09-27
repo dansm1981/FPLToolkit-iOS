@@ -33,6 +33,9 @@ enum APIErrorCode: String, FallbackDecodable {
     case rateLimited = "rate_limited"
     case upstreamUnavailable = "upstream_unavailable"
     case dataUnavailable = "data_unavailable"
+    /// Device routes: the device isn't registered, or its secret is wrong.
+    case unauthorized
+    case invalidRequest = "invalid_request"
     case `internal`
     case unknown
     static let fallback = Self.unknown
@@ -365,6 +368,81 @@ struct PlayerSheet: Decodable, Sendable {
     let elite: Elite?
     let defcon: Defcon?
     let links: Links
+}
+
+// MARK: - Device and watch (§6, as built in Step 1)
+
+struct DeviceRegistration: Decodable, Sendable {
+    let deviceId: String
+    let deviceSecret: String
+}
+
+struct DeviceInfo: Decodable, Sendable {
+    let id: String
+    let entryId: Int?
+    let apnsRegistered: Bool
+    let timeZone: String?
+    let appVersion: String?
+}
+
+/// `PUT /devices/me`. Only the fields that are set are sent.
+struct DeviceUpdate: Encodable, Sendable {
+    var entryId: Int??
+    var timeZone: String?
+    var appVersion: String?
+
+    private enum CodingKeys: String, CodingKey { case entryId, timeZone, appVersion }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        if let entryId {
+            // .some(nil) sends an explicit null: "no team".
+            if let id = entryId { try c.encode(id, forKey: .entryId) } else { try c.encodeNil(forKey: .entryId) }
+        }
+        try c.encodeIfPresent(timeZone, forKey: .timeZone)
+        try c.encodeIfPresent(appVersion, forKey: .appVersion)
+    }
+}
+
+/// The effective watch set is computed by the server: manual ∪ (autoTrackSquad ? squad : ∅).
+struct Watch: Decodable, Sendable {
+    struct Squad: Decodable, Sendable {
+        let entryId: Int
+        let gw: Int
+        let freeHitGw: Int?
+        let playerIds: [Int]
+    }
+    struct Item: Decodable, Sendable, Hashable, Identifiable {
+        enum Reason: String, FallbackDecodable {
+            case squad, manual
+            case unknown
+            static let fallback = Self.unknown
+        }
+        let playerId: Int
+        let reasons: [Reason]
+        var id: Int { playerId }
+    }
+
+    let autoTrackSquad: Bool
+    let manual: [Int]
+    let squad: Squad?
+    let effective: [Item]
+    let players: [String: PlayerSummary]
+
+    func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
+    func isManual(_ playerId: Int) -> Bool { manual.contains(playerId) }
+    func reasons(for playerId: Int) -> [Item.Reason] {
+        effective.first { $0.playerId == playerId }?.reasons ?? []
+    }
+}
+
+struct WatchUpdate: Encodable, Sendable {
+    let manual: [Int]
+    let autoTrackSquad: Bool?
+}
+
+struct DeleteResult: Decodable, Sendable {
+    let deleted: Bool
 }
 
 // MARK: - Fallback enums

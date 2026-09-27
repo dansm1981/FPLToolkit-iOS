@@ -6,6 +6,9 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     let entryId: Int
     @State private var confirmingChange = false
+    @State private var confirmingReset = false
+    @State private var resetError: ErrorCopy?
+    @State private var resetting = false
 
     var body: some View {
         NavigationStack {
@@ -16,6 +19,7 @@ struct SettingsView: View {
                         confirmingChange = true
                     }
                 }
+                .listRowBackground(ToolkitColor.surface)
 
                 Section {
                     Text(appModel.disclosure)
@@ -27,12 +31,29 @@ struct SettingsView: View {
                 } header: {
                     Text("About")
                 }
+                .listRowBackground(ToolkitColor.surface)
+
+                Section {
+                    Button(role: .destructive) {
+                        confirmingReset = true
+                    } label: {
+                        HStack {
+                            Text("Reset app data")
+                            if resetting { Spacer(); ProgressView() }
+                        }
+                    }
+                    .disabled(resetting)
+                } footer: {
+                    Text(resetError.map { "Couldn't reset: \($0.message)" }
+                         ?? "Deletes this device's watch list and settings from our server, and everything saved on this phone.")
+                }
+                .listRowBackground(ToolkitColor.surface)
 
                 Section {
                     LabeledContent("Version", value: Self.version)
                 }
+                .listRowBackground(ToolkitColor.surface)
             }
-            .listRowBackground(ToolkitColor.surface)
             .scrollContentBackground(.hidden)
             .background(ToolkitColor.canvas.ignoresSafeArea())
             .navigationTitle("Settings")
@@ -49,6 +70,22 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("You'll go back to the start and can enter a different Team ID.")
+            }
+            .confirmationDialog("Reset app data?", isPresented: $confirmingReset, titleVisibility: .visible) {
+                Button("Reset app data", role: .destructive) {
+                    Task {
+                        resetting = true
+                        defer { resetting = false }
+                        do {
+                            try await appModel.resetAppData()
+                            dismiss()
+                        } catch let error as APIError {
+                            resetError = ErrorCopy(error)
+                        } catch {}
+                    }
+                }
+            } message: {
+                Text("This removes your team, your watch list and your settings. It can't be undone.")
             }
         }
     }

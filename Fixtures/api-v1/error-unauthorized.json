@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "This device isn't registered. Register it again.",
+    "retryable": false
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T07:47:21.306Z"
+  }
+}

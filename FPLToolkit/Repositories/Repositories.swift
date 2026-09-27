@@ -10,8 +10,15 @@ struct Loaded<T: Sendable>: Sendable {
     var isFromCache: Bool { savedAt != nil }
 }
 
+/// Something a screen can load: network first, with the last saved copy available.
+protocol LoadableEndpoint<Value>: Sendable {
+    associatedtype Value: Decodable & Sendable
+    func fetch(bypassCache: Bool) async throws -> Loaded<Value>
+    func cached() -> Loaded<Value>?
+}
+
 /// Network first; every good response is saved. `cached` returns the last saved copy, if any.
-struct CachedEndpoint<T: Decodable & Sendable>: Sendable {
+struct CachedEndpoint<T: Decodable & Sendable>: LoadableEndpoint {
     let client: APIClient
     let cache: ResponseCache
     let path: String

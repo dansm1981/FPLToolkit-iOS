@@ -5,7 +5,6 @@ struct TeamView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Team>?
-    @State private var selectedPlayer: PlayerRef?
 
     var body: some View {
         Group {
@@ -24,7 +23,7 @@ struct TeamView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
-                            TeamContent(loaded: loaded) { selectedPlayer = PlayerRef(id: $0) }
+                            TeamContent(loaded: loaded) { appModel.router.openPlayer($0) }
                         }
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.bottom, ToolkitSpace.section)
@@ -36,9 +35,6 @@ struct TeamView: View {
         .toolkitScreen()
         .navigationTitle("My team")
         .settingsButton(entryId: entryId)
-        .sheet(item: $selectedPlayer) { ref in
-            PlayerSheetView(playerId: ref.id, knownName: resource?.loaded?.value.player(ref.id)?.webName)
-        }
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.team(entryId: entryId))

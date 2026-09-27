@@ -72,6 +72,10 @@ struct PlayerSheetContent: View {
         VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
             header
 
+            if let store = appModel.watch {
+                WatchToggle(store: store, playerId: player.id, playerName: player.webName)
+            }
+
             if showsAvailability {
                 AvailabilitySection(availability: player.availability,
                                     newsAddedAt: sheet.player.newsAddedAt,
@@ -147,6 +151,73 @@ struct PlayerSheetContent: View {
 }
 
 // MARK: - Sections
+
+/// Watch / stop watching this player (a manual watch, kept even if he leaves your squad).
+private struct WatchToggle: View {
+    let store: WatchStore
+    let playerId: Int
+    let playerName: String
+
+    var body: some View {
+        let watch = store.watch
+        let isManual = watch?.isManual(playerId) ?? false
+        let inSquad = watch.map { $0.autoTrackSquad && ($0.squad?.playerIds.contains(playerId) ?? false) } ?? false
+        Button {
+            Task { await store.setWatched(!isManual, playerId: playerId) }
+        } label: {
+            HStack(spacing: ToolkitSpace.md) {
+                Image(systemName: isManual ? "pin.fill" : (inSquad ? "bell.fill" : "bell"))
+                    .font(.title3)
+                    .foregroundStyle(isManual ? ToolkitColor.onAccent : ToolkitColor.link)
+                    .frame(width: 44, height: 44)
+                    .background(isManual ? ToolkitColor.accent : ToolkitColor.raised, in: Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title(isManual: isManual, inSquad: inSquad))
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Text(caption(isManual: isManual, inSquad: inSquad))
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                if store.isUpdating { ProgressView() }
+            }
+            .padding(ToolkitSpace.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
+        }
+        .buttonStyle(.plain)
+        .disabled(watch == nil || store.isUpdating)
+        .accessibilityLabel(title(isManual: isManual, inSquad: inSquad))
+        .accessibilityHint(caption(isManual: isManual, inSquad: inSquad))
+        .task { await store.loadIfNeeded() }
+        if let error = store.updateError {
+            Text("Couldn't change this: \(error.title.prefix(1).lowercased() + error.title.dropFirst()).")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.error)
+        }
+    }
+
+    private func title(isManual: Bool, inSquad: Bool) -> String {
+        switch (isManual, inSquad) {
+        case (true, true): "Kept if you sell him"
+        case (true, false): "Watching"
+        case (false, true): "Watching: in your squad"
+        case (false, false): "Watch \(playerName)"
+        }
+    }
+
+    private func caption(isManual: Bool, inSquad: Bool) -> String {
+        switch (isManual, inSquad) {
+        case (true, true): "Stays on your watch list after he leaves your squad. Tap to unpin."
+        case (true, false): "On your watch list. Tap to stop watching."
+        case (false, true): "Tap to keep watching him even after you sell him."
+        case (false, false): "Add him to your watch list."
+        }
+    }
+}
 
 private struct AvailabilitySection: View {
     let availability: PlayerSummary.Availability

@@ -1,0 +1,29 @@
+{
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "entryId": 71191,
+    "apnsRegistered": false,
+    "apnsEnvironment": null,
+    "timeZone": "Europe/London",
+    "appVersion": "1.0.0 (1)",
+    "prefs": {
+      "notifications": {
+        "price": true,
+        "availability": true,
+        "deadline24h": false,
+        "deadline3h": true
+      },
+      "quietHours": {
+        "start": "22:30",
+        "end": "07:30"
+      },
+      "autoTrackSquad": true
+    },
+    "createdAt": "2026-09-27T07:47:15.854976+00:00"
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T07:47:16.417Z",
+    "freshness": []
+  }
+}

@@ -10,10 +10,14 @@ final class AppModel {
 
     private(set) var entryId: Int?
     private(set) var bootstrap: Loaded<Bootstrap>?
+    /// The watch list for the connected team's device; nil when no team is connected.
+    private(set) var watch: WatchStore?
+    let router = Router()
 
     let bootstrapRepository: BootstrapRepository
     let teamRepository: TeamRepository
     let playerRepository: PlayerRepository
+    let deviceSession: DeviceSession
 
     private let cache: ResponseCache
     private let defaults: UserDefaults
@@ -23,23 +27,46 @@ final class AppModel {
         self.bootstrapRepository = BootstrapRepository(client: client, cache: cache)
         self.teamRepository = TeamRepository(client: client, cache: cache)
         self.playerRepository = PlayerRepository(client: client, cache: cache)
+        self.deviceSession = DeviceSession(client: client)
         self.cache = cache
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)
         self.entryId = stored > 0 ? stored : nil
         self.bootstrap = bootstrapRepository.bootstrap.cached()
+        if entryId != nil { makeWatchStore() }
     }
 
     func connect(entryId: Int) {
         defaults.set(entryId, forKey: Keys.entryId)
         self.entryId = entryId
+        router.selectedTab = .today
+        makeWatchStore()
+        Task { await syncDevice() }
     }
 
-    /// Forgets the team and everything saved for it.
+    /// Forgets the team and everything saved for it. Manual watches stay with the device.
     func disconnect() {
         defaults.removeObject(forKey: Keys.entryId)
         cache.removeAll()
         entryId = nil
+        watch = nil
+        Task { await deviceSession.sync(entryId: nil) }
+    }
+
+    /// "Reset app data": deletes this device on the server (watch list included), then everything local.
+    func resetAppData() async throws {
+        try await deviceSession.reset()
+        disconnect()
+    }
+
+    /// Keeps the server told which team this device follows. Cheap when nothing changed.
+    func syncDevice() async {
+        guard let entryId else { return }
+        await deviceSession.sync(entryId: entryId)
+    }
+
+    private func makeWatchStore() {
+        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache))
     }
 
     /// Called at launch and on foreground (§3.1). A failure keeps whatever we had.

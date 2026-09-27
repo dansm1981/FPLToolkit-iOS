@@ -17,9 +17,9 @@ final class Resource<T: Decodable & Sendable> {
     /// Why the latest refresh failed while older data stays on screen.
     private(set) var refreshError: ErrorCopy?
 
-    private let endpoint: CachedEndpoint<T>
+    private let endpoint: any LoadableEndpoint<T>
 
-    init(_ endpoint: CachedEndpoint<T>) {
+    init(_ endpoint: some LoadableEndpoint<T>) {
         self.endpoint = endpoint
     }
 
@@ -53,6 +53,12 @@ final class Resource<T: Decodable & Sendable> {
         } catch {
             // Cancelled (the view went away): leave the state as it was.
         }
+    }
+
+    /// Shows a response obtained another way (e.g. the result of a PUT).
+    func replace(with loaded: Loaded<T>) {
+        phase = .loaded(loaded)
+        refreshError = nil
     }
 
     func retry() async {

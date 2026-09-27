@@ -20,17 +20,37 @@ struct APIClient: Sendable {
 
     /// Fetches `path` and decodes the v1 envelope. Returns the raw bytes too, for the offline cache.
     func get<T: Decodable & Sendable>(_ path: String, as type: T.Type, bypassCache: Bool = false) async throws -> Fetched<T> {
+        try await send("GET", path, as: type, bypassCache: bypassCache)
+    }
+
+    /// Any v1 request. `authorization` is the device header for /devices/me routes;
+    /// `body` is sent as JSON.
+    func send<T: Decodable & Sendable>(
+        _ method: String,
+        _ path: String,
+        body: (any Encodable & Sendable)? = nil,
+        authorization: String? = nil,
+        as type: T.Type,
+        bypassCache: Bool = false
+    ) async throws -> Fetched<T> {
         var request = URLRequest(url: baseURL.appending(path: path))
+        request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 15
-        if bypassCache { request.cachePolicy = .reloadIgnoringLocalCacheData }
+        if bypassCache || authorization != nil { request.cachePolicy = .reloadIgnoringLocalCacheData }
+        if let authorization { request.setValue(authorization, forHTTPHeaderField: "Authorization") }
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(body)
+        }
 
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: request)
         } catch let error as URLError {
+            if error.code == .cancelled { throw CancellationError() }
             throw APIError(urlError: error)
         } catch is CancellationError {
             throw CancellationError()

@@ -41,10 +41,13 @@ Open `FPLToolkit.xcodeproj`. The groups are synchronised with the folders, so a 
 FPLToolkit/
   App/            FPLToolkitApp (root, tabs), AppModel (connected team, bootstrap, repositories)
   API/            APIClient (the only networking), DTOs (v1 contract, fallback enums)
-  Repositories/   CachedEndpoint + ResponseCache (last good response on disk), Resource (screen loader)
+  Device/         DeviceSession (register once, secret in the Keychain, sync team/time zone, reset)
+  Repositories/   CachedEndpoint + ResponseCache (last good response on disk), Resource (screen loader),
+                  WatchRepository + WatchStore (the device's watch list, shared by Watch and player sheets)
   Design/         ToolkitTheme (colours from Assets.xcassets, spacing, buttons, pills)
   Components/     InsightCard, "What we checked", skeletons, saved-data banner, error state
-  Features/       Onboarding (S01–S03, S24), Today (S05/S06/S23/S27), Team (S07), Player (S08/S09/S29), Settings
+  Features/       Onboarding (S01–S03, S24), Today (S05/S06/S23/S27), Team (S07), Player (S08/S09/S29),
+                  Watch (S10), Settings (disclosure, change team, reset app data)
   Support/        Formatting, Team ID input parsing, error copy, preview fixtures
 FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (Swift Testing)
 ```
@@ -54,6 +57,7 @@ FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (S
 - **Debug launch arguments** (Xcode: Product → Scheme → Edit Scheme → Run → Arguments):
   - `-entryId 71191` opens straight on Today for that team;
   - `-apiBaseURL http://127.0.0.1:9/` points at an unreachable host to see the offline states. Debug builds only.
+- **Deep links:** `fpltoolkit://today`, `team`, `watch`, `watch/alerts`, `player/{id}` (contract §5). Try one in the simulator with `xcrun simctl openurl booted fpltoolkit://player/154`.
 
 ## Fixtures
 
@@ -70,5 +74,8 @@ FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (S
 | `today-no-published-team.json` | `status: "unverified"` for a team with no squad yet |
 | `player-palmer.json`, `player-haaland.json` | full player sheets: insights, 5 fixtures, market, price prediction, elite, DEFCON |
 | `error-invalid-entry.json`, `error-entry-not-found.json` | the v1 error shape (`invalid_entry_id`, `entry_not_found`) |
+| `device-register.json`, `device-me.json` | `POST /devices` and `PUT /devices/me` (captured 27 Sep; ID and secret scrubbed, device deleted) |
+| `watch-squad.json`, `watch-squad-and-manual.json`, `watch-squad-off.json` | the watch list following the squad; with manual picks (one also in the squad); with the squad switched off (manual watch kept) |
+| `alerts-empty.json`, `error-unauthorized.json` | the alert history before pushes exist; a wrong device secret (401) |
 
 Every response carries `meta.freshness`. Show it; never present stale or unknown data as fresh.

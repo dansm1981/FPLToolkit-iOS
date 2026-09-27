@@ -1,0 +1,99 @@
+{
+  "data": {
+    "autoTrackSquad": false,
+    "manual": [
+      154
+    ],
+    "squad": {
+      "entryId": 71191,
+      "gw": 5,
+      "freeHitGw": null,
+      "playerIds": [
+        1,
+        8,
+        449,
+        334,
+        31,
+        154,
+        368,
+        40,
+        236,
+        464,
+        411,
+        623,
+        124,
+        165,
+        586
+      ]
+    },
+    "effective": [
+      {
+        "playerId": 154,
+        "reasons": [
+          "manual"
+        ]
+      }
+    ],
+    "players": {
+      "154": {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T07:47:20.318Z",
+    "freshness": [
+      {
+        "source": "picks",
+        "asOf": "2026-09-26T21:45:44.897Z",
+        "expectedMaxAgeSeconds": null,
+        "state": "fresh",
+        "label": "Published squad for GW5"
+      },
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-27T03:22:48.021Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "availability",
+        "asOf": "2026-09-27T07:45:00.132Z",
+        "expectedMaxAgeSeconds": 3600,
+        "state": "fresh",
+        "label": "Checked every 15 minutes"
+      },
+      {
+        "source": "price_predictions",
+        "asOf": "2026-09-27T07:30:01.011Z",
+        "expectedMaxAgeSeconds": 3600,
+        "state": "fresh"
+      }
+    ]
+  }
+}

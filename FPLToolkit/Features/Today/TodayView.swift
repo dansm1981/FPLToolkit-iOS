@@ -5,7 +5,6 @@ struct TodayView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Today>?
-    @State private var selectedPlayer: PlayerRef?
 
     var body: some View {
         Group {
@@ -25,7 +24,7 @@ struct TodayView: View {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
                             TodayContent(loaded: loaded, isCurrent: resource.isCurrent, isRefreshing: resource.isRefreshing) {
-                                selectedPlayer = PlayerRef(id: $0)
+                                appModel.router.openPlayer($0)
                             }
                         }
                         .padding(.horizontal, ToolkitSpace.page)
@@ -38,9 +37,6 @@ struct TodayView: View {
         .toolkitScreen()
         .navigationTitle("Today")
         .settingsButton(entryId: entryId)
-        .sheet(item: $selectedPlayer) { ref in
-            PlayerSheetView(playerId: ref.id, knownName: resource?.loaded?.value.player(ref.id)?.webName)
-        }
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.today(entryId: entryId))
