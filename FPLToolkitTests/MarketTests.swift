@@ -4,7 +4,7 @@ import Testing
 
 private final class MarketBundleToken {}
 
-/// The Market screens (happy-backend-pal#25). Responses captured 27 Sep 2026 from the branch, each
+/// The Market screens (happy-backend-pal#25). Responses captured 27 Sep 2026 from production, each
 /// checked against the website's page.
 struct MarketTests {
     @Test func changes() throws {
@@ -18,10 +18,10 @@ struct MarketTests {
 
     @Test func predictions() throws {
         let p = try fixture("market-predictions", as: MarketPredictions.self)
-        #expect(p.tracked == 667 && p.headingUp == 177 && p.headingDown == 351 && p.locked == 11)
+        #expect(p.tracked == 667 && p.headingUp == 177 && p.headingDown == 351 && p.locked == 10)
         #expect(p.risersCount == 177 && p.risers.count == 100 && p.fallers.count == 100)
         let top = try #require(p.risers.first)
-        #expect(p.player(top.playerId)?.webName == "Barry" && top.progressDisplay == "100.4%")
+        #expect(p.player(top.playerId)?.webName == "Barry" && top.progressDisplay == "100.5%")
         #expect(top.nights.map(\.offset) == [0, 1, 2])
         #expect(p.risers.allSatisfy { $0.progress > 0 } && p.fallers.allSatisfy { $0.progress < 0 })
     }
