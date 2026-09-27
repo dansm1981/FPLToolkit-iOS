@@ -37,6 +37,17 @@ enum Format {
         "£" + value.formatted(.number.precision(.fractionLength(1))) + "m"
     }
 
+    /// "+1.2%": a signed percentage with up to one decimal place.
+    static func signedPercent(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)).sign(strategy: .always())) + "%"
+    }
+
+    /// "+1.2%" read aloud as "up 1.2 percent".
+    static func spokenPercent(_ value: Double) -> String {
+        let magnitude = abs(value).formatted(.number.precision(.fractionLength(0...1)))
+        return value == 0 ? "0 percent" : "\(value > 0 ? "up" : "down") \(magnitude) percent"
+    }
+
     /// A supporting value with its unit: "75%", "0 min", "-314,391".
     static func supporting(_ value: SupportingValue) -> String {
         switch value.unit {

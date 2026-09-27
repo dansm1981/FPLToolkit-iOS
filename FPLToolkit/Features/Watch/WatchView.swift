@@ -366,6 +366,7 @@ private struct WatchContent: View {
 
 private struct WatchRow: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     let item: Watch.Item
     let player: PlayerSummary?
     let isManual: Bool
@@ -382,6 +383,33 @@ private struct WatchRow: View {
                 Text(details)
                     .font(.subheadline)
                     .foregroundStyle(ToolkitColor.secondaryText)
+                if let insight = item.topInsight {
+                    // The note's wording and tone come from the API; an icon as well as colour.
+                    Label {
+                        Text(insight.summary)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: insight.symbol)
+                            .foregroundStyle(insight.tone.foreground)
+                    }
+                    .font(.subheadline)
+                    .padding(.top, ToolkitSpace.xs)
+                }
+                if !trends.isEmpty {
+                    let layout = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+                        : AnyLayout(HStackLayout(spacing: ToolkitSpace.md))
+                    layout {
+                        ForEach(trends, id: \.text) { Text($0.text) }
+                    }
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .padding(.top, 2)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(trends.map(\.spoken).joined(separator: ". "))
+                }
             }
             Spacer(minLength: ToolkitSpace.sm)
             if isManual && item.reasons.contains(.squad) {
@@ -397,6 +425,23 @@ private struct WatchRow: View {
         .frame(minHeight: 44)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+    }
+
+    /// Price progress (tonight's projection when there is one, as on the player page) and ownership trend.
+    private var trends: [(text: String, spoken: String)] {
+        var parts: [(String, String)] = []
+        if let price = item.price, let value = price.tonightPct ?? price.progressPct {
+            let side = value < 0 ? "fall" : "rise"
+            let when = price.tonightPct != nil ? "tonight" : "now"
+            parts.append(("Price \(Format.signedPercent(value)) \(when)",
+                          "Price \(when): \(Format.spokenPercent(value)) of the \(side) threshold"))
+        }
+        if let change = item.ownershipChange7d {
+            let points = change.formatted(.number.precision(.fractionLength(1)).sign(strategy: .always()))
+            let spoken = change == 0 ? "no change" : "\(change > 0 ? "up" : "down") \(abs(change).formatted(.number.precision(.fractionLength(1)))) points"
+            parts.append(("Owned \(points) pts (7d)", "Ownership over 7 days: \(spoken)"))
+        }
+        return parts
     }
 
     private var details: String {

@@ -491,8 +491,20 @@ struct Watch: Decodable, Sendable {
             case unknown
             static let fallback = Self.unknown
         }
+        /// Price-change progress, the same numbers as the player page (§12.6).
+        struct Price: Decodable, Sendable, Hashable {
+            let progressPct: Double?
+            let tonightPct: Double?
+        }
         let playerId: Int
         let reasons: [Reason]
+        // Added in §12.6; absent from older servers, so all optional.
+        let needsAttention: Bool?
+        /// The player's most important current note, by the same rules as Today.
+        let topInsight: TeamInsight?
+        let price: Price?
+        /// Percentage-point change in ownership over 7 days; nil when there isn't enough history.
+        let ownershipChange7d: Double?
         var id: Int { playerId }
     }
 

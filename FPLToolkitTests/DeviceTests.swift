@@ -41,6 +41,23 @@ struct DeviceTests {
         #expect(watch.reasons(for: 154) == [.manual])
     }
 
+    /// §12.6 rows: assembled from captured responses until a live one is saved after the server change ships.
+    @Test func watchRowsCarryNoteThenPriceThenOwnership() throws {
+        let watch = try fixture("watch-rows-example", as: Watch.self)
+        let first = try #require(watch.effective.first)
+        #expect(first.needsAttention == true)
+        #expect(first.topInsight?.tone == .bad)
+        #expect(first.price == .init(progressPct: -41, tonightPct: -63.5))
+        #expect(first.ownershipChange7d == -2.4)
+        #expect(watch.effective[1].price?.tonightPct == nil)
+        #expect(watch.effective.last?.topInsight == nil)
+    }
+
+    @Test func olderWatchResponsesStillDecode() throws {
+        let watch = try fixture("watch-squad", as: Watch.self)
+        #expect(watch.effective.allSatisfy { $0.needsAttention == nil && $0.topInsight == nil && $0.price == nil })
+    }
+
     @Test func emptyAlerts() throws {
         struct Alerts: Decodable, Sendable { let alerts: [String] }
         #expect(try fixture("alerts-empty", as: Alerts.self).alerts.isEmpty)

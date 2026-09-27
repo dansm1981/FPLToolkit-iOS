@@ -472,15 +472,8 @@ private struct PriceSection: View {
         return parts.joined(separator: ". ")
     }
 
-    /// "+1.2%" read aloud as "up 1.2 percent".
-    static func spoken(_ value: Double) -> String {
-        let magnitude = abs(value).formatted(.number.precision(.fractionLength(0...1)))
-        return value == 0 ? "0 percent" : "\(value > 0 ? "up" : "down") \(magnitude) percent"
-    }
-
-    static func signed(_ value: Double) -> String {
-        value.formatted(.number.precision(.fractionLength(0...1)).sign(strategy: .always())) + "%"
-    }
+    static func spoken(_ value: Double) -> String { Format.spokenPercent(value) }
+    static func signed(_ value: Double) -> String { Format.signedPercent(value) }
 }
 
 /// Progress towards ±100 with a marker at the threshold. Presentation only: no rule is applied.
