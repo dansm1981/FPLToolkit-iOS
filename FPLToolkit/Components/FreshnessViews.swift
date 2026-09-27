@@ -3,13 +3,23 @@ import SwiftUI
 /// "What we checked": every source the response used, with its age and state (meta.freshness).
 struct WhatWeCheckedSection: View {
     let sources: [FreshnessSource]
+    /// Set when these results are a saved copy: states were true when saved, not necessarily now.
+    var savedAt: Date?
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            SectionLabel(text: "What we checked")
+            HStack(alignment: .firstTextBaseline) {
+                SectionLabel(text: "What we checked")
+                if let savedAt {
+                    Spacer()
+                    Text("Saved \(Format.deadline(savedAt))")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.warning)
+                }
+            }
             VStack(spacing: 0) {
                 ForEach(Array(sources.enumerated()), id: \.offset) { index, source in
-                    FreshnessRow(source: source)
+                    FreshnessRow(source: source, isSaved: savedAt != nil)
                     if index < sources.count - 1 {
                         Divider().overlay(ToolkitColor.border)
                     }
@@ -21,6 +31,7 @@ struct WhatWeCheckedSection: View {
 
 struct FreshnessRow: View {
     let source: FreshnessSource
+    var isSaved = false
 
     var body: some View {
         HStack(alignment: .center, spacing: ToolkitSpace.md) {
@@ -65,7 +76,7 @@ struct FreshnessRow: View {
 
     private var stateText: String {
         switch source.state {
-        case .fresh: "Up to date"
+        case .fresh: isSaved ? "Checked" : "Up to date"
         case .stale: "Out of date"
         case .unknown: "Unknown"
         }

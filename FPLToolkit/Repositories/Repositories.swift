@@ -10,34 +10,54 @@ struct Loaded<T: Sendable>: Sendable {
     var isFromCache: Bool { savedAt != nil }
 }
 
-struct BootstrapRepository: Sendable {
+/// Network first; every good response is saved. `cached` returns the last saved copy, if any.
+struct CachedEndpoint<T: Decodable & Sendable>: Sendable {
     let client: APIClient
+    let cache: ResponseCache
+    let path: String
 
-    func load(bypassCache: Bool = false) async throws -> Loaded<Bootstrap> {
-        let fetched = try await client.get("bootstrap", as: Bootstrap.self, bypassCache: bypassCache)
+    func fetch(bypassCache: Bool = false) async throws -> Loaded<T> {
+        let fetched = try await client.get(path, as: T.self, bypassCache: bypassCache)
+        cache.write(fetched.raw, for: path)
         return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
     }
+
+    func cached() -> Loaded<T>? {
+        guard let (data, savedAt) = cache.read(path) else { return nil }
+        guard let envelope = try? APIClient.decode(Envelope<T>.self, from: data) else {
+            // Saved by an older build with a different shape: drop it.
+            cache.remove(path)
+            return nil
+        }
+        return Loaded(value: envelope.data, meta: envelope.meta, savedAt: savedAt)
+    }
+}
+
+struct BootstrapRepository: Sendable {
+    let client: APIClient
+    let cache: ResponseCache
+
+    var bootstrap: CachedEndpoint<Bootstrap> { .init(client: client, cache: cache, path: "bootstrap") }
 }
 
 struct TeamRepository: Sendable {
     let client: APIClient
+    let cache: ResponseCache
 
-    func team(entryId: Int, bypassCache: Bool = false) async throws -> Loaded<Team> {
-        let fetched = try await client.get("team/\(entryId)", as: Team.self, bypassCache: bypassCache)
-        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    func team(entryId: Int) -> CachedEndpoint<Team> {
+        .init(client: client, cache: cache, path: "team/\(entryId)")
     }
 
-    func today(entryId: Int, bypassCache: Bool = false) async throws -> Loaded<Today> {
-        let fetched = try await client.get("team/\(entryId)/today", as: Today.self, bypassCache: bypassCache)
-        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    func today(entryId: Int) -> CachedEndpoint<Today> {
+        .init(client: client, cache: cache, path: "team/\(entryId)/today")
     }
 }
 
 struct PlayerRepository: Sendable {
     let client: APIClient
+    let cache: ResponseCache
 
-    func player(id: Int, bypassCache: Bool = false) async throws -> Loaded<PlayerSheet> {
-        let fetched = try await client.get("players/\(id)", as: PlayerSheet.self, bypassCache: bypassCache)
-        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    func player(id: Int) -> CachedEndpoint<PlayerSheet> {
+        .init(client: client, cache: cache, path: "players/\(id)")
     }
 }

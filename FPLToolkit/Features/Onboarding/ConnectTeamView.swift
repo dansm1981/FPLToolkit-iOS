@@ -29,8 +29,8 @@ final class ConnectModel {
         do {
             // The team gives the squad and captain; today gives the attention count.
             // Today failing on its own doesn't block onboarding.
-            async let team = repository.team(entryId: entryId)
-            async let today = try? repository.today(entryId: entryId)
+            async let team = repository.team(entryId: entryId).fetch()
+            async let today = try? repository.today(entryId: entryId).fetch()
             found = FoundTeam(entryId: entryId, team: try await team.value, today: await today?.value)
             phase = .idle
         } catch let error as APIError {

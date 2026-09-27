@@ -15,16 +15,19 @@ final class AppModel {
     let teamRepository: TeamRepository
     let playerRepository: PlayerRepository
 
+    private let cache: ResponseCache
     private let defaults: UserDefaults
     private enum Keys { static let entryId = "entryId" }
 
-    init(client: APIClient = .production, defaults: UserDefaults = .standard) {
-        self.bootstrapRepository = BootstrapRepository(client: client)
-        self.teamRepository = TeamRepository(client: client)
-        self.playerRepository = PlayerRepository(client: client)
+    init(client: APIClient = .configured, cache: ResponseCache = .shared, defaults: UserDefaults = .standard) {
+        self.bootstrapRepository = BootstrapRepository(client: client, cache: cache)
+        self.teamRepository = TeamRepository(client: client, cache: cache)
+        self.playerRepository = PlayerRepository(client: client, cache: cache)
+        self.cache = cache
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)
         self.entryId = stored > 0 ? stored : nil
+        self.bootstrap = bootstrapRepository.bootstrap.cached()
     }
 
     func connect(entryId: Int) {
@@ -32,14 +35,16 @@ final class AppModel {
         self.entryId = entryId
     }
 
+    /// Forgets the team and everything saved for it.
     func disconnect() {
         defaults.removeObject(forKey: Keys.entryId)
+        cache.removeAll()
         entryId = nil
     }
 
     /// Called at launch and on foreground (§3.1). A failure keeps whatever we had.
     func refreshBootstrap() async {
-        if let loaded = try? await bootstrapRepository.load() {
+        if let loaded = try? await bootstrapRepository.bootstrap.fetch() {
             bootstrap = loaded
         }
     }

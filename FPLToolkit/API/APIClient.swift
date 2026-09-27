@@ -4,6 +4,17 @@ import Foundation
 struct APIClient: Sendable {
     static let production = APIClient(baseURL: URL(string: "https://www.fpltoolkit.co.uk/api/mobile/v1/")!)
 
+    /// Production, except in debug builds launched with `-apiBaseURL <url>` (e.g. an unreachable
+    /// host to check the offline states).
+    static var configured: APIClient {
+        #if DEBUG
+        if let override = UserDefaults.standard.string(forKey: "apiBaseURL"), let url = URL(string: override) {
+            return APIClient(baseURL: url)
+        }
+        #endif
+        return .production
+    }
+
     let baseURL: URL
     var session: URLSession = .shared
 

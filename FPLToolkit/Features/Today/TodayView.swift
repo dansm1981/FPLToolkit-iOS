@@ -1,28 +1,36 @@
 import SwiftUI
 
-/// S05 (attention), S06 (clear), S22 (light) and the unverified state.
+/// S05 (attention), S06 (clear), S22 (light), S23 (offline), S27 (loading) and the unverified state.
 struct TodayView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
-    @State private var model: TodayModel?
+    @State private var resource: Resource<Today>?
     @State private var showingSettings = false
 
     var body: some View {
         Group {
-            switch model?.phase {
+            switch resource?.phase {
             case .loading?, nil:
-                LoadingStateView(message: "Checking your squad…")
+                ScrollView {
+                    SkeletonCards(caption: "Loading your latest checks…")
+                        .padding(.horizontal, ToolkitSpace.page)
+                }
             case .failed(let copy)?:
                 ErrorStateView(copy: copy) {
-                    Task { await model?.retry() }
+                    Task { await resource?.retry() }
                 }
             case .loaded(let loaded)?:
-                ScrollView {
-                    TodayContent(loaded: loaded, refreshError: model?.refreshError)
+                if let resource {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
+                            SavedDataBanner(resource: resource)
+                            TodayContent(loaded: loaded, isCurrent: resource.isCurrent, isRefreshing: resource.isRefreshing)
+                        }
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.bottom, ToolkitSpace.section)
+                    }
+                    .refreshable { await resource.load(bypassCache: true) }
                 }
-                .refreshable { await model?.load(bypassCache: true) }
             }
         }
         .toolkitScreen()
@@ -42,10 +50,10 @@ struct TodayView: View {
             SettingsView(entryId: entryId)
         }
         .task {
-            if model == nil {
-                let model = TodayModel(entryId: entryId, repository: appModel.teamRepository)
-                self.model = model
-                await model.load()
+            if resource == nil {
+                let resource = Resource(appModel.teamRepository.today(entryId: entryId))
+                self.resource = resource
+                await resource.load()
             }
         }
     }
@@ -53,7 +61,9 @@ struct TodayView: View {
 
 struct TodayContent: View {
     let loaded: Loaded<Today>
-    let refreshError: ErrorCopy?
+    /// False while showing a saved copy or after a failed refresh: never claim "good shape" then.
+    var isCurrent = true
+    var isRefreshing = false
 
     private var today: Today { loaded.value }
 
@@ -63,11 +73,7 @@ struct TodayContent: View {
                 DeadlineLine(next: next)
             }
 
-            if let refreshError {
-                RefreshFailedBanner(copy: refreshError, generatedAt: loaded.meta.generatedAt)
-            }
-
-            StatusCard(today: today)
+            StatusCard(today: today, isCurrent: isCurrent, isRefreshing: isRefreshing)
 
             if today.status == .attention {
                 ForEach(today.attentionInsights) { insight in
@@ -76,7 +82,7 @@ struct TodayContent: View {
             }
 
             if let freshness = loaded.meta.freshness, !freshness.isEmpty {
-                WhatWeCheckedSection(sources: freshness)
+                WhatWeCheckedSection(sources: freshness, savedAt: loaded.savedAt)
                     .padding(.top, ToolkitSpace.sm)
             }
 
@@ -116,11 +122,21 @@ struct DeadlineLine: View {
 
 struct StatusCard: View {
     let today: Today
+    var isCurrent = true
+    var isRefreshing = false
 
     var body: some View {
         ToolkitCard {
             VStack(alignment: .leading, spacing: ToolkitSpace.md) {
                 switch today.status {
+                case .clear where !isCurrent:
+                    // A saved "clear" is not a current all-clear (S23).
+                    statusIcon(isRefreshing ? "arrow.clockwise" : "wifi.slash", ToolkitColor.warning, ToolkitColor.warningFill)
+                    Text(isRefreshing ? "Checking for changes…" : "Latest checks unavailable")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Text("Nothing needed attention when these results were saved, but we can't confirm new injuries or price changes until we reconnect.")
+                        .foregroundStyle(ToolkitColor.secondaryText)
                 case .attention:
                     Text(today.attentionCount == 1 ? "1 thing to review" : "\(today.attentionCount) things to review")
                         .font(.title2.weight(.bold))
@@ -175,33 +191,11 @@ struct StatusCard: View {
     }
 }
 
-struct RefreshFailedBanner: View {
-    let copy: ErrorCopy
-    let generatedAt: Date
-
-    var body: some View {
-        Label {
-            Text("Couldn't refresh: \(copy.title.lowercasedFirst). Showing results from \(Format.deadline(generatedAt)).")
-        } icon: {
-            Image(systemName: "wifi.exclamationmark")
-        }
-        .font(.footnote)
-        .foregroundStyle(ToolkitColor.warning)
-        .padding(ToolkitSpace.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ToolkitColor.warningFill, in: RoundedRectangle(cornerRadius: ToolkitRadius.pill))
-    }
-}
-
-private extension String {
-    var lowercasedFirst: String { prefix(1).lowercased() + dropFirst() }
-}
-
 #if DEBUG
 #Preview("Attention") {
     NavigationStack {
         ScrollView {
-            TodayContent(loaded: PreviewFixtures.load("today-3612045-attention", as: Today.self), refreshError: nil)
+            TodayContent(loaded: PreviewFixtures.load("today-3612045-attention", as: Today.self))
                 .padding(.horizontal, ToolkitSpace.page)
         }
         .toolkitScreen()
@@ -212,7 +206,18 @@ private extension String {
 #Preview("Clear") {
     NavigationStack {
         ScrollView {
-            TodayContent(loaded: PreviewFixtures.load("today-71191", as: Today.self), refreshError: nil)
+            TodayContent(loaded: PreviewFixtures.load("today-71191", as: Today.self))
+                .padding(.horizontal, ToolkitSpace.page)
+        }
+        .toolkitScreen()
+        .navigationTitle("Today")
+    }
+}
+
+#Preview("Saved clear, offline") {
+    NavigationStack {
+        ScrollView {
+            TodayContent(loaded: PreviewFixtures.load("today-71191", as: Today.self), isCurrent: false)
                 .padding(.horizontal, ToolkitSpace.page)
         }
         .toolkitScreen()
@@ -223,7 +228,7 @@ private extension String {
 #Preview("No published team") {
     NavigationStack {
         ScrollView {
-            TodayContent(loaded: PreviewFixtures.load("today-no-published-team", as: Today.self), refreshError: .init(.offline))
+            TodayContent(loaded: PreviewFixtures.load("today-no-published-team", as: Today.self))
                 .padding(.horizontal, ToolkitSpace.page)
         }
         .toolkitScreen()
