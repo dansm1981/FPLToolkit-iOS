@@ -23,8 +23,10 @@ final class WatchStore {
 
     var watch: Watch? { resource.loaded?.value }
 
+    /// Loads once, and again if the last load was cut off and left only the saved copy on screen.
     func loadIfNeeded() async {
-        guard case .loading = resource.phase else { return }
+        let interrupted = resource.loaded?.isFromCache == true && !resource.isRefreshing && resource.refreshError == nil
+        guard resource.isInitial || interrupted else { return }
         await prepare()
         await resource.load()
     }

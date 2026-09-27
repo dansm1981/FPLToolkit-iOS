@@ -114,7 +114,7 @@ final class ScreenAuditTests: XCTestCase {
         app.tabBars.buttons["Watch"].tap()
         let follow = app.switches.firstMatch
         waitFor(follow, "Watch")
-        // The switch is inactive while a saved list refreshes; capture the live state.
+        // The switch is inactive while a saved list refreshes; it must become active (live data).
         expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: follow)
         waitForExpectations(timeout: 20)
         check(app, "06-watch", sizesAndLists: false)

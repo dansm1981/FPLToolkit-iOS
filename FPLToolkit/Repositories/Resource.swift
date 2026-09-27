@@ -23,6 +23,12 @@ final class Resource<T: Decodable & Sendable> {
         self.endpoint = endpoint
     }
 
+    /// Nothing loaded or attempted yet.
+    var isInitial: Bool {
+        if case .loading = phase { return !isRefreshing }
+        return false
+    }
+
     var loaded: Loaded<T>? {
         if case .loaded(let loaded) = phase { return loaded }
         return nil

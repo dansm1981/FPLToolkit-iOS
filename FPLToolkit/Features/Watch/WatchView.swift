@@ -19,6 +19,9 @@ struct WatchView: View {
                 }
             }
         }
+        // The search field is added once search is known to be live, which swaps the view inside
+        // this modifier; tasks attached after it keep running through that swap.
+        .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
         .task { await appModel.watch?.loadIfNeeded() }
         .task {
             if search == nil {
@@ -27,7 +30,6 @@ struct WatchView: View {
             }
         }
         .task(id: query) { await search?.run(query) }
-        .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
         .navigationDestination(isPresented: Binding(
             get: { appModel.router.showingAlerts && appModel.alerts != nil },
             set: { appModel.router.showingAlerts = $0 }
