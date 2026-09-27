@@ -28,16 +28,6 @@ struct DraftView: View {
         .toolkitScreen()
         .navigationTitle(model.draft?.name ?? "Draft")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if let draft = model.draft, let url = URL(string: draft.shareUrl) {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ShareLink(item: url, subject: Text(draft.name), message: Text("My FPL plan")) {
-                        Image(systemName: "square.and.arrow.up")
-                            .accessibilityLabel("Share this plan")
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -46,9 +36,17 @@ private struct DraftContent: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let draft: PlannerDraft
     let model: DraftModel
+    @Environment(\.dismiss) private var dismiss
     /// The player whose menu is open.
     @State private var menuFor: PlannerDraft.Pick?
     @State private var pickerSlot: PickerSlot?
+    @State private var renaming = false
+    @State private var newName = ""
+    @State private var editingMoney = false
+    @State private var confirmingReset = false
+    @State private var confirmingDelete = false
+    /// A line to confirm something done off-screen, e.g. a copy saved.
+    @State private var notice: String?
 
     private var actions: TileActions {
         TileActions(
@@ -71,6 +69,11 @@ private struct DraftContent: View {
                 if let error = model.actionError {
                     ErrorBanner(copy: error)
                 }
+                if let notice {
+                    Label(notice, systemImage: "checkmark.circle")
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.positive)
+                }
                 if let from = model.swapFrom {
                     SwapBanner(name: draft.player(from)?.webName ?? "this player") { model.swapFrom = nil }
                 }
@@ -92,7 +95,7 @@ private struct DraftContent: View {
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
-                ChipsSection(draft: draft)
+                ChipsSection(draft: draft, model: model)
                 Footnotes(draft: draft)
             }
             .padding(.horizontal, ToolkitSpace.page)
@@ -100,11 +103,49 @@ private struct DraftContent: View {
         }
         .refreshable { await model.resource.load(bypassCache: true) }
         .toolbar {
-            if model.isApplying {
-                ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if model.isApplying {
                     ProgressView().accessibilityLabel("Saving")
                 }
+                if draft.isEditable {
+                    Button { Task { await model.undo() } } label: {
+                        Label("Undo", systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(!model.canUndo || model.isApplying)
+                    Button { Task { await model.redo() } } label: {
+                        Label("Redo", systemImage: "arrow.uturn.forward")
+                    }
+                    .disabled(!model.canRedo || model.isApplying)
+                }
+                Menu { draftMenu } label: {
+                    Label("Draft options", systemImage: "ellipsis")
+                }
             }
+        }
+        .alert("Rename draft", isPresented: $renaming) {
+            TextField("Name", text: $newName)
+            Button("Save") {
+                let name = newName.trimmingCharacters(in: .whitespaces)
+                if !name.isEmpty, name != draft.name {
+                    Task { await model.update(PlannerDraftPatch(name: name)) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $editingMoney) {
+            DraftMoneySheet(draft: draft, model: model)
+        }
+        .confirmationDialog("Reset to your FPL squad?", isPresented: $confirmingReset, titleVisibility: .visible) {
+            Button("Reset draft", role: .destructive) { Task { await model.apply(.reset) } }
+        } message: {
+            Text("The draft goes back to the squad imported from FPL, and every planned week is cleared.")
+        }
+        .confirmationDialog("Delete \u{201C}\(draft.name)\u{201D}?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete draft", role: .destructive) {
+                Task { if await model.delete() { dismiss() } }
+            }
+        } message: {
+            Text("This can't be undone.")
         }
         .confirmationDialog(
             menuFor.flatMap { draft.player($0.playerId)?.webName } ?? "Player",
@@ -116,6 +157,48 @@ private struct DraftContent: View {
         }
         .sheet(item: $pickerSlot) { slot in
             PlannerPickerView(draft: draft, slot: slot, model: model)
+        }
+    }
+
+    /// The website's draft toolbar as a menu: share, rename, budget, duplicate, reset, delete.
+    @ViewBuilder
+    private var draftMenu: some View {
+        if let url = URL(string: draft.shareUrl) {
+            ShareLink(item: url, subject: Text(draft.name), message: Text("My FPL plan")) {
+                Label("Share link", systemImage: "link")
+            }
+        }
+        ShareLink(item: DraftShareText.make(draft), subject: Text(draft.name)) {
+            Label("Share as text", systemImage: "text.alignleft")
+        }
+        Divider()
+        Button {
+            newName = draft.name
+            renaming = true
+        } label: {
+            Label("Rename…", systemImage: "pencil")
+        }
+        Button { editingMoney = true } label: {
+            Label("Budget and free transfers…", systemImage: "sterlingsign.circle")
+        }
+        Button {
+            Task {
+                notice = nil
+                if let copy = await model.duplicate() {
+                    notice = "Saved a copy: \u{201C}\(copy.name)\u{201D}. It's in your drafts."
+                }
+            }
+        } label: {
+            Label("Duplicate", systemImage: "plus.square.on.square")
+        }
+        if draft.entryId != nil {
+            Button { confirmingReset = true } label: {
+                Label("Reset to FPL squad…", systemImage: "arrow.counterclockwise")
+            }
+        }
+        Divider()
+        Button(role: .destructive) { confirmingDelete = true } label: {
+            Label("Delete draft…", systemImage: "trash")
         }
     }
 
@@ -294,8 +377,7 @@ private struct MoneySummary: View {
     }
 
     private var freeTransfers: String {
-        if let row = draft.ledger.first(where: { $0.gw == draft.gw }) { return "\(row.freeTransfers)" }
-        return draft.gw >= draft.firstEditableGw ? "\(draft.freeTransfers.starting)" : "–"
+        draft.freeTransfersThisWeek.map(String.init) ?? "–"
     }
 
     private func stat(_ label: String, _ value: String, tint: Color = ToolkitColor.primaryText) -> some View {
@@ -632,35 +714,71 @@ private struct SquadList: View {
 
 private struct ChipsSection: View {
     let draft: PlannerDraft
+    let model: DraftModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
             SectionLabel(text: "Chips")
             ForEach(draft.chips) { chip in
-                HStack(spacing: ToolkitSpace.md) {
-                    Image(systemName: symbol(chip.state))
-                        .foregroundStyle(tint(chip.state))
-                        .frame(width: 24)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(chip.label)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        Text(status(chip))
-                            .font(.footnote)
-                            .foregroundStyle(ToolkitColor.secondaryText)
+                if let verb = verb(chip) {
+                    Button {
+                        Task { await model.apply(.chip(chip.key, gw: draft.gw)) }
+                    } label: {
+                        row(chip, verb: verb)
                     }
-                    Spacer(minLength: 0)
+                    .buttonStyle(.plain)
+                    .disabled(model.isApplying)
+                    .accessibilityHint(chip.state == .active
+                                       ? "Cancels \(chip.label) in GW\(draft.gw)"
+                                       : "Plays \(chip.label) in GW\(draft.gw)")
+                } else {
+                    row(chip, verb: nil)
                 }
-                .padding(.vertical, 2)
-                .accessibilityElement(children: .combine)
             }
         }
     }
 
+    /// "Play" or "Cancel" when the chip can change this week; nil when it can't.
+    private func verb(_ chip: PlannerDraft.Chip) -> String? {
+        guard draft.isEditable else { return nil }
+        switch chip.state {
+        case .available: return "Play"
+        case .active: return "Cancel"
+        default: return nil
+        }
+    }
+
+    private func row(_ chip: PlannerDraft.Chip, verb: String?) -> some View {
+        HStack(spacing: ToolkitSpace.md) {
+            Image(systemName: symbol(chip.state))
+                .foregroundStyle(tint(chip.state))
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(chip.label)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+                Text(status(chip))
+                    .font(.footnote)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: ToolkitSpace.sm)
+            if let verb {
+                Text(verb)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.link)
+            }
+        }
+        .padding(.vertical, 2)
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
     private func status(_ chip: PlannerDraft.Chip) -> String {
         switch chip.state {
-        case .active: "Played this week"
+        case .active: "Playing in GW\(draft.gw)"
         case .available: chip.window.map { "Available (GW\($0.start)–\($0.end))" } ?? "Available"
         default: chip.note ?? ""
         }

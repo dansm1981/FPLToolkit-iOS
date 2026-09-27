@@ -215,17 +215,57 @@ final class ScreenAuditTests: XCTestCase {
 
         let squadOfOne = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '1 of 15 players'")).firstMatch
         waitFor(squadOfOne, "The pick on the draft", timeout: 40)
+        let empty = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '0 of 15 players'")).firstMatch
+
+        // Undo takes the pick back off; redo puts it back.
+        app.buttons["Undo"].firstMatch.tap()
+        waitFor(empty, "Undo", timeout: 40)
+        app.buttons["Redo"].firstMatch.tap()
+        waitFor(squadOfOne, "Redo", timeout: 40)
+
         let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
         waitFor(tile, "\(name) on the pitch")
         tile.tap()
         app.buttons["Remove from squad"].firstMatch.tap()
-        let empty = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '0 of 15 players'")).firstMatch
         waitFor(empty, "Squad empty again", timeout: 40)
 
-        // Tidy up: delete every blank draft.
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        // A chip plays, then cancels.
+        let wildcard = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1'")).firstMatch
+        for _ in 0..<4 where !(wildcard.exists && wildcard.isHittable) { app.swipeUp() }
+        wildcard.tap()
+        let playing = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1' AND label CONTAINS 'Playing in GW'")).firstMatch
+        waitFor(playing, "Wildcard played", timeout: 40)
+        playing.tap()
+        let available = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1' AND label CONTAINS 'Available'")).firstMatch
+        waitFor(available, "Wildcard cancelled", timeout: 40)
+
+        // The draft menu: budget and free transfers (audited), rename, then delete.
+        app.buttons["Draft options"].firstMatch.tap()
+        app.buttons["Budget and free transfers…"].firstMatch.tap()
+        waitFor(app.navigationBars["Budget"].firstMatch, "Budget sheet")
+        settle()
+        check(app, "15-draft-money")
+        app.buttons["Cancel"].firstMatch.tap()
+
+        app.buttons["Draft options"].firstMatch.tap()
+        app.buttons["Rename…"].firstMatch.tap()
+        let nameField = app.alerts.textFields.firstMatch
+        waitFor(nameField, "Rename box")
+        nameField.tap()
+        nameField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "UI test draft")
+        app.alerts.buttons["Save"].tap()
+        waitFor(app.navigationBars["UI test draft"].firstMatch, "Renamed", timeout: 40)
+
+        app.buttons["Draft options"].firstMatch.tap()
+        app.buttons["Delete draft…"].firstMatch.tap()
+        app.buttons["Delete draft"].firstMatch.tap()
+        waitFor(app.navigationBars["Planner"].firstMatch, "Back on the drafts list", timeout: 40)
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["UI test draft"].firstMatch)
+        waitForExpectations(timeout: 20)
+
+        // Tidy up: delete any other blank draft (e.g. from an earlier failed run).
         let blanks = app.buttons.matching(NSPredicate(format: "label CONTAINS 'of 15 players'"))
-        _ = blanks.firstMatch.waitForExistence(timeout: 10)
+        _ = blanks.firstMatch.waitForExistence(timeout: 5)
         var guardCount = 0
         while blanks.count > 0 && guardCount < 5 {
             guardCount += 1

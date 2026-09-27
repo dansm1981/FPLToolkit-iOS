@@ -110,14 +110,70 @@ final class DraftModel {
     /// The player chosen with "Swap with…": the next player tapped swaps with him.
     var swapFrom: Int?
 
+    /// Squad edits to undo and redo, per gameweek (in memory while the draft is open).
+    private(set) var history = SquadHistory()
+    var canUndo: Bool { draft.map { $0.isEditable && history.canUndo(gw: $0.gw) } ?? false }
+    var canRedo: Bool { draft.map { $0.isEditable && history.canRedo(gw: $0.gw) } ?? false }
+
     /// Sends one edit; true when it was made (the draft on screen is then the server's answer).
+    /// Squad edits can be undone; a reset clears the history, since every week changes.
     @discardableResult
     func apply(_ action: PlannerAction) async -> Bool {
+        let before = draft.flatMap { $0.gw == action.gw ? $0.restorePicks : nil }
+        guard await send(action) else { return false }
+        if action.isSquadEdit, let before, let gw = action.gw {
+            history.record(before, gw: gw)
+        } else if action.type == "reset" {
+            history.clear()
+        }
+        return true
+    }
+
+    /// Back to the squad before the last edit in the gameweek shown.
+    func undo() async {
+        guard let d = draft, let squad = history.previous(gw: d.gw) else { return }
+        if await send(.restore(squad, gw: d.gw)) { history.didUndo(gw: d.gw, from: d.restorePicks) }
+    }
+
+    /// Forward again to the squad the last undo left.
+    func redo() async {
+        guard let d = draft, let squad = history.next(gw: d.gw) else { return }
+        if await send(.restore(squad, gw: d.gw)) { history.didRedo(gw: d.gw, from: d.restorePicks) }
+    }
+
+    private func send(_ action: PlannerAction) async -> Bool {
+        await run { resource.replace(with: try await repository.apply(action, to: id)) }
+    }
+
+    /// Renames the draft or changes its starting budget or free transfers. The gameweek shown
+    /// stays on screen (the server answers with the next deadline's).
+    @discardableResult
+    func update(_ patch: PlannerDraftPatch) async -> Bool {
+        let shown = draft?.gw
+        let done = await run { resource.replace(with: try await repository.update(id, patch)) }
+        if done, let shown, draft?.gw != shown { await show(gw: shown) }
+        return done
+    }
+
+    /// A copy of this draft, every planned week included; nil if it couldn't be made.
+    func duplicate() async -> PlannerDraft? {
+        var copy: PlannerDraft?
+        _ = await run { copy = try await repository.create(.copy(id)) }
+        return copy
+    }
+
+    /// Deletes the draft; true when it's gone.
+    func delete() async -> Bool {
+        await run { try await repository.delete(id) }
+    }
+
+    /// Runs one request, keeping `isApplying` and `actionError` up to date.
+    private func run(_ work: () async throws -> Void) async -> Bool {
         isApplying = true
         actionError = nil
         defer { isApplying = false }
         do {
-            resource.replace(with: try await repository.apply(action, to: id))
+            try await work()
             return true
         } catch let error as APIError {
             actionError = ErrorCopy(error)

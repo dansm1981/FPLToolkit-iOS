@@ -37,6 +37,10 @@ struct PlannerView: View {
         .task {
             if list.isInitial { await list.load() }
         }
+        // Back from a draft: names, planned weeks, copies and deletions may have changed.
+        .onAppear {
+            if !list.isInitial { Task { await list.load(bypassCache: true) } }
+        }
         .navigationDestination(for: PlannerDraftRoute.self) { route in
             DraftView(id: route.id, repository: appModel.plannerRepository)
         }

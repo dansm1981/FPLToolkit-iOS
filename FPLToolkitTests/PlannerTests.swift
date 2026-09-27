@@ -50,6 +50,45 @@ struct PlannerTests {
         #expect(older.fixtureStrip == nil && older.strip(for: older.starting[0].playerId).isEmpty)
     }
 
+    /// Undo and redo keep one stack per gameweek, as the website does; a new edit clears redo.
+    @Test func squadHistory() {
+        let squad = { (id: Int) in [PlannerAction.RestorePick(playerId: id, slot: 1, isCaptain: false, isVice: false)] }
+        var history = SquadHistory()
+        #expect(!history.canUndo(gw: 6) && !history.canRedo(gw: 6))
+        history.record(squad(1), gw: 6)         // squad 1 → 2
+        history.record(squad(2), gw: 6)         // squad 2 → 3
+        history.record(squad(9), gw: 7)         // another week keeps its own stack
+        #expect(history.previous(gw: 6) == squad(2))
+        history.didUndo(gw: 6, from: squad(3))  // back to 2
+        #expect(history.canRedo(gw: 6) && history.next(gw: 6) == squad(3))
+        #expect(history.previous(gw: 6) == squad(1))
+        history.didRedo(gw: 6, from: squad(2))  // forward to 3 again
+        #expect(history.previous(gw: 6) == squad(2) && !history.canRedo(gw: 6))
+        history.didUndo(gw: 6, from: squad(3))
+        history.record(squad(2), gw: 6)         // a new edit after an undo
+        #expect(!history.canRedo(gw: 6))
+        #expect(history.previous(gw: 7) == squad(9))
+        for i in 0..<60 { history.record(squad(i), gw: 8) }
+        var undone = 0
+        while let previous = history.previous(gw: 8) { history.didUndo(gw: 8, from: previous); undone += 1 }
+        #expect(undone == SquadHistory.limit)
+        history.clear()
+        #expect(!history.canUndo(gw: 7) && !history.canRedo(gw: 6))
+    }
+
+    @Test func shareText() throws {
+        let draft = try fixture("planner-draft-22615-strip", as: PlannerDraft.self)
+        let text = DraftShareText.make(draft)
+        let lines = text.components(separatedBy: "\n")
+        #expect(lines.first == "All priced in: GW6 plan")
+        #expect(lines.contains { $0.hasPrefix("GK: ") })
+        #expect(lines.contains { $0.hasPrefix("FWD: ") })
+        #expect(text.contains("(C)") && text.contains("(VC)"))
+        #expect(lines.contains { $0.hasPrefix("Bench: ") && $0.components(separatedBy: ", ").count == 4 })
+        #expect(lines.contains { $0.hasPrefix("Bank £2.2m · Squad value £99.8m · 2 free transfers") })
+        #expect(lines.last == "Planned with FPLToolkit: \(draft.shareUrl)")
+    }
+
     @Test func afterATransfer() throws {
         let draft = try fixture("planner-draft-22615-transfer", as: PlannerDraft.self)
         #expect(draft.transfers.out == [290] && draft.transfers.in == [12])

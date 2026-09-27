@@ -138,6 +138,19 @@ struct PlannerDraft: Decodable, Sendable {
     func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
     func fixtures(for id: Int) -> [FixtureDifficulty] { fixtures[String(id)] ?? [] }
     func strip(for id: Int) -> [StripWeek] { fixtureStrip?[String(id)] ?? [] }
+    /// Free transfers in the gameweek shown: the ledger's row, else the starting figure (a draft
+    /// with nothing planned yet); nil for a gameweek that has passed.
+    var freeTransfersThisWeek: Int? {
+        if let row = ledger.first(where: { $0.gw == gw }) { return row.freeTransfers }
+        return gw >= firstEditableGw ? freeTransfers.starting : nil
+    }
+
+    /// The squad as the "restore" action takes it (undo and redo).
+    var restorePicks: [PlannerAction.RestorePick] {
+        (starting + bench).map {
+            PlannerAction.RestorePick(playerId: $0.playerId, slot: $0.slot, isCaptain: $0.isCaptain, isVice: $0.isVice)
+        }
+    }
     var isEditable: Bool { gw >= firstEditableGw }
     static let pitchOrder: [Position] = [.gk, .def, .mid, .fwd]
     /// The starters grouped into pitch rows, goalkeeper first, with the empty places to show.
@@ -177,11 +190,10 @@ struct PlannerAction: Encodable, Sendable {
     static func captain(_ playerId: Int, gw: Int) -> Self { .init(type: "captain", gw: gw, playerId: playerId) }
     static func vice(_ playerId: Int, gw: Int) -> Self { .init(type: "vice", gw: gw, playerId: playerId) }
     static func chip(_ key: String, gw: Int) -> Self { .init(type: "chip", gw: gw, chip: key) }
-    static func restore(_ draft: PlannerDraft) -> Self {
-        .init(type: "restore", gw: draft.gw, picks: (draft.starting + draft.bench).map {
-            RestorePick(playerId: $0.playerId, slot: $0.slot, isCaptain: $0.isCaptain, isVice: $0.isVice)
-        })
-    }
+    static func restore(_ draft: PlannerDraft) -> Self { restore(draft.restorePicks, gw: draft.gw) }
+    static func restore(_ picks: [RestorePick], gw: Int) -> Self { .init(type: "restore", gw: gw, picks: picks) }
+    /// Edits to the squad itself: the ones undo and redo cover.
+    var isSquadEdit: Bool { ["pick", "swap", "remove", "captain", "vice"].contains(type) }
     static let reset = Self(type: "reset")
 }
 
