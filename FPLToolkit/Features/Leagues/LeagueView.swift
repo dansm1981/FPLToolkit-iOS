@@ -123,10 +123,16 @@ struct LeagueView: View {
 
 private struct OverviewSection: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     let overview: LeagueOverview
     let onManager: (Int) -> Void
 
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: ToolkitSpace.sm)]
+    /// Two figures a row, stacked at accessibility text sizes so no heading is cut off.
+    private var row: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: ToolkitSpace.sm))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: ToolkitSpace.sm))
+    }
 
     var body: some View {
         let h = overview.headline
@@ -138,25 +144,31 @@ private struct OverviewSection: View {
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
-                LazyVGrid(columns: columns, alignment: .leading, spacing: ToolkitSpace.sm) {
-                    tile("Your position",
-                         value: h.position.rank.map { "\($0)/\(h.position.of)" } ?? "—/\(h.position.of)",
-                         note: h.position.behindFirst.map { $0 == 0 ? "Top of the league" : "\($0) pts behind 1st" } ?? "—")
-                    tile("Team similarity",
-                         value: h.similarityPct.map { "\($0)%" } ?? "—",
-                         note: "similar to league template")
-                    tile("Biggest threat",
-                         value: h.biggestThreat.map { name($0.playerId) } ?? "—",
-                         note: h.biggestThreat.map { "\(Int($0.eo.rounded()))% league EO" } ?? "—")
-                    tile("Best differential",
-                         value: h.bestDifferential.map { name($0.playerId) } ?? "—",
-                         note: h.bestDifferential.map { "\(Int($0.leagueOwnPct.rounded()))% league ownership" } ?? "—")
-                    tile("Chip activity",
-                         value: "\(h.chips.total)",
-                         note: h.chips.top.prefix(2).map { "\($0.count)× \($0.label)" }.joined(separator: " · ").nonEmpty ?? "None used")
-                    tile("League leader",
-                         value: h.leader?.displayName ?? "—",
-                         note: h.leader?.total.map { "\($0) pts" } ?? "—")
+                VStack(spacing: ToolkitSpace.sm) {
+                    row {
+                        tile("Your position",
+                             value: h.position.rank.map { "\($0)/\(h.position.of)" } ?? "—/\(h.position.of)",
+                             note: h.position.behindFirst.map { $0 == 0 ? "Top of the league" : "\($0) pts behind 1st" } ?? "—")
+                        tile("Team similarity",
+                             value: h.similarityPct.map { "\($0)%" } ?? "—",
+                             note: "similar to league template")
+                    }
+                    row {
+                        tile("Biggest threat",
+                             value: h.biggestThreat.map { name($0.playerId) } ?? "—",
+                             note: h.biggestThreat.map { "\(Int($0.eo.rounded()))% league EO" } ?? "—")
+                        tile("Best differential",
+                             value: h.bestDifferential.map { name($0.playerId) } ?? "—",
+                             note: h.bestDifferential.map { "\(Int($0.leagueOwnPct.rounded()))% league ownership" } ?? "—")
+                    }
+                    row {
+                        tile("Chip activity",
+                             value: "\(h.chips.total)",
+                             note: h.chips.top.prefix(2).map { "\($0.count)× \($0.label)" }.joined(separator: " · ").nonEmpty ?? "None used")
+                        tile("League leader",
+                             value: h.leader?.displayName ?? "—",
+                             note: h.leader?.total.map { "\($0) pts" } ?? "—")
+                    }
                 }
             }
 
@@ -182,8 +194,9 @@ private struct OverviewSection: View {
     private func tile(_ title: String, value: String, note: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(ToolkitColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
             Text(value)
                 .font(.title3.weight(.bold))
                 .foregroundStyle(ToolkitColor.primaryText)
@@ -280,7 +293,7 @@ private struct RivalCard: View {
 
     private func differences(_ title: String, _ ids: [Int], colour: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(colour)
+            Text(title.uppercased()).font(.caption.weight(.semibold)).foregroundStyle(colour)
             ForEach(ids.prefix(5), id: \.self) { Text(name($0)).font(.subheadline).foregroundStyle(ToolkitColor.primaryText) }
             if ids.isEmpty { Text("None").font(.subheadline).foregroundStyle(ToolkitColor.secondaryText) }
         }
@@ -315,7 +328,7 @@ private struct StandingsSection: View {
         HStack(alignment: .top, spacing: ToolkitSpace.md) {
             VStack(spacing: 2) {
                 Text(row.rank.map(String.init) ?? "–").font(.headline.monospacedDigit())
-                Image(systemName: movementSymbol(row)).font(.caption2).foregroundStyle(movementColour(row))
+                Image(systemName: movementSymbol(row)).font(.caption).foregroundStyle(movementColour(row))
                     .accessibilityHidden(true)
             }
             .frame(minWidth: 28)

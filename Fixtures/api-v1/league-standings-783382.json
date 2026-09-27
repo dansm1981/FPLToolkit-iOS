@@ -1,0 +1,594 @@
+{
+  "data": {
+    "league": {
+      "id": 783382,
+      "name": "LEAGUE OF EXPERTS",
+      "isElite": false,
+      "managers": 21,
+      "tracked": 21,
+      "syncedGw": 5,
+      "lastSyncedAt": "2026-09-27T16:00:05.982+00:00"
+    },
+    "rows": [
+      {
+        "entryId": 1699334,
+        "teamName": "Andiletic BilBride",
+        "managerName": "Andy McBride",
+        "rank": 1,
+        "total": 392,
+        "lastRank": 1,
+        "gwPoints": 56,
+        "hits": 0,
+        "benchPoints": 72,
+        "value": 100.9,
+        "chips": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 4
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 22615,
+        "teamName": "All priced in",
+        "managerName": "Dan Smyth",
+        "rank": 2,
+        "total": 362,
+        "lastRank": 2,
+        "gwPoints": 45,
+        "hits": 0,
+        "benchPoints": 54,
+        "value": 101.9,
+        "chips": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 3
+          },
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 4
+          }
+        ],
+        "captainId": 411,
+        "isMe": true
+      },
+      {
+        "entryId": 7409161,
+        "teamName": "Spasmeno Paramythi",
+        "managerName": "Paul Mcbride",
+        "rank": 3,
+        "total": 351,
+        "lastRank": 13,
+        "gwPoints": 78,
+        "hits": 0,
+        "benchPoints": 48,
+        "value": 101,
+        "chips": [
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 5
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 6105838,
+        "teamName": "Stamp On A Spider",
+        "managerName": "Colin McBride",
+        "rank": 4,
+        "total": 351,
+        "lastRank": 4,
+        "gwPoints": 47,
+        "hits": 0,
+        "benchPoints": 15,
+        "value": 100.3,
+        "chips": [
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 4612627,
+        "teamName": "Murphy's Law 2.0",
+        "managerName": "Dominic McBride",
+        "rank": 4,
+        "total": 351,
+        "lastRank": 7,
+        "gwPoints": 66,
+        "hits": 0,
+        "benchPoints": 40,
+        "value": 100.5,
+        "chips": [],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 397489,
+        "teamName": "Shaken, Not Steur'd",
+        "managerName": "Joe Logan",
+        "rank": 6,
+        "total": 350,
+        "lastRank": 5,
+        "gwPoints": 55,
+        "hits": 4,
+        "benchPoints": 66,
+        "value": 100.9,
+        "chips": [
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          },
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 5
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 1778504,
+        "teamName": "xG Merchants",
+        "managerName": "Matt Logan",
+        "rank": 7,
+        "total": 347,
+        "lastRank": 12,
+        "gwPoints": 66,
+        "hits": 0,
+        "benchPoints": 36,
+        "value": 100.6,
+        "chips": [],
+        "captainId": 426,
+        "isMe": false
+      },
+      {
+        "entryId": 6737676,
+        "teamName": "SKBB's",
+        "managerName": "Steve Smyth",
+        "rank": 8,
+        "total": 343,
+        "lastRank": 9,
+        "gwPoints": 60,
+        "hits": 0,
+        "benchPoints": 69,
+        "value": 100.4,
+        "chips": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 4459886,
+        "teamName": "PoissonGoalModel Utd",
+        "managerName": "Jamie McBride",
+        "rank": 9,
+        "total": 343,
+        "lastRank": 3,
+        "gwPoints": 27,
+        "hits": 0,
+        "benchPoints": 59,
+        "value": 100.3,
+        "chips": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 3
+          }
+        ],
+        "captainId": 426,
+        "isMe": false
+      },
+      {
+        "entryId": 3737441,
+        "teamName": "Eddieswayanyhowe",
+        "managerName": "HUGH MCBRIDE",
+        "rank": 10,
+        "total": 342,
+        "lastRank": 6,
+        "gwPoints": 53,
+        "hits": 0,
+        "benchPoints": 82,
+        "value": 101.1,
+        "chips": [
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 4
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 7277503,
+        "teamName": "Black Cats",
+        "managerName": "Joseph Smyth",
+        "rank": 11,
+        "total": 337,
+        "lastRank": 8,
+        "gwPoints": 53,
+        "hits": 0,
+        "benchPoints": 41,
+        "value": 100.4,
+        "chips": [],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 1097988,
+        "teamName": "It's Coming Bone",
+        "managerName": "Aidan Bone",
+        "rank": 12,
+        "total": 328,
+        "lastRank": 11,
+        "gwPoints": 47,
+        "hits": 0,
+        "benchPoints": 13,
+        "value": 100.2,
+        "chips": [
+          {
+            "chip": "3xc",
+            "label": "TC",
+            "gw": 3
+          }
+        ],
+        "captainId": 426,
+        "isMe": false
+      },
+      {
+        "entryId": 6110474,
+        "teamName": "Barrysangermain",
+        "managerName": "Ron White",
+        "rank": 13,
+        "total": 320,
+        "lastRank": 15,
+        "gwPoints": 51,
+        "hits": 0,
+        "benchPoints": 43,
+        "value": 100,
+        "chips": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 3
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 5
+          }
+        ],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 4836394,
+        "teamName": "Nicky Two Bags",
+        "managerName": "Nick Bone",
+        "rank": 14,
+        "total": 318,
+        "lastRank": 13,
+        "gwPoints": 45,
+        "hits": 0,
+        "benchPoints": 68,
+        "value": 100.8,
+        "chips": [],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 3432605,
+        "teamName": "moyesiahs",
+        "managerName": "Simon Moiani",
+        "rank": 15,
+        "total": 317,
+        "lastRank": 16,
+        "gwPoints": 51,
+        "hits": 0,
+        "benchPoints": 44,
+        "value": 100.9,
+        "chips": [],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 2335246,
+        "teamName": "MOTO",
+        "managerName": "Des McBride",
+        "rank": 16,
+        "total": 311,
+        "lastRank": 9,
+        "gwPoints": 28,
+        "hits": 0,
+        "benchPoints": 41,
+        "value": 101.1,
+        "chips": [
+          {
+            "chip": "bboost",
+            "label": "BB",
+            "gw": 1
+          },
+          {
+            "chip": "wildcard",
+            "label": "WC",
+            "gw": 2
+          },
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 3
+          }
+        ],
+        "captainId": 426,
+        "isMe": false
+      },
+      {
+        "entryId": 6619530,
+        "teamName": "Double The Water",
+        "managerName": "Chris Bone",
+        "rank": 17,
+        "total": 311,
+        "lastRank": 17,
+        "gwPoints": 46,
+        "hits": 0,
+        "benchPoints": 23,
+        "value": 99.9,
+        "chips": [],
+        "captainId": 165,
+        "isMe": false
+      },
+      {
+        "entryId": 7203835,
+        "teamName": "Hew Yewerkusen",
+        "managerName": "James Berryman",
+        "rank": 18,
+        "total": 308,
+        "lastRank": 19,
+        "gwPoints": 57,
+        "hits": 0,
+        "benchPoints": 51,
+        "value": 99.9,
+        "chips": [
+          {
+            "chip": "freehit",
+            "label": "FH",
+            "gw": 4
+          }
+        ],
+        "captainId": 480,
+        "isMe": false
+      },
+      {
+        "entryId": 2307689,
+        "teamName": "Claudes on a roll",
+        "managerName": "Chris Logan",
+        "rank": 19,
+        "total": 294,
+        "lastRank": 20,
+        "gwPoints": 55,
+        "hits": 8,
+        "benchPoints": 22,
+        "value": 100.8,
+        "chips": [],
+        "captainId": 346,
+        "isMe": false
+      },
+      {
+        "entryId": 325305,
+        "teamName": "GoodCattleBadCowboy",
+        "managerName": "Kris McBride",
+        "rank": 20,
+        "total": 282,
+        "lastRank": 18,
+        "gwPoints": 27,
+        "hits": 0,
+        "benchPoints": 46,
+        "value": 100,
+        "chips": [],
+        "captainId": 411,
+        "isMe": false
+      },
+      {
+        "entryId": 9153429,
+        "teamName": "sæla fc",
+        "managerName": "Tom McBride",
+        "rank": 21,
+        "total": 237,
+        "lastRank": 21,
+        "gwPoints": 58,
+        "hits": 8,
+        "benchPoints": 12,
+        "value": 100.4,
+        "chips": [],
+        "captainId": 411,
+        "isMe": false
+      }
+    ],
+    "players": {
+      "165": {
+        "id": 165,
+        "webName": "João Pedro",
+        "clubId": 6,
+        "position": "FWD",
+        "price": 7.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Knee injury - 75% chance of playing"
+        },
+        "selectedByPct": 65.3,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market",
+            "band": 1
+          }
+        }
+      },
+      "346": {
+        "id": 346,
+        "webName": "Calvert-Lewin",
+        "clubId": 13,
+        "position": "FWD",
+        "price": 6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 24.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 1,
+          "home": false,
+          "kickoff": "2026-10-10T11:30:00.000Z",
+          "xfdr": {
+            "value": 4.65,
+            "lens": "attack",
+            "source": "market",
+            "band": 5
+          }
+        }
+      },
+      "411": {
+        "id": 411,
+        "webName": "Haaland",
+        "clubId": 15,
+        "position": "FWD",
+        "price": 15.6,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 73.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 14,
+          "home": false,
+          "kickoff": "2026-10-11T15:30:00.000Z",
+          "xfdr": {
+            "value": 3.09,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "426": {
+        "id": 426,
+        "webName": "B.Fernandes",
+        "clubId": 16,
+        "position": "MID",
+        "price": 11.9,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 38.5,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 19,
+          "home": true,
+          "kickoff": "2026-10-10T16:30:00.000Z",
+          "xfdr": {
+            "value": 2.66,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      },
+      "480": {
+        "id": 480,
+        "webName": "Gibbs-White",
+        "clubId": 18,
+        "position": "MID",
+        "price": 8,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": 100,
+          "news": null
+        },
+        "selectedByPct": 15.7,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 8,
+          "home": false,
+          "kickoff": "2026-10-11T13:00:00.000Z",
+          "xfdr": {
+            "value": 3.17,
+            "lens": "attack",
+            "source": "market",
+            "band": 3
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T19:43:07.214Z",
+    "freshness": []
+  }
+}

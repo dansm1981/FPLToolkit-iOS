@@ -24,4 +24,29 @@ struct LeagueTests {
         #expect(list.leagues.last?.myRank == 2 && list.leagues.last?.gapToFirst == 30)
         #expect(list.sharedRivals.first?.leagues.count == 2 && list.max == 10)
     }
+
+    /// Live responses (27 Sep, after happy-backend-pal#22) for team 22615 and LEAGUE OF EXPERTS:
+    /// the same figures the website shows.
+    @Test func liveLeague() throws {
+        let list = try fixture("leagues-list-783382", as: LeagueList.self)
+        #expect(list.leagues.map(\.name) == ["Elite 100", "LEAGUE OF EXPERTS"])
+        let overview = try fixture("league-overview-783382", as: LeagueOverview.self)
+        #expect(overview.headline.position.rank == 2 && overview.headline.position.of == 21)
+        #expect(overview.headline.similarityPct == 67 && overview.headline.chips.total == 22)
+        #expect(overview.player(overview.headline.biggestThreat!.playerId)?.webName == "B.Fernandes")
+        #expect(overview.threats.prefix(5).map(\.score) == [35, 33, 30, 25, 18])
+        let standings = try fixture("league-standings-783382", as: LeagueStandings.self)
+        #expect(standings.rows.first?.teamName == "Andiletic BilBride" && standings.rows.contains { $0.isMe })
+        let vs = try fixture("league-vs-783382", as: LeagueVs.self)
+        #expect(vs.them.starting.count == 11 && vs.headToHead != nil)
+    }
+
+    private func fixture<T: Decodable & Sendable>(_ name: String, as type: T.Type) throws -> T {
+        let bundle = Bundle(for: LeagueBundleToken.self)
+        let url = try #require(
+            bundle.url(forResource: name, withExtension: "json")
+                ?? bundle.url(forResource: name, withExtension: "json", subdirectory: "api-v1"))
+        return try APIClient.decode(Envelope<T>.self, from: Data(contentsOf: url)).data
+    }
 }
+private final class LeagueBundleToken {}

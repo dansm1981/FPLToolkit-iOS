@@ -5,6 +5,7 @@ import SwiftUI
 struct LeagueVsView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     let leagueId: Int
     let entryId: Int
     let baseline: LeagueBaseline
@@ -43,13 +44,20 @@ struct LeagueVsView: View {
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)
 
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: ToolkitSpace.sm)], spacing: ToolkitSpace.sm) {
-            stat("GW pts", them.gwPoints.map(String.init) ?? "—")
-            stat("Total", them.total.map(String.init) ?? "—")
-            stat("Overall rank", them.overallRank.map { $0.formatted() } ?? "—")
-            stat("Value", them.value.map(Format.price) ?? "—")
-            stat("Transfers", "\(them.transfers)")
-            stat("Hits", them.hits > 0 ? "−\(them.hits)" : "0")
+        let row = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: ToolkitSpace.sm))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: ToolkitSpace.sm))
+        VStack(spacing: ToolkitSpace.sm) {
+            row {
+                stat("GW pts", them.gwPoints.map(String.init) ?? "—")
+                stat("Total", them.total.map(String.init) ?? "—")
+                stat("Overall rank", them.overallRank.map { $0.formatted() } ?? "—")
+            }
+            row {
+                stat("Value", them.value.map(Format.price) ?? "—")
+                stat("Transfers", "\(them.transfers)")
+                stat("Hits", them.hits > 0 ? "−\(them.hits)" : "0")
+            }
         }
 
         if let h = vs.headToHead {
@@ -89,7 +97,7 @@ struct LeagueVsView: View {
                 VStack(alignment: .leading, spacing: ToolkitSpace.xs) {
                     ForEach(them.starting) { pickRow($0, vs) }
                     Divider().overlay(ToolkitColor.border).padding(.vertical, ToolkitSpace.xs)
-                    Text("BENCH").font(.caption2.weight(.semibold)).foregroundStyle(ToolkitColor.secondaryText)
+                    Text("BENCH").font(.caption.weight(.semibold)).foregroundStyle(ToolkitColor.secondaryText)
                     ForEach(them.bench) { pickRow($0, vs) }
                 }
             }
@@ -113,7 +121,7 @@ struct LeagueVsView: View {
 
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(ToolkitColor.secondaryText)
+            Text(label.uppercased()).font(.caption.weight(.semibold)).foregroundStyle(ToolkitColor.secondaryText)
             Text(value).font(.headline.monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,7 +141,7 @@ struct LeagueVsView: View {
 
     private func names(_ title: String, _ ids: [Int], _ vs: LeagueVs, colour: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(colour)
+            Text(title.uppercased()).font(.caption.weight(.semibold)).foregroundStyle(colour)
             ForEach(ids, id: \.self) { Text(vs.name($0)).font(.subheadline).foregroundStyle(ToolkitColor.primaryText) }
             if ids.isEmpty { Text("None").font(.subheadline).foregroundStyle(ToolkitColor.secondaryText) }
         }

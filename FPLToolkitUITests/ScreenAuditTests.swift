@@ -53,6 +53,8 @@ final class ScreenAuditTests: XCTestCase {
         let tabBar = app.tabBars.firstMatch
         // iOS 26 fades content in a band above the floating tab bar as it scrolls under it.
         let fadedFromY = tabBar.exists ? tabBar.frame.minY - 60 : .infinity
+        // …and in a band below the navigation bar as content scrolls up under it.
+        let fadedToY = (app.navigationBars.allElementsBoundByIndex.map { $0.frame.maxY }.max() ?? 0) + 40
         let keyboard = app.keyboards.firstMatch
         let keyboardFrame = keyboard.exists ? keyboard.frame : .null
         let navBarFrames = app.navigationBars.allElementsBoundByIndex.map { $0.frame }
@@ -70,6 +72,7 @@ final class ScreenAuditTests: XCTestCase {
                 }
                 let frame = element.frame
                 if issue.auditType == .contrast && frame.maxY > fadedFromY { return true }
+                if issue.auditType == .contrast && frame.minY < fadedToY { return true }
                 // Covered (e.g. scrolled behind the pinned button bar): not what the user sees.
                 if issue.auditType == .contrast && !element.isHittable { return true }
                 // With the keyboard up, the pinned button bar (about 120 pt) sits on top of it.
@@ -348,6 +351,56 @@ final class ScreenAuditTests: XCTestCase {
             waitForExpectations(timeout: 20)
         }
         XCTAssertEqual(blanks.count, 0, "blank drafts left behind")
+    }
+
+    /// Leagues on the Team tab: add Dan's league by ID, its Overview, Standings and "vs me"
+    /// (each audited), then remove it again. The Elite 100 is always listed.
+    func test10Leagues() {
+        let app = launch(["-entryId", team])
+        app.tabBars.buttons["Team"].tap()
+        let addLeague = app.buttons["Add a league"].firstMatch
+        for _ in 0..<8 where !(addLeague.exists && addLeague.isHittable) { app.swipeUp() }
+        waitFor(addLeague, "Leagues on the Team tab", timeout: 40)
+        waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Elite 100'")).firstMatch, "Elite 100", timeout: 40)
+
+        let league = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'LEAGUE OF EXPERTS'")).firstMatch
+        if !league.exists {
+            addLeague.tap()
+            let field = app.textFields["Mini-league ID"].firstMatch
+            waitFor(field, "Add a league")
+            field.tap()
+            field.typeText("783382")
+            app.buttons["Add"].firstMatch.tap()
+        }
+        waitFor(league, "League added", timeout: 120)
+        settle()
+        check(app, "21-team-leagues", sizesAndLists: false)
+
+        league.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label ==[c] 'What matters to you'")).firstMatch, "Overview", timeout: 60)
+        settle()
+        check(app, "22-league-overview")
+
+        app.buttons["Standings"].firstMatch.tap()
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · bench '")).firstMatch
+        waitFor(row, "Standings", timeout: 60)
+        settle()
+        check(app, "23-league-standings")
+
+        row.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH[c] 'Squad · '")).firstMatch, "vs me", timeout: 60)
+        settle()
+        check(app, "24-league-vs")
+        app.buttons["Done"].firstMatch.tap()
+
+        // Back on the Team tab: touch and hold to remove the league again.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        waitFor(league, "Back on Leagues")
+        league.press(forDuration: 1.2)
+        app.buttons["Remove league"].firstMatch.tap()
+        app.buttons["Remove league"].firstMatch.tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: league)
+        waitForExpectations(timeout: 30)
     }
 
     func test07ExploreWithoutATeam() {

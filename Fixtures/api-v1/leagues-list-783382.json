@@ -1,0 +1,37 @@
+{
+  "data": {
+    "leagues": [
+      {
+        "id": 900000000,
+        "name": "Elite 100",
+        "isElite": true,
+        "managers": 100,
+        "tracked": 100,
+        "syncedGw": 5,
+        "lastSyncedAt": "2026-09-27T04:05:03.062653+00:00",
+        "synced": true,
+        "myRank": null,
+        "gapToFirst": null
+      },
+      {
+        "id": 783382,
+        "name": "LEAGUE OF EXPERTS",
+        "isElite": false,
+        "managers": 21,
+        "tracked": 21,
+        "syncedGw": 5,
+        "lastSyncedAt": "2026-09-27T16:00:05.982+00:00",
+        "synced": true,
+        "myRank": 2,
+        "gapToFirst": 30
+      }
+    ],
+    "sharedRivals": [],
+    "max": 10
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T19:43:04.094Z",
+    "freshness": []
+  }
+}
