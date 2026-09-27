@@ -42,6 +42,10 @@ struct ErrorCopy: Equatable {
             self.init(title: "You've reached the draft limit", message: message, canRetry: false)
         case .server(.shortlistFull, let message, _):
             self.init(title: "Your shortlist is full", message: message, canRetry: false)
+        case .server(.leagueNotFound, let message, _):
+            self.init(title: "League not found", message: message, canRetry: false)
+        case .server(.tooManyLeagues, let message, _):
+            self.init(title: "You've reached the league limit", message: message, canRetry: false)
         case .server(_, let message, let retryable):
             self.init(title: "Something went wrong", message: message, canRetry: retryable)
         case .offline:

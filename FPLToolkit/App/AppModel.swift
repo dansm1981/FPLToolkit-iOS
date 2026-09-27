@@ -26,6 +26,8 @@ final class AppModel {
     let plannerRepository: PlannerRepository
     /// The device's shortlist (the planner's star and Shortlist screen).
     let shortlist: ShortlistStore
+    /// The device's mini-leagues (Team tab).
+    let leagues: LeaguesStore
 
     private let cache: ResponseCache
     private let defaults: UserDefaults
@@ -43,6 +45,7 @@ final class AppModel {
         let planner = PlannerRepository(session: session, cache: cache)
         self.plannerRepository = planner
         self.shortlist = ShortlistStore(repository: planner)
+        self.leagues = LeaguesStore(repository: LeaguesRepository(session: session))
         self.cache = cache
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)
@@ -109,6 +112,7 @@ final class AppModel {
     func resetAppData() async throws {
         try await deviceSession.reset()
         shortlist.reset()
+        leagues.reset()
         disconnect()
     }
 

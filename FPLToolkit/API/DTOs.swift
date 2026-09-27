@@ -42,6 +42,8 @@ enum APIErrorCode: String, FallbackDecodable {
     case invalidAction = "invalid_action"
     case tooManyDrafts = "too_many_drafts"
     case shortlistFull = "shortlist_full"
+    case leagueNotFound = "league_not_found"
+    case tooManyLeagues = "too_many_leagues"
     case `internal`
     case unknown
     static let fallback = Self.unknown

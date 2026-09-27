@@ -24,6 +24,8 @@ struct TeamView: View {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
                             TeamContent(loaded: loaded) { appModel.router.openPlayer($0) }
+                            LeaguesCard()
+                                .padding(.top, ToolkitSpace.sm)
                         }
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.bottom, ToolkitSpace.section)
