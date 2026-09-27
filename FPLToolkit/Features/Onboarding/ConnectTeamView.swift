@@ -53,24 +53,15 @@ struct FoundTeam {
 
 /// S02 (connect) and S24 (import error).
 struct ConnectTeamView: View {
-    @Environment(AppModel.self) private var appModel
-    @State private var model: ConnectModel?
+    @State private var model: ConnectModel
     @FocusState private var fieldFocused: Bool
     @State private var showingHelp = false
 
-    var body: some View {
-        Group {
-            if let model {
-                content(model)
-            }
-        }
-        .onAppear {
-            if model == nil { model = ConnectModel(repository: appModel.teamRepository) }
-        }
+    init(repository: TeamRepository) {
+        _model = State(initialValue: ConnectModel(repository: repository))
     }
 
-    @ViewBuilder
-    private func content(_ model: ConnectModel) -> some View {
+    var body: some View {
         @Bindable var model = model
         ScrollView {
             VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
@@ -220,8 +211,9 @@ struct ErrorBanner: View {
 }
 
 #Preview {
+    let appModel = AppModel()
     NavigationStack {
-        ConnectTeamView()
+        ConnectTeamView(repository: appModel.teamRepository)
     }
-    .environment(AppModel())
+    .environment(appModel)
 }

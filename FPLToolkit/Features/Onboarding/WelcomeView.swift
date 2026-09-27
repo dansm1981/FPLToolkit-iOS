@@ -47,7 +47,7 @@ struct WelcomeView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: ToolkitSpace.md) {
                 NavigationLink {
-                    ConnectTeamView()
+                    ConnectTeamView(repository: appModel.teamRepository)
                 } label: {
                     Text("Add my FPL team")
                 }

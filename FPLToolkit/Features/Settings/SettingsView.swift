@@ -32,6 +32,7 @@ struct SettingsView: View {
                     LabeledContent("Version", value: Self.version)
                 }
             }
+            .listRowBackground(ToolkitColor.surface)
             .scrollContentBackground(.hidden)
             .background(ToolkitColor.canvas.ignoresSafeArea())
             .navigationTitle("Settings")
