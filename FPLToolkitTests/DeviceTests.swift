@@ -109,3 +109,15 @@ struct DeepLinkTests {
         #expect(DeepLink(url: try #require(URL(string: "https://www.fpltoolkit.co.uk/players/cole-palmer"))) == nil)
     }
 }
+
+struct SearchTests {
+    @Test func searchResultsDecodeInOrder() throws {
+        let url = try #require(Bundle(for: SearchBundleToken.self).url(forResource: "players-search-pal", withExtension: "json"))
+        let result = try APIClient.decode(Envelope<PlayerSearchResult>.self, from: Data(contentsOf: url)).data
+        #expect(result.query == "pal")
+        #expect(result.players.first?.webName == "Palmer")
+        #expect(result.players.count <= 20)
+    }
+}
+
+private final class SearchBundleToken {}

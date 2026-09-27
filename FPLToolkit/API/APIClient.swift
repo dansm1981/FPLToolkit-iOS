@@ -19,8 +19,13 @@ struct APIClient: Sendable {
     var session: URLSession = .shared
 
     /// Fetches `path` and decodes the v1 envelope. Returns the raw bytes too, for the offline cache.
-    func get<T: Decodable & Sendable>(_ path: String, as type: T.Type, bypassCache: Bool = false) async throws -> Fetched<T> {
-        try await send("GET", path, as: type, bypassCache: bypassCache)
+    func get<T: Decodable & Sendable>(
+        _ path: String,
+        query: [URLQueryItem] = [],
+        as type: T.Type,
+        bypassCache: Bool = false
+    ) async throws -> Fetched<T> {
+        try await send("GET", path, query: query, as: type, bypassCache: bypassCache)
     }
 
     /// Any v1 request. `authorization` is the device header for /devices/me routes;
@@ -28,12 +33,15 @@ struct APIClient: Sendable {
     func send<T: Decodable & Sendable>(
         _ method: String,
         _ path: String,
+        query: [URLQueryItem] = [],
         body: (any Encodable & Sendable)? = nil,
         authorization: String? = nil,
         as type: T.Type,
         bypassCache: Bool = false
     ) async throws -> Fetched<T> {
-        var request = URLRequest(url: baseURL.appending(path: path))
+        var url = baseURL.appending(path: path)
+        if !query.isEmpty { url.append(queryItems: query) }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")

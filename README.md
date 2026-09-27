@@ -76,6 +76,7 @@ FPLToolkitTests/  decoding of every fixture, cache, input parsing, error copy (S
 | `error-invalid-entry.json`, `error-entry-not-found.json` | the v1 error shape (`invalid_entry_id`, `entry_not_found`) |
 | `device-register.json`, `device-me.json` | `POST /devices` and `PUT /devices/me` (captured 27 Sep; ID and secret scrubbed, device deleted) |
 | `watch-squad.json`, `watch-squad-and-manual.json`, `watch-squad-off.json` | the watch list following the squad; with manual picks (one also in the squad); with the squad switched off (manual watch kept) |
+| `players-search-pal.json` | `GET /players/search?q=pal` (from happy-backend-pal#4, before it was merged) |
 | `alerts-empty.json`, `error-unauthorized.json` | the alert history before pushes exist; a wrong device secret (401) |
 
 Every response carries `meta.freshness`. Show it; never present stale or unknown data as fresh.

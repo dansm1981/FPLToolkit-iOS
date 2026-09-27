@@ -11,15 +11,22 @@ final class WatchStore {
     private(set) var updateError: ErrorCopy?
     private(set) var isUpdating = false
 
-    init(repository: WatchRepository) {
+    /// Runs before the first load: tells the server which team this device follows, so the
+    /// squad in the watch list is never the previous team's.
+    private let prepare: @MainActor () async -> Void
+
+    init(repository: WatchRepository, prepare: @escaping @MainActor () async -> Void = {}) {
         self.repository = repository
         self.resource = Resource(repository)
+        self.prepare = prepare
     }
 
     var watch: Watch? { resource.loaded?.value }
 
     func loadIfNeeded() async {
-        if case .loading = resource.phase { await resource.load() }
+        guard case .loading = resource.phase else { return }
+        await prepare()
+        await resource.load()
     }
 
     func setWatched(_ watched: Bool, playerId: Int) async {

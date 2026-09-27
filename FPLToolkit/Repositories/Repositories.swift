@@ -67,4 +67,23 @@ struct PlayerRepository: Sendable {
     func player(id: Int) -> CachedEndpoint<PlayerSheet> {
         .init(client: client, cache: cache, path: "players/\(id)")
     }
+
+    /// Players whose names match, best first. Not saved offline: results are only useful live.
+    func search(_ text: String) async throws -> PlayerSearchResult {
+        try await client.get("players/search", query: [URLQueryItem(name: "q", value: text)], as: PlayerSearchResult.self).envelope.data
+    }
+
+    /// Whether the server has player search yet (it arrives with a backend release). Before
+    /// then the address is caught by `players/{id}` ("invalid_player_id"), or doesn't exist (404).
+    /// Any other failure (offline, FPL down) counts as available, so search isn't hidden by accident.
+    func searchIsAvailable() async -> Bool {
+        do {
+            _ = try await search("aa")
+            return true
+        } catch APIError.server(.invalidPlayerId, _, _), APIError.unexpected(status: 404?) {
+            return false
+        } catch {
+            return true
+        }
+    }
 }

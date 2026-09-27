@@ -1,0 +1,157 @@
+{
+  "data": {
+    "query": "pal",
+    "players": [
+      {
+        "id": 154,
+        "webName": "Palmer",
+        "clubId": 6,
+        "position": "MID",
+        "price": 9.7,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 75,
+          "news": "Muscular injury - 75% chance of playing"
+        },
+        "selectedByPct": 25.8,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 1,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      {
+        "id": 301,
+        "webName": "Palmer",
+        "clubId": 12,
+        "position": "GK",
+        "price": 4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 3.9,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 10,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.15,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      {
+        "id": 152,
+        "webName": "Palestra",
+        "clubId": 6,
+        "position": "DEF",
+        "price": 5.3,
+        "availability": {
+          "code": "d",
+          "level": "doubt",
+          "chanceNext": 50,
+          "news": "Thigh injury - 50% chance of playing"
+        },
+        "selectedByPct": 0.6,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 3,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 2.7,
+            "lens": "clean_sheet",
+            "source": "market"
+          }
+        }
+      },
+      {
+        "id": 570,
+        "webName": "Palacios",
+        "clubId": 10,
+        "position": "MID",
+        "price": 5.4,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.2,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 12,
+          "home": false,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.05,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      },
+      {
+        "id": 619,
+        "webName": "Palacios",
+        "clubId": 12,
+        "position": "MID",
+        "price": 5,
+        "availability": {
+          "code": "a",
+          "level": "ok",
+          "chanceNext": null,
+          "news": null
+        },
+        "selectedByPct": 0.1,
+        "nextFixture": {
+          "gw": 6,
+          "blank": false,
+          "opponentClubId": 10,
+          "home": true,
+          "kickoff": "2026-10-10T14:00:00.000Z",
+          "xfdr": {
+            "value": 3.27,
+            "lens": "attack",
+            "source": "market"
+          }
+        }
+      }
+    ]
+  },
+  "meta": {
+    "apiVersion": "1",
+    "generatedAt": "2026-09-27T08:13:09.266Z",
+    "freshness": [
+      {
+        "source": "fpl_core",
+        "asOf": "2026-09-27T03:22:48.021Z",
+        "expectedMaxAgeSeconds": 108000,
+        "state": "fresh",
+        "label": "Nightly FPL sync"
+      },
+      {
+        "source": "availability",
+        "asOf": "2026-09-27T08:00:02.193Z",
+        "expectedMaxAgeSeconds": 3600,
+        "state": "fresh",
+        "label": "Checked every 15 minutes"
+      }
+    ]
+  }
+}

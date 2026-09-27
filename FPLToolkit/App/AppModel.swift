@@ -66,7 +66,9 @@ final class AppModel {
     }
 
     private func makeWatchStore() {
-        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache))
+        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache)) { [weak self] in
+            await self?.syncDevice()
+        }
     }
 
     /// Called at launch and on foreground (§3.1). A failure keeps whatever we had.

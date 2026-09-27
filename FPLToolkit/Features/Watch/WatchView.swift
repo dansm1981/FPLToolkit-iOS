@@ -5,23 +5,192 @@ import SwiftUI
 struct WatchView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
+    @State private var searchAvailable = false
+    @State private var query = ""
+    @State private var search: PlayerSearchModel?
 
     var body: some View {
         Group {
             if let store = appModel.watch {
-                WatchContent(store: store)
-                    .task { await store.loadIfNeeded() }
+                if let search, !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    SearchResults(search: search, store: store)
+                } else {
+                    WatchContent(store: store, searchAvailable: searchAvailable)
+                }
             }
         }
+        .task { await appModel.watch?.loadIfNeeded() }
+        .task {
+            if search == nil {
+                search = PlayerSearchModel(repository: appModel.playerRepository)
+                searchAvailable = await appModel.playerRepository.searchIsAvailable()
+            }
+        }
+        .task(id: query) { await search?.run(query) }
+        .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
         .toolkitScreen()
         .navigationTitle("Watch")
         .settingsButton(entryId: entryId)
     }
 }
 
+/// Only shows the search field once the server has player search.
+private struct PlayerSearchField: ViewModifier {
+    let isOn: Bool
+    @Binding var query: String
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search all players")
+        } else {
+            content
+        }
+    }
+}
+
+@MainActor
+@Observable
+final class PlayerSearchModel {
+    enum Phase {
+        case idle
+        case tooShort
+        case searching
+        case results(query: String, players: [PlayerSummary])
+        case failed(ErrorCopy)
+    }
+
+    private(set) var phase: Phase = .idle
+    private let repository: PlayerRepository
+
+    init(repository: PlayerRepository) {
+        self.repository = repository
+    }
+
+    /// Runs a search after a short pause in typing; a newer query cancels this one.
+    func run(_ text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { phase = .idle; return }
+        guard trimmed.count >= 2 else { phase = .tooShort; return }
+        do {
+            try await Task.sleep(for: .milliseconds(300))
+            phase = .searching
+            let result = try await repository.search(trimmed)
+            phase = .results(query: trimmed, players: result.players)
+        } catch let error as APIError {
+            phase = .failed(ErrorCopy(error))
+        } catch {
+            // Cancelled by a newer query.
+        }
+    }
+}
+
+private struct SearchResults: View {
+    @Environment(AppModel.self) private var appModel
+    let search: PlayerSearchModel
+    let store: WatchStore
+
+    var body: some View {
+        List {
+            switch search.phase {
+            case .idle, .tooShort:
+                note("Type at least 2 letters of a player's name.")
+            case .searching:
+                HStack(spacing: ToolkitSpace.sm) {
+                    ProgressView()
+                    Text("Searching…").foregroundStyle(ToolkitColor.secondaryText)
+                }
+                .listRowBackground(ToolkitColor.surface)
+            case .failed(let copy):
+                note("\(copy.title). \(copy.message)")
+            case .results(let query, let players):
+                if players.isEmpty {
+                    note("No players match \u{201C}\(query)\u{201D}.")
+                } else {
+                    Section {
+                        ForEach(players) { player in
+                            SearchResultRow(player: player, store: store)
+                        }
+                    } footer: {
+                        if let error = store.updateError {
+                            Text("Your watch list wasn't changed: \(error.message)")
+                                .foregroundStyle(ToolkitColor.error)
+                        }
+                    }
+                    .listRowBackground(ToolkitColor.surface)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundStyle(ToolkitColor.secondaryText)
+            .listRowBackground(ToolkitColor.surface)
+    }
+}
+
+private struct SearchResultRow: View {
+    @Environment(AppModel.self) private var appModel
+    let player: PlayerSummary
+    let store: WatchStore
+
+    var body: some View {
+        let watch = store.watch
+        let isManual = watch?.isManual(player.id) ?? false
+        let inSquad = watch?.reasons(for: player.id).contains(.squad) ?? false
+        HStack(spacing: ToolkitSpace.md) {
+            Button {
+                appModel.router.openPlayer(player.id)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: ToolkitSpace.sm) {
+                        Text(player.webName)
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        AvailabilityBadge(availability: player.availability)
+                    }
+                    Text(details(inSquad: inSquad))
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the player")
+
+            Button {
+                Task { await store.setWatched(!isManual, playerId: player.id) }
+            } label: {
+                Image(systemName: isManual ? "checkmark.circle.fill" : "plus.circle")
+                    .font(.title2)
+                    .foregroundStyle(ToolkitColor.link)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.borderless)
+            .disabled(watch == nil || store.isUpdating)
+            .accessibilityLabel(isManual ? "Stop watching \(player.webName)" : "Watch \(player.webName)")
+        }
+    }
+
+    private func details(inSquad: Bool) -> String {
+        var parts: [String] = []
+        if let club = appModel.club(player.clubId) { parts.append(club.shortName) }
+        parts.append(player.position.rawValue)
+        parts.append(Format.price(player.price))
+        if inSquad { parts.append("in your squad") }
+        return parts.joined(separator: " · ")
+    }
+}
+
 private struct WatchContent: View {
     @Environment(AppModel.self) private var appModel
     let store: WatchStore
+    var searchAvailable = false
 
     var body: some View {
         switch store.resource.phase {
@@ -103,7 +272,9 @@ private struct WatchContent: View {
 
             Section {
                 if manualOnly.isEmpty {
-                    Text("To watch a player who isn't in your squad, open him from Today or Team and tap Watch.")
+                    Text(searchAvailable
+                         ? "To watch a player who isn't in your squad, search for him above."
+                         : "To watch a player who isn't in your squad, open him from Today or Team and tap Watch.")
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 } else {

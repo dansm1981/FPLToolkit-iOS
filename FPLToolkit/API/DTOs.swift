@@ -370,6 +370,13 @@ struct PlayerSheet: Decodable, Sendable {
     let links: Links
 }
 
+// MARK: - Player search (GET /players/search?q=…)
+
+struct PlayerSearchResult: Decodable, Sendable {
+    let query: String
+    let players: [PlayerSummary]
+}
+
 // MARK: - Device and watch (§6, as built in Step 1)
 
 struct DeviceRegistration: Decodable, Sendable {
