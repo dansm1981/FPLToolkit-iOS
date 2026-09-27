@@ -39,31 +39,41 @@ struct RootView: View {
         Group {
             if appModel.updateRequired {
                 UpdateRequiredView()
-            } else if let entryId = appModel.entryId {
-                MainView(entryId: entryId)
+            } else if appModel.entryId != nil || appModel.exploring {
+                MainView(entryId: appModel.entryId)
             } else {
                 OnboardingFlow()
             }
         }
         .animation(.default, value: appModel.entryId)
+        .animation(.default, value: appModel.exploring)
     }
 }
 
 struct MainView: View {
     @Environment(AppModel.self) private var appModel
-    let entryId: Int
+    /// nil while exploring without a team.
+    let entryId: Int?
 
     var body: some View {
         @Bindable var router = appModel.router
         TabView(selection: $router.selectedTab) {
             NavigationStack {
-                TodayView(entryId: entryId)
+                if let entryId {
+                    TodayView(entryId: entryId)
+                } else {
+                    ExploreTodayView()
+                }
             }
             .tabItem { Label("Today", systemImage: "rectangle.stack") }
             .tag(AppTab.today)
 
             NavigationStack {
-                TeamView(entryId: entryId)
+                if let entryId {
+                    TeamView(entryId: entryId)
+                } else {
+                    NoTeamView(title: "My team", message: "Add your FPL team to see your published squad here, with each player's next fixture, price and availability.")
+                }
             }
             .tabItem { Label("Team", systemImage: "tshirt") }
             .tag(AppTab.team)

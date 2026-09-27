@@ -9,10 +9,12 @@ final class AppModel {
         "FPLToolkit is an unofficial, fan-made app. It is not affiliated with the Premier League or Fantasy Premier League."
 
     private(set) var entryId: Int?
+    /// "Explore without a team": the app is usable (watch, search, players) with no team connected.
+    private(set) var exploring = false
     private(set) var bootstrap: Loaded<Bootstrap>?
-    /// The watch list for the connected team's device; nil when no team is connected.
+    /// The device's watch list; nil before a team is connected or exploring starts.
     private(set) var watch: WatchStore?
-    /// Alert history for the connected device; nil when no team is connected.
+    /// Alert history for the device; nil before a team is connected or exploring starts.
     private(set) var alerts: Resource<AlertHistory>?
     let router = Router()
     let push = PushManager()
@@ -24,7 +26,10 @@ final class AppModel {
 
     private let cache: ResponseCache
     private let defaults: UserDefaults
-    private enum Keys { static let entryId = "entryId" }
+    private enum Keys {
+        static let entryId = "entryId"
+        static let exploring = "exploring"
+    }
 
     init(client: APIClient = .configured, cache: ResponseCache = .shared, defaults: UserDefaults = .standard) {
         self.bootstrapRepository = BootstrapRepository(client: client, cache: cache)
@@ -35,8 +40,9 @@ final class AppModel {
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)
         self.entryId = stored > 0 ? stored : nil
+        self.exploring = entryId == nil && defaults.bool(forKey: Keys.exploring)
         self.bootstrap = bootstrapRepository.bootstrap.cached()
-        if entryId != nil { makeWatchStore() }
+        if entryId != nil || exploring { makeWatchStore() }
         push.openLink = { [weak self] link in self?.router.open(link) }
         push.tokenChanged = { [weak self] token in
             guard let self else { return }
@@ -62,17 +68,31 @@ final class AppModel {
 
     func connect(entryId: Int) {
         defaults.set(entryId, forKey: Keys.entryId)
+        defaults.removeObject(forKey: Keys.exploring)
         self.entryId = entryId
+        exploring = false
         router.selectedTab = .today
         makeWatchStore()
         Task { await syncDevice() }
     }
 
-    /// Forgets the team and everything saved for it. Manual watches stay with the device.
+    /// Uses the app without a team: Watch, search and player pages work; Today and Team invite a team.
+    /// A watch list made while exploring stays with the device if a team is added later.
+    func startExploring() {
+        defaults.set(true, forKey: Keys.exploring)
+        exploring = true
+        router.selectedTab = .watch
+        makeWatchStore()
+    }
+
+    /// Forgets the team and everything saved for it, back to the first screen.
+    /// Manual watches stay with the device.
     func disconnect() {
         defaults.removeObject(forKey: Keys.entryId)
+        defaults.removeObject(forKey: Keys.exploring)
         cache.removeAll()
         entryId = nil
+        exploring = false
         watch = nil
         alerts = nil
         Task { await deviceSession.sync(entryId: nil) }
@@ -84,15 +104,20 @@ final class AppModel {
         disconnect()
     }
 
-    /// Keeps the server told which team this device follows. Cheap when nothing changed.
+    /// Keeps the server told which team this device follows (none while exploring). Cheap when
+    /// nothing changed. Exploring matters too: a device kept in the Keychain from an earlier
+    /// install may still be linked to an old team on the server.
     func syncDevice() async {
-        guard let entryId else { return }
-        await deviceSession.sync(entryId: entryId)
+        if let entryId {
+            await deviceSession.sync(entryId: entryId)
+        } else if exploring {
+            await deviceSession.sync(entryId: nil)
+        }
     }
 
     private func makeWatchStore() {
-        guard let entryId else { return }
-        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache, entryId: entryId)) { [weak self] in
+        let key = entryId.map(String.init) ?? "explore"
+        watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache, cacheKeySuffix: key)) { [weak self] in
             await self?.syncDevice()
         }
         alerts = Resource(AlertsRepository(session: deviceSession, cache: cache))

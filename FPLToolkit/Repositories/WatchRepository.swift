@@ -8,10 +8,11 @@ struct WatchRepository: LoadableEndpoint {
     /// Saved per team, so a saved list can never show another team's squad.
     private let cacheKey: String
 
-    init(session: DeviceSession, cache: ResponseCache, entryId: Int) {
+    /// `cacheKeySuffix` is the team ID, or "explore" when there's no team.
+    init(session: DeviceSession, cache: ResponseCache, cacheKeySuffix: String) {
         self.session = session
         self.cache = cache
-        self.cacheKey = "devices/me/watch-\(entryId)"
+        self.cacheKey = "devices/me/watch-\(cacheKeySuffix)"
     }
 
     func fetch(bypassCache: Bool = false) async throws -> Loaded<Watch> {

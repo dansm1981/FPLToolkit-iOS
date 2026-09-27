@@ -4,7 +4,9 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
-    let entryId: Int
+    /// nil while exploring without a team.
+    let entryId: Int?
+    @State private var addingTeam = false
     @State private var confirmingChange = false
     @State private var confirmingReset = false
     @State private var resetError: ErrorCopy?
@@ -14,9 +16,15 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Your team") {
-                    LabeledContent("Team ID", value: String(entryId))
-                    Button("Change team", role: .destructive) {
-                        confirmingChange = true
+                    if let entryId {
+                        LabeledContent("Team ID", value: String(entryId))
+                        Button("Change team", role: .destructive) {
+                            confirmingChange = true
+                        }
+                    } else {
+                        Text("No team added. You're exploring: watch any player and open their page.")
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                        Button("Add my FPL team") { addingTeam = true }
                     }
                 }
                 .listRowBackground(ToolkitColor.surface)
@@ -74,6 +82,7 @@ struct SettingsView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .sheet(isPresented: $addingTeam) { AddTeamSheet() }
             .confirmationDialog("Change team?", isPresented: $confirmingChange, titleVisibility: .visible) {
                 Button("Change team", role: .destructive) {
                     dismiss()
@@ -117,7 +126,7 @@ struct SettingsView: View {
 
 /// The person icon at the top right of each tab, opening Settings.
 private struct SettingsButton: ViewModifier {
-    let entryId: Int
+    let entryId: Int?
     @State private var showing = false
 
     func body(content: Content) -> some View {
@@ -140,7 +149,7 @@ private struct SettingsButton: ViewModifier {
 }
 
 extension View {
-    func settingsButton(entryId: Int) -> some View {
+    func settingsButton(entryId: Int?) -> some View {
         modifier(SettingsButton(entryId: entryId))
     }
 }

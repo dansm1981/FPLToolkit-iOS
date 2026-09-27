@@ -129,4 +129,13 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.staticTexts["Quiet hours"].firstMatch, "Notification settings")
         check(app, "08-notifications", sizesAndLists: false)
     }
+
+    func test07ExploreWithoutATeam() {
+        let app = launch(["-entryId", "0", "-exploring", "YES"])
+        waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")
+        check(app, "09-explore-today")
+        app.tabBars.buttons["Team"].tap()
+        waitFor(app.staticTexts["Add your FPL team"].firstMatch, "Explore Team")
+        check(app, "10-explore-team")
+    }
 }

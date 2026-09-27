@@ -4,7 +4,8 @@ import SwiftUI
 /// each with why it's watched. Alerts for them arrive once pushes are switched on (Step 4).
 struct WatchView: View {
     @Environment(AppModel.self) private var appModel
-    let entryId: Int
+    /// nil while exploring without a team.
+    let entryId: Int?
     @State private var searchAvailable = false
     @State private var query = ""
     @State private var search: PlayerSearchModel?
@@ -223,7 +224,7 @@ private struct WatchContent: View {
         return List {
             Section {
                 VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    Text("Your squad and the players you follow.")
+                    Text(appModel.entryId == nil ? "The players you follow." : "Your squad and the players you follow.")
                         .foregroundStyle(ToolkitColor.secondaryText)
                     SavedDataBanner(resource: store.resource)
                     if let error = store.updateError {
@@ -234,25 +235,27 @@ private struct WatchContent: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: ToolkitSpace.sm, trailing: 0))
             }
 
-            Section {
-                Toggle(isOn: Binding(
-                    get: { watch.autoTrackSquad },
-                    set: { on in Task { await store.setAutoTrackSquad(on) } }
-                )) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Follow my published squad")
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        Text(squadCaption(watch))
-                            .font(.subheadline)
-                            .foregroundStyle(ToolkitColor.secondaryText)
+            if appModel.entryId != nil {
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { watch.autoTrackSquad },
+                        set: { on in Task { await store.setAutoTrackSquad(on) } }
+                    )) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Follow my published squad")
+                                .font(.headline)
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            Text(squadCaption(watch))
+                                .font(.subheadline)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                        }
                     }
+                    .tint(ToolkitColor.accent)
+                    .disabled(store.isUpdating || loaded.isFromCache)
+                    .padding(.vertical, ToolkitSpace.xs)
                 }
-                .tint(ToolkitColor.accent)
-                .disabled(store.isUpdating || loaded.isFromCache)
-                .padding(.vertical, ToolkitSpace.xs)
+                .listRowBackground(ToolkitColor.surface)
             }
-            .listRowBackground(ToolkitColor.surface)
 
             if !squadItems.isEmpty {
                 Section {
@@ -280,9 +283,7 @@ private struct WatchContent: View {
 
             Section {
                 if manualOnly.isEmpty {
-                    Text(searchAvailable
-                         ? "To watch a player who isn't in your squad, search for him above."
-                         : "To watch a player who isn't in your squad, open him from Today or Team and tap Watch.")
+                    Text(emptyManualText)
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 } else {
@@ -296,7 +297,7 @@ private struct WatchContent: View {
                     }
                 }
             } header: {
-                SectionLabel(text: "Also watching")
+                SectionLabel(text: appModel.entryId == nil ? "Watching" : "Also watching")
             }
             .listRowBackground(ToolkitColor.surface)
 
@@ -329,6 +330,17 @@ private struct WatchContent: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .refreshable { await store.resource.load(bypassCache: true) }
+    }
+
+    private var emptyManualText: String {
+        if appModel.entryId == nil {
+            return searchAvailable
+                ? "Search for any player above and tap + to watch him."
+                : "Add your team to follow your squad, or open a player and tap Watch."
+        }
+        return searchAvailable
+            ? "To watch a player who isn't in your squad, search for him above."
+            : "To watch a player who isn't in your squad, open him from Today or Team and tap Watch."
     }
 
     private func squadCaption(_ watch: Watch) -> String {

@@ -53,6 +53,9 @@ struct WelcomeView: View {
                 }
                 .buttonStyle(ToolkitPrimaryButtonStyle())
 
+                Button("Explore without a team") { appModel.startExploring() }
+                    .buttonStyle(ToolkitSecondaryButtonStyle())
+
                 Text(appModel.disclosure)
                     .font(.footnote)
                     .foregroundStyle(ToolkitColor.secondaryText)
