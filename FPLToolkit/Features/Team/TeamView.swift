@@ -5,6 +5,7 @@ struct TeamView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Team>?
+    @State private var selectedPlayer: PlayerRef?
 
     var body: some View {
         Group {
@@ -23,7 +24,7 @@ struct TeamView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
-                            TeamContent(loaded: loaded)
+                            TeamContent(loaded: loaded) { selectedPlayer = PlayerRef(id: $0) }
                         }
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.bottom, ToolkitSpace.section)
@@ -35,6 +36,9 @@ struct TeamView: View {
         .toolkitScreen()
         .navigationTitle("My team")
         .settingsButton(entryId: entryId)
+        .sheet(item: $selectedPlayer) { ref in
+            PlayerSheetView(playerId: ref.id, knownName: resource?.loaded?.value.player(ref.id)?.webName)
+        }
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.team(entryId: entryId))
@@ -48,6 +52,7 @@ struct TeamView: View {
 struct TeamContent: View {
     @Environment(AppModel.self) private var appModel
     let loaded: Loaded<Team>
+    var onSelectPlayer: ((Int) -> Void)?
 
     private var team: Team { loaded.value }
 
@@ -64,7 +69,14 @@ struct TeamContent: View {
                         VStack(spacing: 0) {
                             ForEach(Array(line.picks.enumerated()), id: \.element.playerId) { index, pick in
                                 if let player = team.player(pick.playerId) {
-                                    PlayerRow(pick: pick, player: player)
+                                    Button {
+                                        onSelectPlayer?(pick.playerId)
+                                    } label: {
+                                        PlayerRow(pick: pick, player: player)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityHint("Opens the player")
                                     if index < line.picks.count - 1 {
                                         Divider().overlay(ToolkitColor.border)
                                     }

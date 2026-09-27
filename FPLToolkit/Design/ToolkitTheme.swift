@@ -106,7 +106,8 @@ struct Pill: View {
 struct SectionLabel: View {
     let text: String
     var body: some View {
-        Text(text.uppercased())
+        // Uppercased, but "xFDR" keeps its casing.
+        Text(text.uppercased().replacingOccurrences(of: "XFDR", with: "xFDR"))
             .font(.footnote.weight(.semibold))
             .tracking(1.2)
             .foregroundStyle(ToolkitColor.secondaryText)
