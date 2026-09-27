@@ -42,9 +42,23 @@ struct DraftView: View {
 }
 
 private struct DraftContent: View {
+    @Environment(AppModel.self) private var appModel
     @Environment(\.dynamicTypeSize) private var typeSize
     let draft: PlannerDraft
     let model: DraftModel
+    /// The player whose menu is open.
+    @State private var menuFor: PlannerDraft.Pick?
+    @State private var pickerSlot: PickerSlot?
+
+    private var actions: TileActions {
+        TileActions(
+            highlighted: model.swapFrom,
+            tap: { pick in tapped(pick) },
+            add: draft.isEditable ? { position, onBench in
+                pickerSlot = PickerSlot(position: position, replacing: nil, onBench: onBench)
+            } : nil
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -54,6 +68,12 @@ private struct DraftContent: View {
                 if let error = model.stepError {
                     ErrorBanner(copy: error)
                 }
+                if let error = model.actionError {
+                    ErrorBanner(copy: error)
+                }
+                if let from = model.swapFrom {
+                    SwapBanner(name: draft.player(from)?.webName ?? "this player") { model.swapFrom = nil }
+                }
                 MoneySummary(draft: draft)
                 if !draft.check.ok {
                     IssuesCard(issues: draft.check.issues)
@@ -62,10 +82,15 @@ private struct DraftContent: View {
                     WeekTransfers(draft: draft)
                 }
                 if typeSize.isAccessibilitySize {
-                    SquadList(draft: draft)
+                    SquadList(draft: draft, actions: actions)
                 } else {
-                    PitchCard(draft: draft)
-                    BenchCard(draft: draft)
+                    PitchCard(draft: draft, actions: actions)
+                    BenchCard(draft: draft, actions: actions)
+                }
+                if !draft.isEditable {
+                    Label("GW\(draft.gw) has passed. Plan from GW\(draft.firstEditableGw).", systemImage: "lock")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
                 }
                 ChipsSection(draft: draft)
                 Footnotes(draft: draft)
@@ -74,6 +99,94 @@ private struct DraftContent: View {
             .padding(.bottom, ToolkitSpace.section)
         }
         .refreshable { await model.resource.load(bypassCache: true) }
+        .toolbar {
+            if model.isApplying {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProgressView().accessibilityLabel("Saving")
+                }
+            }
+        }
+        .confirmationDialog(
+            menuFor.flatMap { draft.player($0.playerId)?.webName } ?? "Player",
+            isPresented: Binding(get: { menuFor != nil }, set: { if !$0 { menuFor = nil } }),
+            titleVisibility: .visible,
+            presenting: menuFor
+        ) { pick in
+            menu(for: pick)
+        }
+        .sheet(item: $pickerSlot) { slot in
+            PlannerPickerView(draft: draft, slot: slot, model: model)
+        }
+    }
+
+    private func tapped(_ pick: PlannerDraft.Pick) {
+        guard draft.isEditable else {
+            appModel.router.openPlayer(pick.playerId)
+            return
+        }
+        if let from = model.swapFrom {
+            model.swapFrom = nil
+            if from != pick.playerId {
+                Task { await model.apply(.swap(from, with: pick.playerId, gw: draft.gw)) }
+            }
+            return
+        }
+        model.clearActionError()
+        menuFor = pick
+    }
+
+    /// The website's player menu: captain, vice, replace, swap, watch, remove, and the player page.
+    @ViewBuilder
+    private func menu(for pick: PlannerDraft.Pick) -> some View {
+        let onBench = draft.bench.contains(pick)
+        let position = draft.player(pick.playerId)?.position ?? .unknown
+        if !onBench && !pick.isCaptain {
+            Button("Make captain") { Task { await model.apply(.captain(pick.playerId, gw: draft.gw)) } }
+        }
+        if !onBench && !pick.isVice {
+            Button("Make vice-captain") { Task { await model.apply(.vice(pick.playerId, gw: draft.gw)) } }
+        }
+        Button("Replace…") {
+            pickerSlot = PickerSlot(position: position, replacing: pick, onBench: onBench)
+        }
+        Button("Swap with…") { model.swapFrom = pick.playerId }
+        if let store = appModel.watch, let watch = store.watch {
+            let watched = watch.isManual(pick.playerId)
+            Button(watched ? "Stop watching" : "Watch for alerts") {
+                Task { await store.setWatched(!watched, playerId: pick.playerId) }
+            }
+        }
+        Button("View player") { appModel.router.openPlayer(pick.playerId) }
+        Button("Remove from squad", role: .destructive) {
+            Task { await model.apply(.remove(pick.playerId, gw: draft.gw)) }
+        }
+    }
+}
+
+/// What tapping the pitch does: a player opens his menu (or completes a swap), an empty place
+/// opens the picker. `add` is nil when the gameweek can't be edited.
+struct TileActions {
+    var highlighted: Int?
+    var tap: (PlannerDraft.Pick) -> Void
+    var add: ((Position, Bool) -> Void)?
+}
+
+private struct SwapBanner: View {
+    let name: String
+    let cancel: () -> Void
+
+    var body: some View {
+        ToolkitCard {
+            HStack(spacing: ToolkitSpace.md) {
+                Label("Tap the player to swap with \(name)", systemImage: "arrow.up.arrow.down")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: ToolkitSpace.sm)
+                Button("Cancel", action: cancel)
+                    .frame(minHeight: 44)
+            }
+        }
     }
 }
 
@@ -252,6 +365,7 @@ private struct WeekTransfers: View {
 
 private struct PitchCard: View {
     let draft: PlannerDraft
+    let actions: TileActions
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
@@ -267,10 +381,12 @@ private struct PitchCard: View {
                 ForEach(draft.rows(), id: \.position) { row in
                     HStack(alignment: .top, spacing: ToolkitSpace.xs) {
                         ForEach(row.picks) { pick in
-                            PlannerTile(pick: pick, draft: draft)
+                            PlannerTile(pick: pick, draft: draft, highlighted: actions.highlighted == pick.playerId) {
+                                actions.tap(pick)
+                            }
                         }
                         ForEach(0..<row.empty, id: \.self) { _ in
-                            EmptyTile(position: row.position)
+                            EmptyTile(position: row.position, onTap: actions.add.map { add in { add(row.position, false) } })
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -289,17 +405,20 @@ private struct PitchCard: View {
 
 private struct BenchCard: View {
     let draft: PlannerDraft
+    let actions: TileActions
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
             SectionLabel(text: "Bench")
             HStack(alignment: .top, spacing: ToolkitSpace.xs) {
                 ForEach(draft.bench) { pick in
-                    PlannerTile(pick: pick, draft: draft)
+                    PlannerTile(pick: pick, draft: draft, highlighted: actions.highlighted == pick.playerId) {
+                        actions.tap(pick)
+                    }
                 }
                 ForEach(PlannerDraft.pitchOrder, id: \.self) { position in
                     ForEach(0..<draft.emptyBench(position), id: \.self) { _ in
-                        EmptyTile(position: position)
+                        EmptyTile(position: position, onTap: actions.add.map { add in { add(position, true) } })
                     }
                 }
             }
@@ -319,14 +438,15 @@ struct PlannerTile: View {
     @ScaledMetric(relativeTo: .caption) private var badge: CGFloat = 20
     let pick: PlannerDraft.Pick
     let draft: PlannerDraft
+    /// The player chosen with "Swap with…".
+    var highlighted = false
     /// A full-width row (circle beside the text) for the list shown at accessibility sizes.
     var asRow = false
+    var onTap: () -> Void
 
     var body: some View {
         let player = draft.player(pick.playerId)
-        Button {
-            appModel.router.openPlayer(pick.playerId)
-        } label: {
+        Button(action: onTap) {
             if asRow {
                 HStack(spacing: ToolkitSpace.md) {
                     marker(player)
@@ -366,7 +486,9 @@ struct PlannerTile: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText(player))
-        .accessibilityHint("Opens the player")
+        .accessibilityHint(draft.isEditable ? "Shows what you can do with this player" : "Opens the player")
+        // Combining the tile into one element drops the button role; put it back.
+        .accessibilityAddTraits(highlighted ? [.isButton, .isSelected] : .isButton)
     }
 
     /// The club's short name in a circle (ringed when doubtful or out), with the C / V badge.
@@ -378,6 +500,7 @@ struct PlannerTile: View {
                 .frame(width: circle, height: circle)
                 .background(ToolkitColor.raised, in: Circle())
                 .overlay(Circle().strokeBorder(availabilityColor(player), lineWidth: 2))
+                .overlay(Circle().strokeBorder(highlighted ? ToolkitColor.accent : .clear, lineWidth: 3).padding(-4))
             if pick.isCaptain || pick.isVice {
                 Text(pick.isCaptain ? "C" : "V")
                     .font(.caption.weight(.heavy))
@@ -437,40 +560,65 @@ struct PlannerTile: View {
 }
 
 private struct EmptyTile: View {
+    @ScaledMetric(relativeTo: .caption) private var circle: CGFloat = 44
     let position: Position
+    /// Opens the picker; nil when the gameweek can't be edited.
+    var onTap: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: 3) {
-            Image(systemName: "plus")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(ToolkitColor.secondaryText)
-                .frame(width: 44, height: 44)
-                .overlay(Circle().strokeBorder(ToolkitColor.border, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
-            Text(position.rawValue)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(ToolkitColor.secondaryText)
+        Button {
+            onTap?()
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: "plus")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(onTap == nil ? ToolkitColor.secondaryText : ToolkitColor.link)
+                    .frame(width: circle, height: circle)
+                    .overlay(Circle().strokeBorder(onTap == nil ? ToolkitColor.border : ToolkitColor.link,
+                                                   style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                Text(position.rawValue)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            }
+            .frame(maxWidth: 76)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: 76)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Empty \(position.spokenName) place")
+        .buttonStyle(.plain)
+        .disabled(onTap == nil)
+        .accessibilityLabel("Add a \(position.spokenName)")
     }
 }
 
 /// At accessibility text sizes the pitch becomes a list, so nothing is squeezed.
 private struct SquadList: View {
     let draft: PlannerDraft
+    let actions: TileActions
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.md) {
             SectionLabel(text: "Starting XI · \(draft.formation)")
             ForEach(draft.rows(), id: \.position) { row in
                 ForEach(row.picks) { pick in
-                    PlannerTile(pick: pick, draft: draft, asRow: true)
+                    PlannerTile(pick: pick, draft: draft, highlighted: actions.highlighted == pick.playerId, asRow: true) {
+                        actions.tap(pick)
+                    }
+                }
+                if row.empty > 0, let add = actions.add {
+                    Button("Add a \(row.position.spokenName)") { add(row.position, false) }
+                        .buttonStyle(ToolkitSecondaryButtonStyle())
                 }
             }
             SectionLabel(text: "Bench")
             ForEach(draft.bench) { pick in
-                PlannerTile(pick: pick, draft: draft, asRow: true)
+                PlannerTile(pick: pick, draft: draft, highlighted: actions.highlighted == pick.playerId, asRow: true) {
+                    actions.tap(pick)
+                }
+            }
+            ForEach(PlannerDraft.pitchOrder, id: \.self) { position in
+                if draft.emptyBench(position) > 0, let add = actions.add {
+                    Button("Add a \(position.spokenName) to the bench") { add(position, true) }
+                        .buttonStyle(ToolkitSecondaryButtonStyle())
+                }
             }
         }
     }

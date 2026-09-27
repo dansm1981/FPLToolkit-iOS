@@ -186,6 +186,52 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "12-planner-list", sizesAndLists: false)
     }
 
+    /// Builds from a blank draft: "+" opens the picker, a pick lands on the pitch, the player menu
+    /// removes him. Blank drafts are deleted afterwards (the imported one is kept for test08).
+    func test09PlannerEditing() {
+        let app = launch(["-entryId", team])
+        app.tabBars.buttons["Planner"].tap()
+        let newDraft = app.buttons["New draft"].firstMatch
+        waitFor(newDraft, "New draft menu", timeout: 30)
+        newDraft.tap()
+        app.buttons["Start from scratch"].firstMatch.tap()
+
+        let addKeeper = app.buttons["Add a goalkeeper"].firstMatch
+        waitFor(addKeeper, "Blank draft", timeout: 40)
+        addKeeper.tap()
+        let firstKeeper = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · GK · '")).firstMatch
+        waitFor(firstKeeper, "Picker", timeout: 40)
+        settle()
+        check(app, "13-planner-picker", sizesAndLists: false)
+        let name = firstKeeper.label.components(separatedBy: ",").first ?? ""
+        firstKeeper.tap()
+
+        let squadOfOne = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '1 of 15 players'")).firstMatch
+        waitFor(squadOfOne, "The pick on the draft", timeout: 40)
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        waitFor(tile, "\(name) on the pitch")
+        tile.tap()
+        app.buttons["Remove from squad"].firstMatch.tap()
+        let empty = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '0 of 15 players'")).firstMatch
+        waitFor(empty, "Squad empty again", timeout: 40)
+
+        // Tidy up: delete every blank draft.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let blanks = app.buttons.matching(NSPredicate(format: "label CONTAINS 'of 15 players'"))
+        _ = blanks.firstMatch.waitForExistence(timeout: 10)
+        var guardCount = 0
+        while blanks.count > 0 && guardCount < 5 {
+            guardCount += 1
+            let before = blanks.count
+            blanks.firstMatch.swipeLeft()
+            app.buttons["Delete"].firstMatch.tap()
+            app.buttons["Delete draft"].firstMatch.tap()
+            expectation(for: NSPredicate { _, _ in blanks.count < before }, evaluatedWith: nil)
+            waitForExpectations(timeout: 20)
+        }
+        XCTAssertEqual(blanks.count, 0, "blank drafts left behind")
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

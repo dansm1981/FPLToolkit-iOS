@@ -16,15 +16,16 @@ struct PlannerRepository: Sendable {
 
     func create(_ request: PlannerNewDraft) async throws -> PlannerDraft {
         let fetched = try await session.send("POST", Self.base, body: request, as: PlannerDraft.self)
-        return saved(fetched)
+        return saved(fetched).value
     }
 
-    func apply(_ action: PlannerAction, to id: String) async throws -> PlannerDraft {
+    /// One edit; the answer is the draft for that gameweek, or `invalid_action` with the reason.
+    func apply(_ action: PlannerAction, to id: String) async throws -> Loaded<PlannerDraft> {
         let fetched = try await session.send("POST", "\(Self.base)/\(id)/actions", body: action, as: PlannerDraft.self)
         return saved(fetched)
     }
 
-    func update(_ id: String, _ patch: PlannerDraftPatch) async throws -> PlannerDraft {
+    func update(_ id: String, _ patch: PlannerDraftPatch) async throws -> Loaded<PlannerDraft> {
         let fetched = try await session.send("PATCH", "\(Self.base)/\(id)", body: patch, as: PlannerDraft.self)
         return saved(fetched)
     }
@@ -38,10 +39,10 @@ struct PlannerRepository: Sendable {
     }
 
     /// Keeps the answer as that gameweek's saved copy.
-    private func saved(_ fetched: Fetched<PlannerDraft>) -> PlannerDraft {
+    private func saved(_ fetched: Fetched<PlannerDraft>) -> Loaded<PlannerDraft> {
         let draft = fetched.envelope.data
         cache.write(fetched.raw, for: PlannerDraftEndpoint.cacheKey(draft.id, gw: draft.gw))
-        return draft
+        return Loaded(value: draft, meta: fetched.envelope.meta, savedAt: nil)
     }
 }
 
@@ -85,8 +86,8 @@ struct PlannerDraftEndpoint: LoadableEndpoint {
     }
 }
 
-/// One draft on screen: the gameweek shown, stepping between gameweeks, and (from P2-5) edits
-/// with undo. The draft shown is always the server's answer; nothing is changed locally.
+/// One draft on screen: the gameweek shown, stepping between gameweeks, and edits. The draft
+/// shown is always the server's answer; nothing is changed locally.
 @MainActor
 @Observable
 final class DraftModel {
@@ -101,6 +102,37 @@ final class DraftModel {
     }
 
     var draft: PlannerDraft? { resource.loaded?.value }
+
+    /// An edit is on its way to the server.
+    private(set) var isApplying = false
+    /// Why the last edit wasn't made (the server's reason, in words).
+    private(set) var actionError: ErrorCopy?
+    /// The player chosen with "Swap with…": the next player tapped swaps with him.
+    var swapFrom: Int?
+
+    /// Sends one edit; true when it was made (the draft on screen is then the server's answer).
+    @discardableResult
+    func apply(_ action: PlannerAction) async -> Bool {
+        isApplying = true
+        actionError = nil
+        defer { isApplying = false }
+        do {
+            resource.replace(with: try await repository.apply(action, to: id))
+            return true
+        } catch let error as APIError {
+            actionError = ErrorCopy(error)
+            return false
+        } catch {
+            return false
+        }
+    }
+
+    func clearActionError() { actionError = nil }
+
+    /// Players for a slot, with why each can't be chosen (the server decides).
+    func candidates(_ query: [URLQueryItem]) async throws -> PlannerPicker {
+        try await repository.picker(id, query: query)
+    }
 
     func load() async {
         if resource.isInitial { await resource.load() }
