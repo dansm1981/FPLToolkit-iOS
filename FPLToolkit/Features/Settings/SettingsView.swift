@@ -36,9 +36,9 @@ struct SettingsView: View {
                     Text(appModel.disclosure)
                         .font(.callout)
                         .foregroundStyle(ToolkitColor.secondaryText)
-                    if let url = URL(string: appModel.bootstrap?.value.config.webBaseUrl ?? "https://www.fpltoolkit.co.uk") {
-                        Link("Open fpltoolkit.co.uk", destination: url)
-                    }
+                    Link("Help & support", destination: webURL("app/support"))
+                    Link("Privacy policy", destination: webURL("app/privacy"))
+                    Link("Open fpltoolkit.co.uk", destination: webURL(""))
                 } header: {
                     Text("About")
                 }
@@ -99,6 +99,12 @@ struct SettingsView: View {
                 Text("This removes your team, your watch list and your settings. It can't be undone.")
             }
         }
+    }
+
+    private func webURL(_ path: String) -> URL {
+        let base = URL(string: appModel.bootstrap?.value.config.webBaseUrl ?? "https://www.fpltoolkit.co.uk")
+            ?? URL(string: "https://www.fpltoolkit.co.uk")!
+        return path.isEmpty ? base : base.appending(path: path)
     }
 
     private static var version: String {
