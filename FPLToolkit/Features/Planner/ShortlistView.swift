@@ -75,14 +75,15 @@ struct ShortlistView: View {
                     SectionLabel(text: shown.count == list.items.count
                                  ? "\(list.items.count) of up to \(list.max)"
                                  : "Showing \(shown.count) of \(list.items.count)")
-                } footer: {
-                    if !list.items.isEmpty {
-                        Text("Vibe marks your favourites. Swipe left to take a player off.")
-                            .font(.footnote)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
                 }
                 .listRowBackground(ToolkitColor.surface)
+                if !list.items.isEmpty {
+                    // A plain row, not a section footer: footers don't scale fully with text size.
+                    Text("Vibe marks your favourites. Swipe left to take a player off.")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .listRowBackground(Color.clear)
+                }
             } else if store.loadError == nil {
                 Section {
                     HStack(spacing: ToolkitSpace.sm) {
@@ -163,6 +164,7 @@ struct ShortlistView: View {
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())

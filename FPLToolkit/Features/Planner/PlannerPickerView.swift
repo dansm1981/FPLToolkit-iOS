@@ -336,6 +336,7 @@ private struct CandidateRow: View {
                                 .foregroundStyle(ToolkitColor.link)
                         }
                     }
+                    .multilineTextAlignment(.leading)
                     Spacer(minLength: ToolkitSpace.sm)
                     VStack(alignment: .trailing, spacing: 3) {
                         if busy {

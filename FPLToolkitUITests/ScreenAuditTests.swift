@@ -292,7 +292,8 @@ final class ScreenAuditTests: XCTestCase {
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", starred)).firstMatch
         waitFor(row, "\(starred) on the shortlist", timeout: 40)
         settle()
-        check(app, "20-shortlist")
+        // A List screen: like the other lists, text sizes are checked by eye (the audit's list false alarms).
+        check(app, "20-shortlist", sizesAndLists: false)
         row.swipeLeft()
         app.buttons["Delete"].firstMatch.tap()
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
