@@ -5,7 +5,6 @@ struct TodayView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Today>?
-    @State private var showingSettings = false
 
     var body: some View {
         Group {
@@ -35,20 +34,7 @@ struct TodayView: View {
         }
         .toolkitScreen()
         .navigationTitle("Today")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingSettings = true
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                        .font(.title3)
-                }
-                .accessibilityLabel("Settings")
-            }
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView(entryId: entryId)
-        }
+        .settingsButton(entryId: entryId)
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.today(entryId: entryId))

@@ -39,10 +39,18 @@ struct MainView: View {
     let entryId: Int
 
     var body: some View {
-        NavigationStack {
-            TodayView(entryId: entryId)
+        TabView {
+            NavigationStack {
+                TodayView(entryId: entryId)
+            }
+            .tabItem { Label("Today", systemImage: "rectangle.stack") }
+
+            NavigationStack {
+                TeamView(entryId: entryId)
+            }
+            .tabItem { Label("Team", systemImage: "tshirt") }
         }
-        // A new team gets a fresh screen and model.
+        // A new team gets fresh screens and models.
         .id(entryId)
     }
 }

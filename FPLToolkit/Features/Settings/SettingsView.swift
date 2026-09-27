@@ -59,3 +59,33 @@ struct SettingsView: View {
         return "\(short) (\(build))"
     }
 }
+
+/// The person icon at the top right of each tab, opening Settings.
+private struct SettingsButton: ViewModifier {
+    let entryId: Int
+    @State private var showing = false
+
+    func body(content: Content) -> some View {
+        content
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showing = true
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                            .font(.title3)
+                    }
+                    .accessibilityLabel("Settings")
+                }
+            }
+            .sheet(isPresented: $showing) {
+                SettingsView(entryId: entryId)
+            }
+    }
+}
+
+extension View {
+    func settingsButton(entryId: Int) -> some View {
+        modifier(SettingsButton(entryId: entryId))
+    }
+}
