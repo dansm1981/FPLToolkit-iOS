@@ -116,6 +116,65 @@ final class ScreenAuditTests: XCTestCase {
         XCTAssertTrue(element.waitForExistence(timeout: timeout), "\(what) didn't appear")
     }
 
+    /// Brings an element of a long list into plain view, clear of the navigation bar and the tab bar,
+    /// with slow drags by the distance still to go. A flick (`swipeUp`) can carry a row past the
+    /// screen or leave it under the floating tab bar, and a List drops rows scrolled far away, so an
+    /// element that isn't there is looked for down the list first, then back up.
+    ///
+    /// The drags run down the left margin, clear of the rows: in a ScrollView a slow drag that starts
+    /// on a link ends on it too (the row moves with the finger) and opens it.
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        for attempt in 0..<24 {
+            // A sheet covers the tab bar; the sheet's content then runs to the bottom of the screen.
+            let tabBar = app.tabBars.firstMatch
+            let tabBarShows = tabBar.exists && tabBar.isHittable
+            let top = (app.navigationBars.allElementsBoundByIndex.map { $0.frame.maxY }.max() ?? 0) + 8
+            let bottom = (tabBarShows ? tabBar.frame.minY : app.frame.maxY) - 8
+            let middle = (top + bottom) / 2
+            let page = (bottom - top) * 0.6
+            let step: CGFloat
+            if element.exists {
+                let frame = element.frame
+                if frame.minY >= top && frame.maxY <= bottom && element.isHittable { return }
+                if abs(frame.midY - middle) < 40 {
+                    // Where it should be, but not hittable yet (still moving).
+                    settle(0.5)
+                    continue
+                }
+                step = max(-page, min(page, frame.midY - middle))
+            } else {
+                step = attempt < 8 ? page : -page
+            }
+            let start = app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 8, dy: middle + step / 2))
+            start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -step)),
+                        withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+    }
+
+    /// Goes back from a pushed screen, and waits until it's gone: a list searched while it's still
+    /// sliding back in reports rows at the wrong places.
+    private func back(_ app: XCUIApplication, leaving screen: XCUIElement) {
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: screen)
+        waitForExpectations(timeout: 15)
+    }
+
+    /// The Research tab's hub.
+    private func openResearch(_ app: XCUIApplication) {
+        app.tabBars.buttons["Research"].tap()
+        waitFor(app.navigationBars["Research"].firstMatch, "Research hub")
+    }
+
+    /// Opens a row of the Research hub. Its label is the title, a comma, then the detail; matching
+    /// the comma keeps "Elite template" from finding "Elite template race".
+    private func openHubRow(_ app: XCUIApplication, _ title: String) {
+        let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "\(title),")).firstMatch
+        reveal(link, in: app)
+        waitFor(link, "\(title) on the hub")
+        link.tap()
+    }
+
     func test01WelcomeAndConnect() {
         let app = launch(["-entryId", "0"])
         let add = app.buttons["Add my FPL team"]
@@ -442,20 +501,20 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
+        openResearch(app)
         let ticker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Fixture ticker'")).firstMatch
         waitFor(ticker, "Research hub")
         settle()
         check(app, "32-research-hub", sizesAndLists: false)
 
-        ticker.tap()
+        openHubRow(app, "Fixture ticker")
         let clubRow = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ', run total '")).firstMatch
         waitFor(clubRow, "Fixture ticker", timeout: 60)
         settle()
         check(app, "33-research-ticker", combinedTiles: true)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        back(app, leaving: clubRow)
 
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Rotation planner'")).firstMatch.tap()
+        openHubRow(app, "Rotation planner")
         let add = app.buttons["Add player"].firstMatch
         waitFor(add, "Rotation planner")
         // Start from no players, so the run is the same each time.
@@ -480,9 +539,9 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(figure, "Rotation", timeout: 60)
         settle()
         check(app, "35-research-rotation", combinedTiles: true)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        back(app, leaving: figure)
 
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Congestion'")).firstMatch.tap()
+        openHubRow(app, "Congestion")
         let club = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ' in the window'")).firstMatch
         waitFor(club, "Congestion", timeout: 60)
         settle()
@@ -495,7 +554,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
+        openResearch(app)
         let screens: [(String, NSPredicate, String)] = [
             ("Price changes", NSPredicate(format: "label BEGINSWITH[c] 'Price rises'"), "37-market-changes"),
             ("Predictions", NSPredicate(format: "label ==[c] 'Closest to a rise'"), "38-market-predictions"),
@@ -503,20 +562,19 @@ final class ScreenAuditTests: XCTestCase {
             ("Transfers and ownership", NSPredicate(format: "label BEGINSWITH[c] 'Most bought'"), "40-market-transfers"),
         ]
         for (title, marker, shot) in screens {
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-            for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
-            waitFor(link, "\(title) on the hub")
-            link.tap()
-            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            openHubRow(app, title)
+            var screen = app.descendants(matching: .any).matching(marker).firstMatch
+            waitFor(screen, title, timeout: 60)
             settle()
             check(app, shot, clippingCheckedLarge: true)
             if title == "Transfers and ownership" {
                 app.buttons["Ownership"].firstMatch.tap()
-                waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'Most owned'")).firstMatch, "Ownership")
+                screen = app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'Most owned'")).firstMatch
+                waitFor(screen, "Ownership")
                 settle()
                 check(app, "41-market-ownership", clippingCheckedLarge: true)
             }
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            back(app, leaving: screen)
         }
     }
 
@@ -526,18 +584,16 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
+        openResearch(app)
         let screens: [(String, NSPredicate, String)] = [
             ("Player insights", NSPredicate(format: "label BEGINSWITH[c] 'Top 12 by'"), "42-players-insights"),
             ("Template team", NSPredicate(format: "label ==[c] 'The template XI'"), "43-players-template"),
             ("Injuries", NSPredicate(format: "label BEGINSWITH[c] 'Injured ('"), "44-players-injuries"),
         ]
         for (title, marker, shot) in screens {
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-            for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
-            waitFor(link, "\(title) on the hub")
-            link.tap()
-            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            openHubRow(app, title)
+            let screen = app.descendants(matching: .any).matching(marker).firstMatch
+            waitFor(screen, title, timeout: 60)
             settle()
             check(app, shot, clippingCheckedLarge: true)
             if title == "Player insights" {
@@ -547,8 +603,7 @@ final class ScreenAuditTests: XCTestCase {
                 settle()
                 check(app, "45-players-insights-list", clippingCheckedLarge: true)
             }
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            settle(1)
+            back(app, leaving: screen)
         }
     }
 
@@ -574,14 +629,14 @@ final class ScreenAuditTests: XCTestCase {
         ]
         for (title, marker, shot) in sections {
             let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-            for _ in 0..<10 where !(link.exists && link.isHittable) { app.swipeUp() }
+            reveal(link, in: app)
             waitFor(link, "\(title) on the sheet")
             link.tap()
-            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            let screen = app.descendants(matching: .any).matching(marker).firstMatch
+            waitFor(screen, title, timeout: 60)
             settle()
             check(app, shot, clippingCheckedLarge: true)
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            settle(1)
+            back(app, leaving: screen)
         }
     }
 
@@ -591,7 +646,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
+        openResearch(app)
         let screens: [(String, NSPredicate, String)] = [
             ("Elite overview", NSPredicate(format: "label BEGINSWITH[c] 'Elite snapshot'"), "53-elite-overview"),
             ("Elite ownership", NSPredicate(format: "label ENDSWITH[c] ' players'"), "55-elite-ownership"),
@@ -600,11 +655,9 @@ final class ScreenAuditTests: XCTestCase {
             ("Elite template", NSPredicate(format: "label BEGINSWITH[c] 'Template squad'"), "59-elite-template"),
         ]
         for (title, marker, shot) in screens {
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-            for _ in 0..<8 where !(link.exists && link.isHittable) { app.swipeUp() }
-            waitFor(link, "\(title) on the hub")
-            link.tap()
-            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            openHubRow(app, title)
+            let screen = app.descendants(matching: .any).matching(marker).firstMatch
+            waitFor(screen, title, timeout: 60)
             settle()
             check(app, shot, clippingCheckedLarge: true)
             if title == "Elite overview" || title == "Elite ownership" {
@@ -615,8 +668,7 @@ final class ScreenAuditTests: XCTestCase {
                 check(app, title == "Elite overview" ? "54-elite-overview-lists" : "56-elite-ownership-list",
                       clippingCheckedLarge: true)
             }
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            settle(1)
+            back(app, leaving: screen)
         }
     }
 
@@ -626,7 +678,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
+        openResearch(app)
         let screens: [(String, NSPredicate, String)] = [
             ("Elite template race", NSPredicate(format: "label BEGINSWITH[c] 'Elite ownership race'"), "60-elite-race"),
             ("Elite movers", NSPredicate(format: "label BEGINSWITH[c] 'Biggest 1 GW risers'"), "62-elite-movers"),
@@ -636,11 +688,9 @@ final class ScreenAuditTests: XCTestCase {
             ("Elite trends", NSPredicate(format: "label ==[c] 'Season shape'"), "67-elite-trends"),
         ]
         for (title, marker, shot) in screens {
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-            for _ in 0..<10 where !(link.exists && link.isHittable) { app.swipeUp() }
-            waitFor(link, "\(title) on the hub")
-            link.tap()
-            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            openHubRow(app, title)
+            let screen = app.descendants(matching: .any).matching(marker).firstMatch
+            waitFor(screen, title, timeout: 60)
             settle()
             if title == "Elite comparison" {
                 // Start from no players, so the run is the same each time, then chart two.
@@ -671,8 +721,7 @@ final class ScreenAuditTests: XCTestCase {
                 check(app, title == "Elite template race" ? "61-elite-race-standings" : "64-elite-compare-players",
                       clippingCheckedLarge: true)
             }
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            settle(1)
+            back(app, leaving: screen)
         }
     }
 
@@ -682,11 +731,8 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
-        let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'DEFCON,'")).firstMatch
-        for _ in 0..<12 where !(link.exists && link.isHittable) { app.swipeUp() }
-        waitFor(link, "DEFCON on the hub")
-        link.tap()
+        openResearch(app)
+        openHubRow(app, "DEFCON")
         waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'DEFCON leaderboard'")).firstMatch,
                 "DEFCON", timeout: 60)
         settle()
@@ -725,7 +771,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Research"].tap()
+        openResearch(app)
         let screens: [(String, NSPredicate, String)] = [
             ("Hauls", NSPredicate(format: "label ==[c] 'Most 10+ point gameweeks'"), "72-deep-hauls"),
             ("Consistency", NSPredicate(format: "label ==[c] 'Most consistent returners'"), "73-deep-consistency"),
@@ -733,15 +779,12 @@ final class ScreenAuditTests: XCTestCase {
             ("Records", NSPredicate(format: "label ==[c] 'Biggest single gameweek scores'"), "75-deep-records"),
         ]
         for (title, marker, shot) in screens {
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "\(title),")).firstMatch
-            for _ in 0..<12 where !(link.exists && link.isHittable) { app.swipeUp() }
-            waitFor(link, "\(title) on the hub")
-            link.tap()
-            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            openHubRow(app, title)
+            let screen = app.descendants(matching: .any).matching(marker).firstMatch
+            waitFor(screen, title, timeout: 60)
             settle()
             check(app, shot, clippingCheckedLarge: true)
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            settle(1)
+            back(app, leaving: screen)
         }
     }
 
