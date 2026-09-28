@@ -552,6 +552,39 @@ final class ScreenAuditTests: XCTestCase {
         }
     }
 
+    /// The player sheet's "More" sections, one per website player tab. `auditApiBaseURL` as for test11.
+    func test14PlayerMore() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Team"].tap()
+        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'DEF'")).firstMatch
+        waitFor(player, "a defender")
+        player.tap()
+        waitFor(app.buttons["Done"], "Player sheet")
+        let sections: [(String, NSPredicate, String)] = [
+            ("Gameweek history", NSPredicate(format: "label ==[c] 'Every gameweek'"), "46-player-history"),
+            ("Form trends", NSPredicate(format: "label ==[c] 'Rolling windows'"), "47-player-form"),
+            ("Underlying stats", NSPredicate(format: "label ==[c] 'Season totals and per 90'"), "48-player-underlying"),
+            ("Fixtures", NSPredicate(format: "label ==[c] 'Returns by fixture difficulty'"), "49-player-fixtures"),
+            ("Price and ownership", NSPredicate(format: "label ==[c] 'Recent daily snapshots'"), "50-player-price"),
+            ("DEFCON", NSPredicate(format: "label BEGINSWITH[c] 'Match by match'"), "51-player-defensive"),
+            ("Vs similar players", NSPredicate(format: "label ==[c] 'Percentile ranks'"), "52-player-compare"),
+        ]
+        for (title, marker, shot) in sections {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            for _ in 0..<10 where !(link.exists && link.isHittable) { app.swipeUp() }
+            waitFor(link, "\(title) on the sheet")
+            link.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            settle()
+            check(app, shot, clippingCheckedLarge: true)
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            settle(1)
+        }
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

@@ -120,6 +120,8 @@ struct PlayerSheetContent: View {
 
             StatsSection(player: sheet.player)
 
+            PlayerMoreSection(playerId: player.id, name: player.webName)
+
             if let url = URL(string: sheet.links.web) {
                 Link(destination: url) {
                     Label("More on fpltoolkit.co.uk", systemImage: "arrow.up.right.square")

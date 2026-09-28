@@ -74,6 +74,11 @@ struct PlayerRepository: Sendable {
         .init(client: client, cache: cache, path: "players/\(id)")
     }
 
+    /// One of the website's player page tabs, loaded when its section is opened.
+    func tab<T: Decodable & Sendable>(_ id: Int, _ tab: PlayerTab, as type: T.Type) -> CachedEndpoint<T> {
+        .init(client: client, cache: cache, path: "players/\(id)/\(tab.rawValue)")
+    }
+
     /// Players whose names match, best first. Not saved offline: results are only useful live.
     func search(_ text: String) async throws -> PlayerSearchResult {
         try await client.get("players/search", query: [URLQueryItem(name: "q", value: text)], as: PlayerSearchResult.self).envelope.data
