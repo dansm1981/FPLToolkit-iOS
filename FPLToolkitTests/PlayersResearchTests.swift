@@ -4,7 +4,7 @@ import Testing
 
 private final class PlayersBundleToken {}
 
-/// The Players screens (happy-backend-pal#27). Responses captured 28 Sep 2026 from the branch, each
+/// The Players screens (happy-backend-pal#27). Responses captured 28 Sep 2026 from production, each
 /// checked against the website's page.
 struct PlayersResearchTests {
     @Test func insights() throws {
