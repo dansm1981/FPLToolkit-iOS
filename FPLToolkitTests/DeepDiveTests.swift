@@ -4,8 +4,8 @@ import Testing
 
 private final class DeepDiveBundleToken {}
 
-/// The deep dives (happy-backend-pal#33). Captured 28 Sep 2026 from the branch run locally; each
-/// endpoint was checked against the website's page.
+/// The deep dives (happy-backend-pal#33). Captured 28 Sep 2026 from production; each endpoint was
+/// checked against the website's page.
 struct DeepDiveTests {
     @Test func hauls() throws {
         let h = try fixture("deep-dive-hauls", as: Hauls.self)

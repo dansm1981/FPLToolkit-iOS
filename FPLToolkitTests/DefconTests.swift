@@ -4,8 +4,8 @@ import Testing
 
 private final class DefconBundleToken {}
 
-/// The DEFCON screen (happy-backend-pal#32). Captured 28 Sep 2026 from the branch run locally; the
-/// endpoint was checked against the website's hub.
+/// The DEFCON screen (happy-backend-pal#32). Captured 28 Sep 2026 from production; the endpoint was
+/// checked against the website's hub.
 struct DefconTests {
     @Test func hub() throws {
         let d = try fixture("defcon")
