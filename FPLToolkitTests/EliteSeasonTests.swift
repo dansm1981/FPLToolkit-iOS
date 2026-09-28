@@ -4,8 +4,8 @@ import Testing
 
 private final class EliteSeasonBundleToken {}
 
-/// The Elite group's season screens (happy-backend-pal#31), GW5. Captured 28 Sep 2026 from the
-/// branch run locally; each page checked against the website's.
+/// The Elite group's season screens (happy-backend-pal#31), GW5. Captured 28 Sep 2026 from
+/// production; each page checked against the website's.
 struct EliteSeasonTests {
     @Test func race() throws {
         let page = try fixture("elite-race-5", as: EliteRace.self)
