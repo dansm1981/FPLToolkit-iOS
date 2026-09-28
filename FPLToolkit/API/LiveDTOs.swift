@@ -141,6 +141,11 @@ struct LiveTeam: Decodable, Sendable {
         let points: Int?
     }
 
+    struct Headline: Decodable, Sendable, Hashable {
+        let text: String
+        let kind: String
+    }
+
     struct Substitution: Decodable, Sendable, Hashable {
         let `in`: Int
         let out: Int
@@ -149,6 +154,9 @@ struct LiveTeam: Decodable, Sendable {
     let entryId: Int
     let gameweek: Int
     let status: Status
+    /// The single most relevant thing right now (the Lock Screen's second line); nil from servers
+    /// before happy-backend-pal#39.
+    let headline: Headline?
     let chip: String?
     let total: Total
     let captainId: Int?

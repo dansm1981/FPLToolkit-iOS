@@ -13,6 +13,9 @@ struct MatchdayView: View {
     @State private var since: MatchdayMemory.Seen?
     @State private var capturedSince = false
     @State private var expanded: Set<Int> = []
+    /// Whether the Live Activity is on the Lock Screen.
+    @State private var following = false
+    @State private var followError: String?
 
     static let refreshSeconds: UInt64 = 30
 
@@ -58,7 +61,8 @@ struct MatchdayView: View {
         remember()
     }
 
-    /// Captures the previous visit once, then saves what this one has seen.
+    /// Captures the previous visit once, saves what this one has seen, and brings the Live Activity
+    /// up to date.
     private func remember() {
         guard let live = table.current?.loaded?.value else { return }
         if !capturedSince {
@@ -66,12 +70,40 @@ struct MatchdayView: View {
             capturedSince = true
         }
         MatchdayMemory.save(live, entryId: entryId)
+        let updated = self.updated
+        Task {
+            await MatchdayActivity.update(live, entryId: entryId, updated: updated)
+            following = MatchdayActivity.running(entryId: entryId) != nil
+        }
+    }
+
+    private func follow(_ live: LiveTeam) {
+        do {
+            try MatchdayActivity.start(live, entryId: entryId, updated: updated)
+            following = true
+            followError = nil
+        } catch {
+            followError = "Couldn't start it on the Lock Screen. Check Live Activities are on in Settings → FPLToolkit."
+        }
     }
 
     @ViewBuilder
     private func content(_ live: LiveTeam) -> some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
             MatchdayScoreCard(live: live, updated: updated)
+            if Self.canFollow(live.status) {
+                MatchdayFollowCard(
+                    following: following,
+                    enabled: MatchdayActivity.isEnabled,
+                    error: followError,
+                    start: { follow(live) },
+                    stop: {
+                        Task {
+                            await MatchdayActivity.stop(entryId: entryId)
+                            following = false
+                        }
+                    })
+            }
             if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
                 MatchdayCatchUp(text: catchUp)
             }
@@ -83,6 +115,15 @@ struct MatchdayView: View {
             MatchdayFixtures(live: live)
             MatchdayTrustKey()
         }
+    }
+
+    /// Following makes sense until FPL confirms the gameweek (debug builds allow it any time, to test).
+    static func canFollow(_ status: LiveTeam.Status) -> Bool {
+        #if DEBUG
+        return true
+        #else
+        return status != .finished
+        #endif
     }
 
     private var updated: Date? {
@@ -208,6 +249,63 @@ struct MatchdayCatchUp: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Lock Screen
+
+struct MatchdayFollowCard: View {
+    let following: Bool
+    let enabled: Bool
+    let error: String?
+    let start: () -> Void
+    let stop: () -> Void
+
+    var body: some View {
+        ToolkitCard {
+            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+                if !enabled {
+                    Label("Live Activities are off for FPLToolkit. Turn them on in Settings → FPLToolkit to follow your team on the Lock Screen.",
+                          systemImage: "lock.iphone")
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if following {
+                    HStack {
+                        Label("On your Lock Screen", systemImage: "lock.iphone")
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.positive)
+                        Spacer()
+                        Button("Stop", action: stop)
+                            .font(.subheadline.weight(.semibold))
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    Text("It updates while FPLToolkit is open. Once alerts are switched on it will update by itself.")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Button(action: start) {
+                        Label("Follow on your Lock Screen", systemImage: "lock.iphone")
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.link)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Text("Your score and the moment that matters most, on the Lock Screen and in the Dynamic Island.")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let error {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.error)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
     }
 }
 
