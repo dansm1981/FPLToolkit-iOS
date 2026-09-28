@@ -26,6 +26,7 @@ final class AppModel {
     let marketRepository: MarketRepository
     let playersResearchRepository: PlayersResearchRepository
     let eliteRepository: EliteRepository
+    let liveRepository: LiveRepository
     let deviceSession: DeviceSession
     let plannerRepository: PlannerRepository
     /// The device's shortlist (the planner's star and Shortlist screen).
@@ -48,6 +49,7 @@ final class AppModel {
         self.marketRepository = MarketRepository(client: client, cache: cache)
         self.playersResearchRepository = PlayersResearchRepository(client: client, cache: cache)
         self.eliteRepository = EliteRepository(client: client, cache: cache)
+        self.liveRepository = LiveRepository(client: client, cache: cache)
         let session = DeviceSession(client: client)
         self.deviceSession = session
         let planner = PlannerRepository(session: session, cache: cache)

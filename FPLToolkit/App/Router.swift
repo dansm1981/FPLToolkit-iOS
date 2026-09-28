@@ -13,6 +13,8 @@ enum DeepLink: Equatable {
     case research
     case watch
     case alerts
+    /// Matchday (Phase 3): `fpltoolkit://matchday`, also where the Live Activity opens.
+    case matchday
     /// `event` is set when the link came from an alert (notifications.md §6).
     case player(Int, event: String? = nil)
 
@@ -25,6 +27,7 @@ enum DeepLink: Equatable {
         case "planner": self = .planner
         case "research": self = .research
         case "watch": self = parts.first?.lowercased() == "alerts" ? .alerts : .watch
+        case "matchday": self = .matchday
         case "player":
             guard let id = parts.first.flatMap(Int.init), id > 0 else { self = .today; return }
             let event = URLComponents(url: url, resolvingAgainstBaseURL: false)?
@@ -43,6 +46,8 @@ final class Router {
     var presentedPlayer: PlayerRef?
     /// Opens the alert history on the Watch tab (from a bundled notification).
     var showingAlerts = false
+    /// Matchday, over whichever tab is showing.
+    var showingMatchday = false
 
     func open(_ link: DeepLink) {
         switch link {
@@ -54,6 +59,7 @@ final class Router {
         case .alerts:
             selectedTab = .watch
             showingAlerts = true
+        case .matchday: showingMatchday = true
         case .player(let id, let event): presentedPlayer = PlayerRef(id: id, fromAlert: event != nil)
         }
     }

@@ -26,6 +26,7 @@ struct TodayView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
+                            MatchdayCard(entryId: entryId)
                             TodayContent(
                                 loaded: loaded,
                                 isCurrent: resource.isCurrent,

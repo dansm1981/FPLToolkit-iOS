@@ -57,6 +57,7 @@ struct FreshnessSource: Decodable, Sendable, Hashable {
         case availability
         case pricePredictions = "price_predictions"
         case picks, elite, xfdr, defcon
+        case livePoints = "live_points", matchEvents = "match_events"
         case unknown
         static let fallback = Self.unknown
     }

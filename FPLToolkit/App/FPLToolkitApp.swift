@@ -99,6 +99,15 @@ struct MainView: View {
         .sheet(item: $router.presentedPlayer) { ref in
             PlayerSheetView(playerId: ref.id, fromAlert: ref.fromAlert)
         }
+        .fullScreenCover(isPresented: $router.showingMatchday) {
+            NavigationStack {
+                if let entryId {
+                    MatchdayView(entryId: entryId)
+                } else {
+                    NoTeamView(title: "Matchday", message: "Add your FPL team to follow it live on match days.")
+                }
+            }
+        }
         // A new team gets fresh screens and models.
         .id(entryId)
     }

@@ -109,6 +109,8 @@ extension FreshnessSource.Kind {
         case .elite: "Top 100 managers"
         case .xfdr: "Fixture difficulty"
         case .defcon: "Defensive contributions"
+        case .livePoints: "FPL live points"
+        case .matchEvents: "Match events"
         case .unknown: "Other data"
         }
     }
@@ -122,6 +124,8 @@ extension FreshnessSource.Kind {
         case .elite: "star"
         case .xfdr: "calendar"
         case .defcon: "shield.lefthalf.filled"
+        case .livePoints: "dot.radiowaves.left.and.right"
+        case .matchEvents: "sportscourt"
         case .unknown: "questionmark"
         }
     }

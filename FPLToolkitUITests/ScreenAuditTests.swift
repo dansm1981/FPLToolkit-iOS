@@ -788,6 +788,29 @@ final class ScreenAuditTests: XCTestCase {
         }
     }
 
+    /// Matchday (Phase 3, P3-3): opened from the Today card; the score, moments and live squad, and
+    /// one player's points breakdown. `auditApiBaseURL` as for test11.
+    func test19Matchday() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'GW'")).firstMatch
+        waitFor(card, "Matchday card on Today", timeout: 60)
+        card.tap()
+        let moments = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'What changed for you'")).firstMatch
+        waitFor(moments, "Matchday", timeout: 60)
+        settle()
+        check(app, "76-matchday")
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch
+        reveal(row, in: app)
+        row.tap()
+        waitFor(app.staticTexts["FPL-recorded"].firstMatch, "Points breakdown")
+        settle()
+        check(app, "77-matchday-breakdown")
+        app.buttons["Done"].tap()
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

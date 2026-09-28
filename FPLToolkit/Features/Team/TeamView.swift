@@ -37,6 +37,15 @@ struct TeamView: View {
         .toolkitScreen()
         .navigationTitle("My team")
         .settingsButton(entryId: entryId)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    appModel.router.showingMatchday = true
+                } label: {
+                    Label("Matchday", systemImage: "sportscourt")
+                }
+            }
+        }
         .task {
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.team(entryId: entryId))

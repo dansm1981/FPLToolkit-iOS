@@ -271,3 +271,14 @@ struct EliteRepository: Sendable {
     }
 }
 
+/// The live matchday (contract §24) and the odds before the deadline (§25).
+struct LiveRepository: Sendable {
+    let client: APIClient
+    let cache: ResponseCache
+
+    /// The gameweek whose deadline has most recently passed, unless `gw` is given.
+    func team(entryId: Int, gw: Int? = nil) -> CachedEndpoint<LiveTeam> {
+        .init(client: client, cache: cache, path: "live/team/\(entryId)",
+              query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
+    }
+}
