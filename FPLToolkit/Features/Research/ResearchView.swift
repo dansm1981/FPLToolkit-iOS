@@ -108,9 +108,33 @@ struct ResearchView: View {
                     detail: "How concentrated the armband is, conviction, and the vice-captains.") {
                     EliteCaptaincyView()
                 }
+                row("Elite template race", systemImage: "flag.checkered",
+                    detail: "The template players and the challengers closing in, over the season.") {
+                    EliteRaceView()
+                }
+                row("Elite movers", systemImage: "arrow.up.arrow.down",
+                    detail: "The sharpest ownership swings, first-time picks, and template entries and exits.") {
+                    EliteMoversView()
+                }
+                row("Elite comparison", systemImage: "chart.xyaxis.line",
+                    detail: "Up to eight players' elite ownership, side by side across the season.") {
+                    EliteCompareView(entryId: entryId)
+                }
                 row("Elite template", systemImage: "person.3.sequence",
                     detail: "The fifteen they converge on, the XI they start, and who came and went.") {
                     EliteTemplateView()
+                }
+                row("Elite chips", systemImage: "square.stack.3d.up",
+                    detail: "When the cohort plays each chip, and how many they have left.") {
+                    EliteChipsView()
+                }
+                row("Elite squad structure", systemImage: "square.grid.3x3",
+                    detail: "Formations, spend by position, and team value over the season.") {
+                    EliteStructureView()
+                }
+                row("Elite trends", systemImage: "chart.line.uptrend.xyaxis",
+                    detail: "The cohort's season week by week, and who they're piling into or dropping.") {
+                    EliteTrendsView()
                 }
             } header: {
                 Text("Elite")

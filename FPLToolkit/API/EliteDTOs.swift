@@ -220,3 +220,159 @@ struct EliteTemplate: Decodable, Sendable {
     let changes: Changes?
     let positions: [Group]
 }
+
+// MARK: - The season pages (P2-14b)
+
+/// A player's change in elite ownership, and his elite ownership now ("45%").
+struct EliteMoverRow: Decodable, Sendable, Hashable, Identifiable {
+    let playerId: Int
+    let change: EliteChange
+    let now: String
+    var id: Int { playerId }
+}
+
+struct EliteRace: Decodable, Sendable {
+    struct Tab: Decodable, Sendable, Hashable {
+        /// Nil for all positions.
+        let position: Position?
+        let title: String
+        let count: Int
+    }
+
+    struct Contender: Decodable, Sendable, Hashable, Identifiable {
+        let playerId: Int
+        let owned: ShownValue
+        /// Over three gameweeks.
+        let change: EliteChange
+        let band: String
+        /// Elite ownership in each of the race's weeks.
+        let series: [Double]
+        var id: Int { playerId }
+    }
+
+    let position: Position?
+    let tabs: [Tab]
+    /// "Top 10 overall" or the position.
+    let title: String
+    let weeks: [Int]
+    let contenders: [Contender]
+}
+
+struct EliteMovers: Decodable, Sendable {
+    struct BandMove: Decodable, Sendable, Hashable, Identifiable {
+        let playerId: Int
+        let direction: String
+        /// "entered Elite Core (70%)".
+        let text: String
+        let band: String
+        var id: String { "\(playerId)-\(text)" }
+    }
+
+    let stats: [EliteStat]
+    let risers: [EliteMoverRow]
+    let risers3: [EliteMoverRow]
+    let fallers: [EliteMoverRow]
+    let entrants: [EliteMoverRow]
+    let bandMoves: [BandMove]
+}
+
+struct EliteTrends: Decodable, Sendable {
+    struct Row: Decodable, Sendable, Hashable, Identifiable {
+        let gameweek: Int
+        let meanPoints: String
+        let medianPoints: String
+        let medianTotal: String
+        let medianRank: String
+        let top10k: String
+        let hits: String
+        let template: String
+        var id: Int { gameweek }
+    }
+
+    let stats: [EliteStat]
+    /// Every published gameweek, oldest first.
+    let rows: [Row]
+    let rising: [EliteMoverRow]
+    let cooling: [EliteMoverRow]
+}
+
+struct EliteCompare: Decodable, Sendable {
+    struct Metric: Decodable, Sendable, Hashable, Identifiable {
+        let key: String
+        let label: String
+        var id: String { key }
+    }
+
+    struct Series: Decodable, Sendable, Hashable {
+        let owned: [Double]
+        let start: [Double]
+        let captain: [Double]
+        /// Nil in weeks with no elite row.
+        let edge: [Double?]
+        let overall: [Double?]
+
+        func values(_ metric: String) -> [Double?] {
+            switch metric {
+            case "start": start
+            case "captain": captain
+            case "edge": edge
+            case "overall": overall
+            default: owned
+            }
+        }
+    }
+
+    struct Row: Decodable, Sendable, Hashable, Identifiable {
+        let playerId: Int
+        let now: ShownValue
+        let band: String
+        /// Over three gameweeks, as the website writes it ("+2pp").
+        let trend: ShownValue
+        let series: Series
+        var id: Int { playerId }
+    }
+
+    let ids: [Int]
+    let metrics: [Metric]
+    let weeks: [Int]
+    let rows: [Row]
+}
+
+struct EliteChips: Decodable, Sendable {
+    struct Available: Decodable, Sendable, Hashable, Identifiable {
+        let key: String
+        let label: String
+        let value: Double
+        let display: String
+        var id: String { key }
+    }
+
+    struct Row: Decodable, Sendable, Hashable, Identifiable {
+        let gameweek: Int
+        /// One per chip, in `labels` order: "12%", or "—" when nobody played it.
+        let cells: [String]
+        var id: Int { gameweek }
+    }
+
+    let played: [EliteStat]
+    let available: [Available]
+    let labels: [String]
+    let timeline: [Row]
+}
+
+struct EliteStructure: Decodable, Sendable {
+    struct Row: Decodable, Sendable, Hashable, Identifiable {
+        let gameweek: Int
+        let value: String
+        let bank: String
+        let bench: String
+        let formation: String
+        var id: Int { gameweek }
+    }
+
+    let stats: [EliteStat]
+    let formations: [EliteOverview.Formation]
+    let spend: [EliteStat]
+    let squad: [EliteStat]
+    let timeline: [Row]
+}

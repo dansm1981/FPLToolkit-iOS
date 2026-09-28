@@ -78,7 +78,7 @@ struct RotationPlannerView: View {
             await load(options)
         }
         .sheet(isPresented: $adding) {
-            RotationAddPlayerSheet(entryId: entryId, chosen: Set(picks.map(\.id))) { player in
+            AddPlayerSheet(entryId: entryId, chosen: Set(picks.map(\.id))) { player in
                 var list = picks
                 guard list.count < Self.maxPlayers, !list.contains(where: { $0.id == player.id }) else { return }
                 list.append(Pick(id: player.id, name: player.webName))
@@ -395,12 +395,16 @@ struct RotationPlannerView: View {
     }
 }
 
-/// Adds a player to the rotation: your squad first, then any player by name.
-private struct RotationAddPlayerSheet: View {
+/// Adds a player to a research screen (the rotation, the Elite comparison): your squad first, then
+/// any player by name.
+struct AddPlayerSheet: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
     let entryId: Int?
     let chosen: Set<Int>
+    /// VoiceOver hints: "Adds to the rotation", "Already in the rotation".
+    var addHint = "Adds to the rotation"
+    var chosenHint = "Already in the rotation"
     let onPick: (PlayerSummary) -> Void
 
     @State private var query = ""
@@ -500,7 +504,7 @@ private struct RotationAddPlayerSheet: View {
         }
         .buttonStyle(.plain)
         .disabled(isChosen)
-        .accessibilityHint(isChosen ? "Already in the rotation" : "Adds to the rotation")
+        .accessibilityHint(isChosen ? chosenHint : addHint)
     }
 
     private func note(_ text: String) -> some View {

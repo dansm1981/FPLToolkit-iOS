@@ -222,6 +222,20 @@ struct EliteRepository: Sendable {
     func transfers(gw: Int?) -> CachedEndpoint<ElitePage<EliteTransfers>> { page("transfers", gw: gw) }
     func captaincy(gw: Int?) -> CachedEndpoint<ElitePage<EliteCaptaincy>> { page("captaincy", gw: gw) }
     func template(gw: Int?) -> CachedEndpoint<ElitePage<EliteTemplate>> { page("template", gw: gw) }
+    func movers(gw: Int?) -> CachedEndpoint<ElitePage<EliteMovers>> { page("movers", gw: gw) }
+    func trends(gw: Int?) -> CachedEndpoint<ElitePage<EliteTrends>> { page("trends", gw: gw) }
+    func chips(gw: Int?) -> CachedEndpoint<ElitePage<EliteChips>> { page("chips", gw: gw) }
+    func structure(gw: Int?) -> CachedEndpoint<ElitePage<EliteStructure>> { page("structure", gw: gw) }
+
+    /// The template race for one position, or all.
+    func race(gw: Int?, position: Position?) -> CachedEndpoint<ElitePage<EliteRace>> {
+        page("race", gw: gw, position.map { [URLQueryItem(name: "position", value: $0.rawValue)] } ?? [])
+    }
+
+    /// Up to eight players' elite ownership over the season, in the order chosen.
+    func compare(gw: Int?, ids: [Int]) -> CachedEndpoint<ElitePage<EliteCompare>> {
+        page("compare", gw: gw, ids.isEmpty ? [] : [URLQueryItem(name: "ids", value: ids.map(String.init).joined(separator: ","))])
+    }
 
     /// The website's ownership table controls: highest first unless `ascending`, as a new column sorts.
     func ownership(gw: Int?, position: Position?, club: Int?, maxPrice: Double?, view: OwnershipView,

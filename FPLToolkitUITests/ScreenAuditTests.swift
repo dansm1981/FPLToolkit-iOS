@@ -620,6 +620,62 @@ final class ScreenAuditTests: XCTestCase {
         }
     }
 
+    /// The Elite group's season screens. `auditApiBaseURL` as for test11.
+    func test16EliteSeason() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let screens: [(String, NSPredicate, String)] = [
+            ("Elite template race", NSPredicate(format: "label BEGINSWITH[c] 'Elite ownership race'"), "60-elite-race"),
+            ("Elite movers", NSPredicate(format: "label BEGINSWITH[c] 'Biggest 1 GW risers'"), "62-elite-movers"),
+            ("Elite comparison", NSPredicate(format: "label ==[c] 'Add player'"), "63-elite-compare"),
+            ("Elite chips", NSPredicate(format: "label BEGINSWITH[c] 'Chips played in GW'"), "65-elite-chips"),
+            ("Elite squad structure", NSPredicate(format: "label BEGINSWITH[c] 'Value and shape'"), "66-elite-structure"),
+            ("Elite trends", NSPredicate(format: "label ==[c] 'Season shape'"), "67-elite-trends"),
+        ]
+        for (title, marker, shot) in screens {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            for _ in 0..<10 where !(link.exists && link.isHittable) { app.swipeUp() }
+            waitFor(link, "\(title) on the hub")
+            link.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            settle()
+            if title == "Elite comparison" {
+                // Start from no players, so the run is the same each time, then chart two.
+                while let remove = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Remove '")).allElementsBoundByIndex.first {
+                    remove.tap()
+                }
+                for name in ["Haaland", "Palmer"] {
+                    app.buttons["Add player"].firstMatch.tap()
+                    let field = app.searchFields.firstMatch
+                    waitFor(field, "Add player")
+                    field.tap()
+                    field.typeText(name)
+                    let result = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+                    waitFor(result, "\(name) in search", timeout: 30)
+                    result.tap()
+                }
+                waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'Players'")).firstMatch,
+                        "Comparison chart", timeout: 60)
+                settle()
+            }
+            check(app, shot, clippingCheckedLarge: true)
+            if title == "Elite template race" || title == "Elite comparison" {
+                // The rows under the chart. A slow drag, not a flick, so the list is still when audited.
+                let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+                from.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)),
+                           withVelocity: .slow, thenHoldForDuration: 0.3)
+                settle()
+                check(app, title == "Elite template race" ? "61-elite-race-standings" : "64-elite-compare-players",
+                      clippingCheckedLarge: true)
+            }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            settle(1)
+        }
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")
