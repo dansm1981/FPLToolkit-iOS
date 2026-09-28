@@ -93,11 +93,15 @@ struct SavedDataBanner<T: Decodable & Sendable>: View {
                         .font(.headline)
                     Text("Showing saved data from \(Format.ago(shownAt)).")
                         .font(.subheadline)
-                    Button("Try again") {
+                    // The frame goes on the label: outside it, the tappable area stays the text's height.
+                    Button {
                         Task { await resource.load(bypassCache: true) }
+                    } label: {
+                        Text("Try again")
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .font(.subheadline.weight(.semibold))
-                    .frame(minHeight: 44)
                     .disabled(resource.isRefreshing)
                 }
                 .foregroundStyle(ToolkitColor.warning)
