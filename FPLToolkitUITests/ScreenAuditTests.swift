@@ -676,6 +676,49 @@ final class ScreenAuditTests: XCTestCase {
         }
     }
 
+    /// The DEFCON screen. `auditApiBaseURL` as for test11 (the full base, ending /api/mobile/v1/).
+    func test17Defcon() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'DEFCON,'")).firstMatch
+        for _ in 0..<12 where !(link.exists && link.isHittable) { app.swipeUp() }
+        waitFor(link, "DEFCON on the hub")
+        link.tap()
+        waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'DEFCON leaderboard'")).firstMatch,
+                "DEFCON", timeout: 60)
+        settle()
+        check(app, "68-defcon", clippingCheckedLarge: true)
+        // Further down: the leaderboard's rows, then the reliability map and its list. Slow drags, so
+        // the list is still when audited.
+        func drag() {
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+            from.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        drag()
+        settle()
+        check(app, "69-defcon-leaderboard", clippingCheckedLarge: true)
+        // Bring the map's heading to just under the navigation bar: drag by exactly the distance, a
+        // screen at a time, with no momentum.
+        let map = app.descendants(matching: .any).matching(NSPredicate(format: "label ==[c] 'DEFCON reliability map'")).firstMatch
+        for _ in 0..<12 {
+            let delta = map.frame.minY - 140
+            if abs(delta) < 30 { break }
+            let step = max(-450, min(450, delta))
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: step > 0 ? 0.8 : 0.3))
+            from.press(forDuration: 0.1, thenDragTo: from.withOffset(CGVector(dx: 0, dy: -step)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        settle()
+        check(app, "70-defcon-map", clippingCheckedLarge: true)
+        drag()
+        settle()
+        check(app, "71-defcon-map-list", clippingCheckedLarge: true)
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

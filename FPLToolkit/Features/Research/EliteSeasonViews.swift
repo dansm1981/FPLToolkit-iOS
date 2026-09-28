@@ -107,8 +107,8 @@ struct EliteMoverRowView: View {
     }
 }
 
-/// A plain row of figures that doesn't open anything: a gameweek in a season table.
-private struct EliteTableRow: View {
+/// A plain row of figures that doesn't open anything: a gameweek in a season table, a club.
+struct TextFigureRow: View {
     let title: String
     let lines: [String]
     /// The whole row for VoiceOver.
@@ -280,7 +280,7 @@ struct EliteTrendsView: View {
                 EliteStats(stats: t.stats)
             }
             MarketList(title: "Gameweek by gameweek", rows: t.rows, initial: 38) { row in
-                EliteTableRow(
+                TextFigureRow(
                     title: "GW\(row.gameweek)",
                     lines: ["Mean \(row.meanPoints) pts · median \(row.medianPoints) · total \(row.medianTotal)",
                             "Rank \(row.medianRank) · top 10k \(row.top10k) · hits \(row.hits) · template \(row.template)"],
@@ -451,12 +451,12 @@ struct EliteChipsView: View {
                 EliteStats(stats: c.played)
             }
             MarketList(title: "Chips still available", rows: c.available) { chip in
-                EliteTableRow(title: chip.label, lines: ["\(chip.display) of the cohort still hold it"],
+                TextFigureRow(title: chip.label, lines: ["\(chip.display) of the cohort still hold it"],
                               spoken: "\(chip.label): \(chip.display) of the cohort still hold it")
             }
             MarketList(title: "Chip timeline", rows: c.timeline, initial: 38) { row in
                 let cells = zip(c.labels, row.cells).map { "\($0) \($1)" }
-                EliteTableRow(title: "GW\(row.gameweek)", lines: [cells.joined(separator: " · ")],
+                TextFigureRow(title: "GW\(row.gameweek)", lines: [cells.joined(separator: " · ")],
                               spoken: "Gameweek \(row.gameweek): " + zip(c.labels, row.cells)
                                 .map { "\($0) \($1 == "—" ? "none" : $1)" }.joined(separator: ", "))
             }
@@ -491,7 +491,7 @@ struct EliteStructureView: View {
                 EliteStats(stats: s.stats)
             }
             MarketList(title: "Formations", rows: s.formations, empty: "No formation data for this gameweek.") { f in
-                EliteTableRow(title: f.formation, lines: ["\(f.display) of the cohort"],
+                TextFigureRow(title: f.formation, lines: ["\(f.display) of the cohort"],
                               spoken: "\(f.formation), \(f.display) of elite managers")
             }
             VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
@@ -503,7 +503,7 @@ struct EliteStructureView: View {
                 EliteStats(stats: s.squad)
             }
             MarketList(title: "Team value over the season", rows: s.timeline, initial: 38) { row in
-                EliteTableRow(title: "GW\(row.gameweek)",
+                TextFigureRow(title: "GW\(row.gameweek)",
                               lines: ["Value \(row.value) · bank \(row.bank) · bench \(row.bench) · \(row.formation)"],
                               spoken: "Gameweek \(row.gameweek): team value \(row.value), bank \(row.bank), bench \(row.bench), most common formation \(row.formation)")
             }

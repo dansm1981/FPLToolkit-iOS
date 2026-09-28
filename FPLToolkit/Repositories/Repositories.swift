@@ -128,6 +128,19 @@ struct ResearchRepository: Sendable {
         return .init(client: client, cache: cache, path: "research/rotation", query: query)
     }
 
+    /// The DEFCON hub: the leaderboard's filters, then the reliability map's. Defaults are left out.
+    func defcon(position: Position?, minStarts: Int, maxPrice: Double, sort: String,
+                mapPosition: Position?, mapMinStarts: Int) -> CachedEndpoint<Defcon> {
+        var query: [URLQueryItem] = []
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if minStarts != 1 { query.append(URLQueryItem(name: "minStarts", value: String(minStarts))) }
+        if maxPrice != 0 { query.append(URLQueryItem(name: "maxPrice", value: String(maxPrice))) }
+        if sort != "hits" { query.append(URLQueryItem(name: "sort", value: sort)) }
+        if let mapPosition { query.append(URLQueryItem(name: "mapPosition", value: mapPosition.rawValue)) }
+        if mapMinStarts != 1 { query.append(URLQueryItem(name: "mapMinStarts", value: String(mapMinStarts))) }
+        return .init(client: client, cache: cache, path: "defcon", query: query)
+    }
+
     func congestion(days: Int, shortestRestFirst: Bool) -> CachedEndpoint<ResearchCongestion> {
         .init(client: client, cache: cache, path: "research/congestion", query: [
             URLQueryItem(name: "days", value: String(days)),

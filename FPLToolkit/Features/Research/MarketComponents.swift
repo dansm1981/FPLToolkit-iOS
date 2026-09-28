@@ -145,10 +145,16 @@ struct MarketList<Row: Identifiable, Content: View>: View {
                 }
                 if rows.count > initial {
                     Divider().overlay(ToolkitColor.border)
-                    Button(expanded ? "Show fewer" : "Show all \(rows.count)") { expanded.toggle() }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.link)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    // The frame goes on the label: outside it, the tappable area stays the text's height.
+                    Button {
+                        expanded.toggle()
+                    } label: {
+                        Text(expanded ? "Show fewer" : "Show all \(rows.count)")
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.link)
                 }
             }
             .padding(.horizontal, ToolkitSpace.lg)

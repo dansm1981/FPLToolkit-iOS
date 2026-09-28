@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The Research tab: the website's research pages, in its groups: Fixtures (the ticker, the rotation
 /// planner and congestion), Players (insights, the template team, injuries), Market (prices,
-/// predictions, trends, transfers and ownership) and Elite (what the top 100 managers do). The
-/// server builds every table with the website's code.
+/// predictions, trends, transfers and ownership), Elite (what the top 100 managers do), and DEFCON
+/// and deep dives. The server builds every table with the website's code.
 struct ResearchView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int?
@@ -138,6 +138,16 @@ struct ResearchView: View {
                 }
             } header: {
                 Text("Elite")
+            }
+            .listRowBackground(ToolkitColor.surface)
+
+            Section {
+                row("DEFCON", systemImage: "shield.lefthalf.filled",
+                    detail: "Who hits the defensive contribution threshold most, the reliability map, and the leakiest clubs.") {
+                    DefconView()
+                }
+            } header: {
+                Text("DEFCON and deep dives")
             }
             .listRowBackground(ToolkitColor.surface)
         }
