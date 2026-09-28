@@ -124,8 +124,14 @@ private struct WatchedSummary: View {
                 .padding(.horizontal, ToolkitSpace.lg)
                 .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
                 .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
-                Button("Open Watch") { appModel.router.selectedTab = .watch }
-                    .frame(minHeight: 44)
+                // The frame goes on the label: outside it, the tappable area stays the text's height.
+                Button {
+                    appModel.router.selectedTab = .watch
+                } label: {
+                    Text("Open Watch")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
             } else {
                 Text("Search for any player on the Watch tab and tap + to watch them.")
                     .foregroundStyle(ToolkitColor.secondaryText)

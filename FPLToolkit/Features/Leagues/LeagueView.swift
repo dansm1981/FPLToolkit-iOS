@@ -346,10 +346,14 @@ private struct RivalCard: View {
                     differences("Your differences", rival.yourDifferences, colour: ToolkitColor.positive)
                     differences("Their differences", rival.theirDifferences, colour: ToolkitColor.error)
                 }
-                Button("Compare", action: compare)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(ToolkitColor.link)
-                    .frame(minHeight: 44)
+                // The frame goes on the label: outside it, the tappable area stays the text's height.
+                Button(action: compare) {
+                    Text("Compare")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
             }
             .fixedSize(horizontal: false, vertical: true)
         }

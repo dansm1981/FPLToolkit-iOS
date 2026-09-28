@@ -295,8 +295,12 @@ private struct SwapBanner: View {
                     .foregroundStyle(ToolkitColor.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: ToolkitSpace.sm)
-                Button("Cancel", action: cancel)
-                    .frame(minHeight: 44)
+                // The frame goes on the label: outside it, the tappable area stays the text's height.
+                Button(action: cancel) {
+                    Text("Cancel")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
             }
         }
     }

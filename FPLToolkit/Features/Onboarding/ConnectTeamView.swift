@@ -123,10 +123,16 @@ struct ConnectTeamView: View {
                                 .foregroundStyle(ToolkitColor.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
                         } else {
-                            Button("Using the FPL app?") { withAnimation { showingHelp = true } }
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(ToolkitColor.link)
-                                .frame(minHeight: 44)
+                            // The frame goes on the label: outside it, the tappable area stays the text's height.
+                            Button {
+                                withAnimation { showingHelp = true }
+                            } label: {
+                                Text("Using the FPL app?")
+                                    .frame(minHeight: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.link)
                         }
                     }
                 }
