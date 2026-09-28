@@ -5,7 +5,7 @@ import Testing
 private final class PlayerTabsBundleToken {}
 
 /// The player sheet's "More" sections (happy-backend-pal#28), for Tarkowski (229) and Haaland (411).
-/// Captured 28 Sep 2026 from the branch; each checked against the website's tab page.
+/// Captured 28 Sep 2026 from production; each checked against the website's tab page.
 struct PlayerTabsTests {
     @Test func history() throws {
         let h = try fixture("history", as: PlayerHistoryTab.self)
