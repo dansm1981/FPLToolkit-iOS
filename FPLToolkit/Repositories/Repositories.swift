@@ -203,3 +203,39 @@ struct PlayersResearchRepository: Sendable {
     var injuries: CachedEndpoint<InjuryList> { .init(client: client, cache: cache, path: "players/injuries") }
 }
 
+/// The Research tab's Elite group (contract §19). `gw` nil means the newest published gameweek.
+struct EliteRepository: Sendable {
+    let client: APIClient
+    let cache: ResponseCache
+
+    enum OwnershipView: String, CaseIterable, Identifiable, Sendable {
+        case all, core, differentials
+        var id: String { rawValue }
+    }
+
+    private func page<Body>(_ name: String, gw: Int?, _ extra: [URLQueryItem] = []) -> CachedEndpoint<ElitePage<Body>> {
+        let query = (gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []) + extra
+        return .init(client: client, cache: cache, path: "elite/\(name)", query: query)
+    }
+
+    func overview(gw: Int?) -> CachedEndpoint<ElitePage<EliteOverview>> { page("overview", gw: gw) }
+    func transfers(gw: Int?) -> CachedEndpoint<ElitePage<EliteTransfers>> { page("transfers", gw: gw) }
+    func captaincy(gw: Int?) -> CachedEndpoint<ElitePage<EliteCaptaincy>> { page("captaincy", gw: gw) }
+    func template(gw: Int?) -> CachedEndpoint<ElitePage<EliteTemplate>> { page("template", gw: gw) }
+
+    /// The website's ownership table controls: highest first unless `ascending`, as a new column sorts.
+    func ownership(gw: Int?, position: Position?, club: Int?, maxPrice: Double?, view: OwnershipView,
+                   sort: String, ascending: Bool, search: String) -> CachedEndpoint<ElitePage<EliteOwnership>> {
+        var query: [URLQueryItem] = []
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if let club { query.append(URLQueryItem(name: "club", value: String(club))) }
+        if let maxPrice { query.append(URLQueryItem(name: "maxPrice", value: String(maxPrice))) }
+        if view != .all { query.append(URLQueryItem(name: "view", value: view.rawValue)) }
+        if sort != "owned_pct" { query.append(URLQueryItem(name: "sort", value: sort)) }
+        if ascending { query.append(URLQueryItem(name: "dir", value: "asc")) }
+        let text = search.trimmingCharacters(in: .whitespaces)
+        if !text.isEmpty { query.append(URLQueryItem(name: "q", value: text)) }
+        return page("ownership", gw: gw, query)
+    }
+}
+

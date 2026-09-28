@@ -585,6 +585,41 @@ final class ScreenAuditTests: XCTestCase {
         }
     }
 
+    /// The Research tab's Elite group. `auditApiBaseURL` as for test11.
+    func test15Elite() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let screens: [(String, NSPredicate, String)] = [
+            ("Elite overview", NSPredicate(format: "label BEGINSWITH[c] 'Elite snapshot'"), "53-elite-overview"),
+            ("Elite ownership", NSPredicate(format: "label ENDSWITH[c] ' players'"), "55-elite-ownership"),
+            ("Elite transfers", NSPredicate(format: "label BEGINSWITH[c] 'Transfer activity'"), "57-elite-transfers"),
+            ("Elite captaincy", NSPredicate(format: "label BEGINSWITH[c] 'Captaincy consensus'"), "58-elite-captaincy"),
+            ("Elite template", NSPredicate(format: "label BEGINSWITH[c] 'Template squad'"), "59-elite-template"),
+        ]
+        for (title, marker, shot) in screens {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            for _ in 0..<8 where !(link.exists && link.isHittable) { app.swipeUp() }
+            waitFor(link, "\(title) on the hub")
+            link.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            settle()
+            check(app, shot, clippingCheckedLarge: true)
+            if title == "Elite overview" || title == "Elite ownership" {
+                // The lists further down.
+                app.swipeUp()
+                app.swipeUp()
+                settle()
+                check(app, title == "Elite overview" ? "54-elite-overview-lists" : "56-elite-ownership-list",
+                      clippingCheckedLarge: true)
+            }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            settle(1)
+        }
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

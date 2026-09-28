@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// The Research tab: the website's research pages, in its groups: Fixtures (the ticker, the rotation
-/// planner and congestion), Players (insights, the template team, injuries) and Market (prices,
-/// predictions, trends, transfers and ownership). The server builds every table with the website's
-/// code.
+/// planner and congestion), Players (insights, the template team, injuries), Market (prices,
+/// predictions, trends, transfers and ownership) and Elite (what the top 100 managers do). The
+/// server builds every table with the website's code.
 struct ResearchView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int?
@@ -88,6 +88,32 @@ struct ResearchView: View {
                 .accessibilityHint("Opens the Watch tab")
             } header: {
                 Text("Market")
+            }
+            .listRowBackground(ToolkitColor.surface)
+
+            Section {
+                row("Elite overview", systemImage: "crown",
+                    detail: "What the top 100 managers own, buy, sell and captain, week by week.") {
+                    EliteOverviewView()
+                }
+                row("Elite ownership", systemImage: "chart.bar.xaxis",
+                    detail: "Every player the cohort owns, starts and captains, against the wider game.") {
+                    EliteOwnershipView()
+                }
+                row("Elite transfers", systemImage: "arrow.left.arrow.right.circle",
+                    detail: "Their buys and sells, net flow, and the swaps they made most.") {
+                    EliteTransfersView()
+                }
+                row("Elite captaincy", systemImage: "c.circle",
+                    detail: "How concentrated the armband is, conviction, and the vice-captains.") {
+                    EliteCaptaincyView()
+                }
+                row("Elite template", systemImage: "person.3.sequence",
+                    detail: "The fifteen they converge on, the XI they start, and who came and went.") {
+                    EliteTemplateView()
+                }
+            } header: {
+                Text("Elite")
             }
             .listRowBackground(ToolkitColor.surface)
         }
