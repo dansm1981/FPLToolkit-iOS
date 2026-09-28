@@ -484,12 +484,16 @@ struct AddPlayerSheet: View {
             dismiss()
         } label: {
             HStack(spacing: ToolkitSpace.md) {
+                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(player.webName)
                         .font(.headline)
                         .foregroundStyle(ToolkitColor.primaryText)
-                    Text([appModel.club(player.clubId)?.shortName, player.position.rawValue, Format.price(player.price)]
-                        .compactMap { $0 }.joined(separator: " · "))
+                    ClubLabel(
+                        clubId: player.clubId,
+                        text: [appModel.club(player.clubId)?.shortName, player.position.rawValue, Format.price(player.price)]
+                            .compactMap { $0 }.joined(separator: " · ")
+                    )
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }

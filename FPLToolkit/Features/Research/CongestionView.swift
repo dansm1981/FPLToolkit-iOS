@@ -152,9 +152,12 @@ struct CongestionView: View {
 
     private func clubCell(_ club: ResearchCongestion.Club) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(appModel.club(club.clubId)?.shortName ?? "?")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(ToolkitColor.primaryText)
+            HStack(spacing: 3) {
+                ClubLogo(clubId: club.clubId, size: 14)
+                Text(appModel.club(club.clubId)?.shortName ?? "?")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+            }
             Text(summary(club))
                 .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(ToolkitColor.secondaryText)

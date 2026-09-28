@@ -136,16 +136,23 @@ struct PlayerSheetContent: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            let fullName = [sheet.player.firstName, sheet.player.secondName].compactMap { $0 }.joined(separator: " ")
-            if !fullName.isEmpty && fullName != player.webName {
-                Text(fullName)
-                    .font(.headline)
-                    .foregroundStyle(ToolkitColor.primaryText)
-            }
-            Text([appModel.club(player.clubId)?.name, player.position.displayName, Format.price(player.price)]
-                .compactMap { $0 }.joined(separator: " · "))
+        HStack(spacing: ToolkitSpace.md) {
+            PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 56, scalesWithText: false)
+            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+                let fullName = [sheet.player.firstName, sheet.player.secondName].compactMap { $0 }.joined(separator: " ")
+                if !fullName.isEmpty && fullName != player.webName {
+                    Text(fullName)
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                }
+                ClubLabel(
+                    clubId: player.clubId,
+                    text: [appModel.club(player.clubId)?.name, player.position.displayName, Format.price(player.price)]
+                        .compactMap { $0 }.joined(separator: " · "),
+                    logoSize: 16
+                )
                 .foregroundStyle(ToolkitColor.secondaryText)
+            }
         }
     }
 
@@ -338,7 +345,7 @@ private struct FixturesSection: View {
             Text("GW\(fixture.gw)")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(ToolkitColor.secondaryText)
-            Text(opponent(fixture))
+            ClubLabel(clubId: fixture.opponentClubId, text: opponent(fixture))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(ToolkitColor.primaryText)
             if let xfdr = fixture.xfdr {

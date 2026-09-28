@@ -208,9 +208,12 @@ struct FixtureTickerView: View {
 
     private func clubCell(_ row: ResearchTicker.Row) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(appModel.club(row.clubId)?.shortName ?? "?")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(ToolkitColor.primaryText)
+            HStack(spacing: 3) {
+                ClubLogo(clubId: row.clubId, size: 14)
+                Text(appModel.club(row.clubId)?.shortName ?? "?")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+            }
             Text("Σ \(row.sumDisplay)")
                 .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(ToolkitColor.secondaryText)

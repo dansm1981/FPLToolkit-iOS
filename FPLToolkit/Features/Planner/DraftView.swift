@@ -544,8 +544,7 @@ private struct BenchCard: View {
     }
 }
 
-/// A player on the pitch: name, captaincy, availability, this gameweek's opponent and xFDR.
-/// No photos or club badges (workspace rule); the club is shown by its short name.
+/// A player on the pitch: photo, name, captaincy, availability, this gameweek's opponent and xFDR.
 struct PlannerTile: View {
     @Environment(AppModel.self) private var appModel
     // The circle and badge grow with the text size, so their text is never cut off.
@@ -608,14 +607,21 @@ struct PlannerTile: View {
         .accessibilityAddTraits(highlighted ? [.isButton, .isSelected] : .isButton)
     }
 
-    /// The club's short name in a circle (ringed when doubtful or out), with the C / V badge.
+    /// The player's photo in a circle, or the club's short name when there isn't one; ringed
+    /// when doubtful or out, with the C / V badge.
     private func marker(_ player: PlayerSummary?) -> some View {
         ZStack(alignment: .topTrailing) {
-            Text(club(player?.clubId) ?? "–")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(ToolkitColor.primaryText)
-                .frame(width: circle, height: circle)
-                .background(ToolkitColor.raised, in: Circle())
+            Group {
+                if let photo = player?.photo {
+                    PlayerPhoto(path: photo, size: circle, scalesWithText: false)
+                } else {
+                    Text(club(player?.clubId) ?? "–")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .frame(width: circle, height: circle)
+                        .background(ToolkitColor.raised, in: Circle())
+                }
+            }
                 .overlay(Circle().strokeBorder(availabilityColor(player), lineWidth: 2))
                 .overlay(Circle().strokeBorder(highlighted ? ToolkitColor.accent : .clear, lineWidth: 3).padding(-4))
             if pick.isCaptain || pick.isVice {

@@ -312,6 +312,8 @@ private struct CandidateRow: View {
         HStack(alignment: .top, spacing: ToolkitSpace.sm) {
             Button(action: pick) {
                 HStack(alignment: .top, spacing: ToolkitSpace.md) {
+                    PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
+                        .opacity(candidate.reason == nil ? 1 : 0.6)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: ToolkitSpace.sm) {
                             Text(player.webName)
@@ -319,7 +321,7 @@ private struct CandidateRow: View {
                                 .foregroundStyle(candidate.reason == nil ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
                             AvailabilityBadge(availability: player.availability)
                         }
-                        Text(details)
+                        ClubLabel(clubId: player.clubId, text: details)
                             .font(.subheadline)
                             .foregroundStyle(ToolkitColor.secondaryText)
                         if let strip = candidate.fixtureStrip, !strip.isEmpty {

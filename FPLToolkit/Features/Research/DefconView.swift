@@ -285,7 +285,8 @@ struct DefconView: View {
             title: club?.name ?? "Club \(leak.clubId)",
             lines: ["Defenders: \(leak.defHitRate) hit · avg DC \(leak.avgDcVsDef)",
                     "Midfielders and forwards: \(leak.attackHitRate) hit · avg DC \(leak.avgDcVsAttack)"],
-            spoken: "\(club?.name ?? "Club"): defenders hit DEFCON \(leak.defHitRate) of the time against them, averaging \(leak.avgDcVsDef); midfielders and forwards \(leak.attackHitRate), averaging \(leak.avgDcVsAttack)"
+            spoken: "\(club?.name ?? "Club"): defenders hit DEFCON \(leak.defHitRate) of the time against them, averaging \(leak.avgDcVsDef); midfielders and forwards \(leak.attackHitRate), averaging \(leak.avgDcVsAttack)",
+            clubId: leak.clubId
         )
     }
 }

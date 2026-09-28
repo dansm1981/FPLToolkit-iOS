@@ -42,7 +42,8 @@ private struct SquadChip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
+                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 28)
                 Text(player.webName)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(ToolkitColor.primaryText)
@@ -53,7 +54,7 @@ private struct SquadChip: View {
             if player.availability.level != .ok {
                 AvailabilityBadge(availability: player.availability)
             }
-            Text(opponent)
+            ClubLabel(clubId: player.nextFixture?.opponentClubId, text: opponent, logoSize: 12)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(ToolkitColor.secondaryText)
             if let xfdr = player.nextFixture?.xfdr {

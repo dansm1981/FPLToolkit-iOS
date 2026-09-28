@@ -219,18 +219,21 @@ struct PlayerRow: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: ToolkitSpace.sm))
             : AnyLayout(HStackLayout(alignment: .center, spacing: ToolkitSpace.md))
         layout {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: ToolkitSpace.sm) {
-                    Text(player.webName)
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    if pick.isCaptain { RoleBadge(letter: "C") }
-                    if pick.isViceCaptain { RoleBadge(letter: "V") }
-                    AvailabilityBadge(availability: player.availability)
+            HStack(spacing: ToolkitSpace.md) {
+                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: ToolkitSpace.sm) {
+                        Text(player.webName)
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        if pick.isCaptain { RoleBadge(letter: "C") }
+                        if pick.isViceCaptain { RoleBadge(letter: "V") }
+                        AvailabilityBadge(availability: player.availability)
+                    }
+                    ClubLabel(clubId: player.clubId, text: details)
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
                 }
-                Text(details)
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: ToolkitSpace.sm) }
             if let fixture = player.nextFixture {

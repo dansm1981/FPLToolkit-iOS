@@ -113,12 +113,17 @@ struct TextFigureRow: View {
     let lines: [String]
     /// The whole row for VoiceOver.
     let spoken: String
+    /// Shows the club's logo before the title when the row is about a club.
+    var clubId: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(ToolkitColor.primaryText)
+            HStack(spacing: 6) {
+                if let clubId { ClubLogo(clubId: clubId, size: 18) }
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(ToolkitColor.primaryText)
+            }
             ForEach(lines, id: \.self) { line in
                 Text(line)
                     .font(.subheadline.monospacedDigit())

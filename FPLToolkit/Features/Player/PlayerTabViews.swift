@@ -115,15 +115,28 @@ private struct Opponent {
     }
 }
 
-/// A simple two-column line: words on the left, a figure on the right.
+/// A simple two-column line: words on the left, a figure on the right, and the opponent's logo
+/// first when the line is about a match.
 private struct TabRow: View {
     let title: String
     var detail: String?
     let value: String
     var tint: Color = ToolkitColor.primaryText
     var spoken: String?
+    var opponentClubId: Int?
 
     var body: some View {
+        HStack(spacing: ToolkitSpace.sm) {
+            if let opponentClubId { ClubLogo(clubId: opponentClubId, size: 20) }
+            line
+        }
+        .padding(.vertical, ToolkitSpace.xs)
+        .frame(minHeight: 44)
+        .accessibilityElement(children: .combine)
+        .modifier(OptionalLabel(label: spoken))
+    }
+
+    private var line: some View {
         HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -144,10 +157,6 @@ private struct TabRow: View {
                 .multilineTextAlignment(.trailing)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.vertical, ToolkitSpace.xs)
-        .frame(minHeight: 44)
-        .accessibilityElement(children: .combine)
-        .modifier(OptionalLabel(label: spoken))
     }
 }
 
@@ -203,7 +212,8 @@ private struct HistoryTabView: View {
                     let opponent = Opponent(appModel, clubId: row.opponentClubId, home: row.home)
                     let detail = "\(row.minutes) min · \(row.goals) G · \(row.assists) A · \(row.cleanSheets) CS · xG \(row.xg) · xA \(row.xa) · \(row.bonus) bonus · \(row.bps) BPS" + (row.price.map { " · \($0)" } ?? "")
                     TabRow(title: "GW\(row.gw.map(String.init) ?? "–") \(opponent.short)", detail: detail, value: Self.points(row.points),
-                           spoken: "Gameweek \(row.gw.map(String.init) ?? "unknown"), \(opponent.spoken), \(row.points) points, \(detail)")
+                           spoken: "Gameweek \(row.gw.map(String.init) ?? "unknown"), \(opponent.spoken), \(row.points) points, \(detail)",
+                           opponentClubId: row.opponentClubId)
                 }
             }
         }
@@ -332,6 +342,7 @@ private struct FixturesTabView: View {
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
                     let opponent = Opponent(appModel, clubId: f.opponentClubId, home: f.home)
                     HStack(spacing: ToolkitSpace.sm) {
+                        ClubLogo(clubId: f.opponentClubId, size: 20)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("GW\(f.gw.map(String.init) ?? "–") \(opponent.short)")
                                 .font(.headline)
@@ -450,7 +461,8 @@ private struct DefensiveTabView: View {
                                detail: "\(m.minutes) min · CBIT \(m.cbit) · \(m.tackles) tkl · \(m.recoveries) rec · \(status) · \(Self.points(m.points))",
                                value: "\(m.dc) DC",
                                tint: m.hit ? ToolkitColor.positive : m.nearMiss ? ToolkitColor.warning : ToolkitColor.primaryText,
-                               spoken: "Gameweek \(m.gw.map(String.init) ?? "unknown"), \(opponent.spoken), \(m.dc) defensive contributions, \(status), \(m.minutes) minutes, \(m.points) points")
+                               spoken: "Gameweek \(m.gw.map(String.init) ?? "unknown"), \(opponent.spoken), \(m.dc) defensive contributions, \(status), \(m.minutes) minutes, \(m.points) points",
+                               opponentClubId: m.opponentClubId)
                     }
                 }
             }

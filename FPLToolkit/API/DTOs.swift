@@ -85,6 +85,8 @@ struct Bootstrap: Decodable, Sendable {
         let id: Int
         let name: String
         let shortName: String
+        /// API-Football logo, relative to the API base (`images/clubs/{id}?v=…`); nil without one.
+        let logo: String?
     }
     struct Config: Decodable, Sendable {
         struct Features: Decodable, Sendable {
@@ -133,6 +135,8 @@ struct PlayerSummary: Decodable, Sendable, Identifiable, Hashable {
 
     let id: Int
     let webName: String
+    /// API-Football photo, relative to the API base (`images/players/{id}?v=…`); nil without one.
+    let photo: String?
     let clubId: Int
     let position: Position
     let price: Double

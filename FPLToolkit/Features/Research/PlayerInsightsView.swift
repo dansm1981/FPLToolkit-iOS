@@ -180,6 +180,7 @@ struct PlayerInsightsView: View {
                 appModel.router.openPlayer(row.playerId)
             } label: {
                 HStack(spacing: ToolkitSpace.sm) {
+                    PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: ToolkitSpace.sm) {
                             Text(player?.webName ?? "Player \(row.playerId)")
@@ -187,7 +188,7 @@ struct PlayerInsightsView: View {
                                 .foregroundStyle(ToolkitColor.primaryText)
                             if let player { AvailabilityBadge(availability: player.availability) }
                         }
-                        Text(detailLine(player, others: f.others))
+                        ClubLabel(clubId: player?.clubId, text: detailLine(player, others: f.others))
                             .font(.subheadline)
                             .foregroundStyle(ToolkitColor.secondaryText)
                     }

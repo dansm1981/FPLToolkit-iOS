@@ -44,10 +44,13 @@ struct InsightCard: View {
             .background(insight.tone.fill, in: RoundedRectangle(cornerRadius: ToolkitRadius.pill))
 
             if let player {
-                Text(player.webName)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(ToolkitColor.primaryText)
-                    .padding(.top, ToolkitSpace.xs)
+                HStack(spacing: ToolkitSpace.sm) {
+                    PlayerPhoto(path: player.photo, size: 40)
+                    Text(player.webName)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                }
+                .padding(.top, ToolkitSpace.xs)
             }
 
             Text(insight.summary)

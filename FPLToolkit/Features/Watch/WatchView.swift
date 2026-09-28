@@ -155,16 +155,19 @@ private struct SearchResultRow: View {
             Button {
                 appModel.router.openPlayer(player.id)
             } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: ToolkitSpace.sm) {
-                        Text(player.webName)
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        AvailabilityBadge(availability: player.availability)
+                HStack(spacing: ToolkitSpace.md) {
+                    PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: ToolkitSpace.sm) {
+                            Text(player.webName)
+                                .font(.headline)
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            AvailabilityBadge(availability: player.availability)
+                        }
+                        ClubLabel(clubId: player.clubId, text: details(inSquad: inSquad))
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
                     }
-                    Text(details(inSquad: inSquad))
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
                 }
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 .contentShape(Rectangle())
@@ -374,6 +377,7 @@ private struct WatchRow: View {
 
     var body: some View {
         HStack(spacing: ToolkitSpace.md) {
+            PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: ToolkitSpace.sm) {
                     Text(player?.webName ?? "Player \(item.playerId)")
@@ -381,7 +385,7 @@ private struct WatchRow: View {
                         .foregroundStyle(ToolkitColor.primaryText)
                     if let player { AvailabilityBadge(availability: player.availability) }
                 }
-                Text(details)
+                ClubLabel(clubId: player?.clubId, text: details)
                     .font(.subheadline)
                     .foregroundStyle(ToolkitColor.secondaryText)
                 if let insight = item.topInsight {

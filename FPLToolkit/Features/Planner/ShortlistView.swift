@@ -153,16 +153,19 @@ struct ShortlistView: View {
             Button {
                 appModel.router.openPlayer(item.playerId)
             } label: {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: ToolkitSpace.sm) {
-                        Text(name)
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        if let player { AvailabilityBadge(availability: player.availability) }
+                HStack(spacing: ToolkitSpace.md) {
+                    PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: ToolkitSpace.sm) {
+                            Text(name)
+                                .font(.headline)
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            if let player { AvailabilityBadge(availability: player.availability) }
+                        }
+                        ClubLabel(clubId: player?.clubId, text: details(player))
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
                     }
-                    Text(details(player))
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
                 }
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)

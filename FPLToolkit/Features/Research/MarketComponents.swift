@@ -48,8 +48,8 @@ enum MarketFormat {
     }
 }
 
-/// A player in a market list: name, then club, position and figures, with one figure picked out on
-/// the right. Opens the player. VoiceOver reads it as one row.
+/// A player in a market list: photo and name, then club, position and figures, with one figure
+/// picked out on the right. Opens the player. VoiceOver reads it as one row.
 struct MarketPlayerRow: View {
     @Environment(AppModel.self) private var appModel
     let playerId: Int
@@ -68,11 +68,12 @@ struct MarketPlayerRow: View {
             appModel.router.openPlayer(playerId)
         } label: {
             HStack(alignment: .center, spacing: ToolkitSpace.md) {
+                PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(player?.webName ?? "Player \(playerId)")
                         .font(.headline)
                         .foregroundStyle(ToolkitColor.primaryText)
-                    Text(detailLine)
+                    ClubLabel(clubId: player?.clubId, text: detailLine)
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                     if let extra {
@@ -198,7 +199,15 @@ struct ClubMenu: View {
                 ForEach(clubs) { Text($0.name).tag(Int?.some($0.id)) }
             }
         } label: {
-            Label(club.flatMap { appModel.club($0)?.name } ?? "All clubs", systemImage: "shield")
+            Label {
+                Text(club.flatMap { appModel.club($0)?.name } ?? "All clubs")
+            } icon: {
+                if let club, appModel.club(club)?.logo != nil {
+                    ClubLogo(clubId: club, size: 18)
+                } else {
+                    Image(systemName: "shield")
+                }
+            }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(ToolkitColor.link)
                 .frame(minHeight: 44)
