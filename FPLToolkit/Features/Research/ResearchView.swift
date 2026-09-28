@@ -146,6 +146,22 @@ struct ResearchView: View {
                     detail: "Who hits the defensive contribution threshold most, the reliability map, and the leakiest clubs.") {
                     DefconView()
                 }
+                row("Hauls", systemImage: "flame",
+                    detail: "Who delivers 10+ point gameweeks most often, and their best scores.") {
+                    HaulsView()
+                }
+                row("Consistency", systemImage: "chart.bar.fill",
+                    detail: "The share of each player's games that return 4 or more points.") {
+                    ConsistencyView()
+                }
+                row("Home and away", systemImage: "house",
+                    detail: "Points per game by venue: home specialists and the best travellers.") {
+                    HomeAwayView()
+                }
+                row("Records", systemImage: "trophy",
+                    detail: "The season's extremes: top scores, hauls, price swings and ownership.") {
+                    RecordsView()
+                }
             } header: {
                 Text("DEFCON and deep dives")
             }

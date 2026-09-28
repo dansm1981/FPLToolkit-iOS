@@ -141,6 +141,11 @@ struct ResearchRepository: Sendable {
         return .init(client: client, cache: cache, path: "defcon", query: query)
     }
 
+    var hauls: CachedEndpoint<Hauls> { .init(client: client, cache: cache, path: "deep-dives/hauls") }
+    var consistency: CachedEndpoint<Consistency> { .init(client: client, cache: cache, path: "deep-dives/consistency") }
+    var homeAway: CachedEndpoint<HomeAway> { .init(client: client, cache: cache, path: "deep-dives/home-away") }
+    var records: CachedEndpoint<SeasonRecords> { .init(client: client, cache: cache, path: "deep-dives/records") }
+
     func congestion(days: Int, shortestRestFirst: Bool) -> CachedEndpoint<ResearchCongestion> {
         .init(client: client, cache: cache, path: "research/congestion", query: [
             URLQueryItem(name: "days", value: String(days)),

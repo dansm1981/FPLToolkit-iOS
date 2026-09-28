@@ -719,6 +719,32 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "71-defcon-map-list", clippingCheckedLarge: true)
     }
 
+    /// The deep dives. `auditApiBaseURL` as for test17.
+    func test18DeepDives() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let screens: [(String, NSPredicate, String)] = [
+            ("Hauls", NSPredicate(format: "label ==[c] 'Most 10+ point gameweeks'"), "72-deep-hauls"),
+            ("Consistency", NSPredicate(format: "label ==[c] 'Most consistent returners'"), "73-deep-consistency"),
+            ("Home and away", NSPredicate(format: "label ==[c] 'Home specialists'"), "74-deep-home-away"),
+            ("Records", NSPredicate(format: "label ==[c] 'Biggest single gameweek scores'"), "75-deep-records"),
+        ]
+        for (title, marker, shot) in screens {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "\(title),")).firstMatch
+            for _ in 0..<12 where !(link.exists && link.isHittable) { app.swipeUp() }
+            waitFor(link, "\(title) on the hub")
+            link.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            settle()
+            check(app, shot, clippingCheckedLarge: true)
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            settle(1)
+        }
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")
