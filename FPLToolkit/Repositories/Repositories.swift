@@ -281,4 +281,10 @@ struct LiveRepository: Sendable {
         .init(client: client, cache: cache, path: "live/team/\(entryId)",
               query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
     }
+
+    /// Chances from bookmaker odds; the next gameweek unless `gw` is given.
+    func odds(gw: Int? = nil) -> CachedEndpoint<Odds> {
+        .init(client: client, cache: cache, path: "odds",
+              query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
+    }
 }

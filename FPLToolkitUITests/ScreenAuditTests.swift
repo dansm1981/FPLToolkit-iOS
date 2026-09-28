@@ -811,6 +811,30 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Done"].tap()
     }
 
+    /// Odds (Phase 3, P3-5): the Team tab's "Show odds" switch and the odds check sheet. Needs odds
+    /// loaded for the next gameweek (48 hours before a deadline, or loaded early).
+    func test20Odds() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Team"].tap()
+        let toggle = app.switches.firstMatch
+        waitFor(toggle, "Show odds", timeout: 60)
+        if (toggle.value as? String) != "1" {
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        }
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'clean sheet' OR label CONTAINS[c] 'to score'")).firstMatch,
+                "Odds on the rows")
+        settle()
+        check(app, "78-team-odds")
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Odds check'")).firstMatch.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label ==[c] 'Captain options'")).firstMatch, "Odds check", timeout: 30)
+        settle()
+        check(app, "79-odds-check")
+        app.buttons["Done"].tap()
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

@@ -5,6 +5,10 @@ struct TeamView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Team>?
+    /// Chances from bookmaker odds (P3-5), shown on the rows when switched on.
+    @State private var odds: Resource<Odds>?
+    @AppStorage("odds.overlay") private var showOdds = false
+    @State private var checkingOdds = false
 
     var body: some View {
         Group {
@@ -23,7 +27,12 @@ struct TeamView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
-                            TeamContent(loaded: loaded) { appModel.router.openPlayer($0) }
+                            TeamContent(
+                                loaded: loaded,
+                                onSelectPlayer: { appModel.router.openPlayer($0) },
+                                odds: odds?.loaded?.value,
+                                showOdds: $showOdds,
+                                onOddsCheck: { checkingOdds = true })
                             LeaguesCard()
                                 .padding(.top, ToolkitSpace.sm)
                         }
@@ -46,7 +55,17 @@ struct TeamView: View {
                 }
             }
         }
+        .sheet(isPresented: $checkingOdds) {
+            if let team = resource?.loaded?.value, let odds = odds?.loaded?.value {
+                NavigationStack { OddsCheckView(team: team, odds: odds) }
+            }
+        }
         .task {
+            if odds == nil {
+                let odds = Resource(appModel.liveRepository.odds())
+                self.odds = odds
+                Task { await odds.load() }
+            }
             if resource == nil {
                 let resource = Resource(appModel.teamRepository.team(entryId: entryId))
                 self.resource = resource
@@ -61,8 +80,47 @@ struct TeamContent: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let loaded: Loaded<Team>
     var onSelectPlayer: ((Int) -> Void)?
+    var odds: Odds?
+    var showOdds: Binding<Bool>?
+    var onOddsCheck: (() -> Void)?
 
     private var team: Team { loaded.value }
+
+    private func chance(for player: PlayerSummary) -> OddsChance? {
+        guard showOdds?.wrappedValue == true, let odds, odds.available else { return nil }
+        return OddsChance.of(player, in: odds)
+    }
+
+    private func oddsControls(_ odds: Odds, isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+            Toggle(isOn: isOn) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show odds")
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Text("Betting-market estimate for GW\(odds.gameweek)")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+            }
+            .tint(ToolkitColor.accent)
+            .frame(minHeight: 44)
+            if let onOddsCheck {
+                Button(action: onOddsCheck) {
+                    Label("Odds check: captain, defence, bench", systemImage: "chart.bar.xaxis")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.link)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, ToolkitSpace.lg)
+        .padding(.vertical, ToolkitSpace.sm)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+        .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
@@ -70,6 +128,9 @@ struct TeamContent: View {
                 header(snapshot)
                 if let freeHit = snapshot.freeHitGw {
                     freeHitBanner(freeHit: freeHit, gw: snapshot.gw)
+                }
+                if let odds, odds.available, let showOdds {
+                    oddsControls(odds, isOn: showOdds)
                 }
                 ForEach(lines(snapshot)) { line in
                     VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
@@ -80,7 +141,7 @@ struct TeamContent: View {
                                     Button {
                                         onSelectPlayer?(pick.playerId)
                                     } label: {
-                                        PlayerRow(pick: pick, player: player)
+                                        PlayerRow(pick: pick, player: player, chance: chance(for: player))
                                             .contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
@@ -222,6 +283,8 @@ struct PlayerRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let pick: Team.Pick
     let player: PlayerSummary
+    /// The betting-market chance for this player's position, when odds are switched on.
+    var chance: OddsChance?
 
     var body: some View {
         let layout = typeSize.isAccessibilitySize
@@ -242,6 +305,21 @@ struct PlayerRow: View {
                     ClubLabel(clubId: player.clubId, text: details)
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
+                    if let chance {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chart.bar.xaxis")
+                                .accessibilityHidden(true)
+                            Text(chance.text)
+                            if let move = chance.movement {
+                                Text(move)
+                                    .foregroundStyle(move.hasPrefix("↑") ? ToolkitColor.positive : ToolkitColor.error)
+                            }
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.link)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(chance.spoken)
+                    }
                 }
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: ToolkitSpace.sm) }
