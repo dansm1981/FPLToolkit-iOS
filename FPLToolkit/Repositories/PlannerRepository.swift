@@ -32,6 +32,7 @@ struct PlannerRepository: Sendable {
 
     func delete(_ id: String) async throws {
         _ = try await session.send("DELETE", "\(Self.base)/\(id)", as: DeleteResult.self)
+        LastDraft.forget(id: id)
     }
 
     func picker(_ id: String, query: [URLQueryItem]) async throws -> PlannerPicker {
@@ -275,3 +276,23 @@ final class DraftModel {
         }
     }
 }
+
+/// The draft last opened in the Planner: where "+" on a research list adds a player, as the
+/// website's "+" adds to its current draft.
+enum LastDraft {
+    static let idKey = "planner.lastDraftId"
+    static let nameKey = "planner.lastDraftName"
+
+    static func remember(id: String, name: String?) {
+        UserDefaults.standard.set(id, forKey: idKey)
+        if let name { UserDefaults.standard.set(name, forKey: nameKey) }
+    }
+
+    /// Called when a draft is deleted, so "+" doesn't point at it.
+    static func forget(id: String) {
+        guard UserDefaults.standard.string(forKey: idKey) == id else { return }
+        UserDefaults.standard.removeObject(forKey: idKey)
+        UserDefaults.standard.removeObject(forKey: nameKey)
+    }
+}
+

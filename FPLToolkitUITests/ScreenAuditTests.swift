@@ -520,6 +520,38 @@ final class ScreenAuditTests: XCTestCase {
         }
     }
 
+    /// The Research tab's Players group. `auditApiBaseURL` as for test11.
+    func test13Players() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        app.tabBars.buttons["Research"].tap()
+        let screens: [(String, NSPredicate, String)] = [
+            ("Player insights", NSPredicate(format: "label BEGINSWITH[c] 'Top 12 by'"), "42-players-insights"),
+            ("Template team", NSPredicate(format: "label ==[c] 'The template XI'"), "43-players-template"),
+            ("Injuries", NSPredicate(format: "label BEGINSWITH[c] 'Injured ('"), "44-players-injuries"),
+        ]
+        for (title, marker, shot) in screens {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
+            waitFor(link, "\(title) on the hub")
+            link.tap()
+            waitFor(app.descendants(matching: .any).matching(marker).firstMatch, title, timeout: 60)
+            settle()
+            check(app, shot, clippingCheckedLarge: true)
+            if title == "Player insights" {
+                // The list below the map.
+                let list = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH[c] ' players'")).firstMatch
+                for _ in 0..<4 where !(list.exists && list.isHittable) { app.swipeUp() }
+                settle()
+                check(app, "45-players-insights-list", clippingCheckedLarge: true)
+            }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            settle(1)
+        }
+    }
+
     func test07ExploreWithoutATeam() {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")

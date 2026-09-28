@@ -93,20 +93,26 @@ struct MarketPredictionsView: View {
 
     private func row(_ row: MarketPredictions.Row, _ p: MarketPredictions) -> some View {
         let player = p.player(row.playerId)
-        let nights = zip(["Tonight", "Tomorrow", "Night 3"], row.nights).map { label, night in
-            "\(label) \(night.display)" + (night.likelihood.map { " (\($0)/5)" } ?? "")
+        let labels = ["Tonight", "Tomorrow", "Night 3"]
+        var nights: [String] = []
+        for (label, night) in zip(labels, row.nights) {
+            let likelihood: String = night.likelihood.map { " (\($0)/5)" } ?? ""
+            nights.append("\(label) \(night.display)\(likelihood)")
         }
-        let status = row.lockedDisplay.map { "Locked to \($0)" } ?? (row.calibrating ? "Calibrating" : nil)
-        var details = ["£\(row.price.formatted(.number.precision(.fractionLength(1))))m", "\(MarketFormat.percent(row.own)) owned"]
+        let status: String? = row.lockedDisplay.map { "Locked to \($0)" } ?? (row.calibrating ? "Calibrating" : nil)
+        let price: String = row.price.formatted(.number.precision(.fractionLength(1)))
+        var details: [String] = ["£\(price)m", "\(MarketFormat.percent(row.own)) owned"]
         if let hourly = row.hourly { details.append("\(hourly.formatted())/h") }
+        var spoken: [String] = [player?.webName ?? "Player", "progress \(row.progressDisplay)"]
+        spoken.append(contentsOf: details)
+        spoken.append(contentsOf: nights)
+        if let status { spoken.append(status) }
+        let tint: Color = row.progress >= 0 ? ToolkitColor.positive : ToolkitColor.error
         return MarketPlayerRow(
             playerId: row.playerId, player: player, details: details,
             extra: nights.joined(separator: " · "),
-            trailing: row.progressDisplay,
-            trailingColor: row.progress >= 0 ? ToolkitColor.positive : ToolkitColor.error,
-            badge: status,
-            spoken: ([player?.webName ?? "Player", "progress \(row.progressDisplay)"] + details + nights + [status].compactMap { $0 })
-                .joined(separator: ", ")
+            trailing: row.progressDisplay, trailingColor: tint, badge: status,
+            spoken: spoken.joined(separator: ", ")
         )
     }
 }

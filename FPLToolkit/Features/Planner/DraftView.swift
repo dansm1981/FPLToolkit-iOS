@@ -24,7 +24,11 @@ struct DraftView: View {
                 DraftContent(draft: loaded.value, model: model)
             }
         }
-        .task { await model.load() }
+        .task {
+            LastDraft.remember(id: model.id, name: model.draft?.name)
+            await model.load()
+        }
+        .onChange(of: model.draft?.name) { _, name in LastDraft.remember(id: model.id, name: name) }
         .toolkitScreen()
         .navigationTitle(model.draft?.name ?? "Draft")
         .navigationBarTitleDisplayMode(.inline)

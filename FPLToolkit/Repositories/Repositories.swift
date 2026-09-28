@@ -167,3 +167,34 @@ struct MarketRepository: Sendable {
     }
 }
 
+/// The Research tab's Players screens (contract §17): public data, saved offline.
+struct PlayersResearchRepository: Sendable {
+    let client: APIClient
+    let cache: ResponseCache
+
+    func insights(position: Position?, club: Int?, search: String, sort: String, ascending: Bool?,
+                  per90: Bool, fdrHorizon: Int) -> CachedEndpoint<PlayerInsights> {
+        var query = [URLQueryItem(name: "sort", value: sort), URLQueryItem(name: "fdr", value: String(fdrHorizon))]
+        if let ascending { query.append(URLQueryItem(name: "dir", value: ascending ? "asc" : "desc")) }
+        if per90 { query.append(URLQueryItem(name: "per90", value: "1")) }
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if let club { query.append(URLQueryItem(name: "club", value: String(club))) }
+        let text = search.trimmingCharacters(in: .whitespaces)
+        if !text.isEmpty { query.append(URLQueryItem(name: "q", value: text)) }
+        return .init(client: client, cache: cache, path: "players/insights", query: query)
+    }
+
+    func opportunity(metric: String, position: Position?, maxOwn: Int, minMins: Int) -> CachedEndpoint<OpportunityMap> {
+        var query = [
+            URLQueryItem(name: "metric", value: metric),
+            URLQueryItem(name: "maxOwn", value: String(maxOwn)),
+            URLQueryItem(name: "minMins", value: String(minMins)),
+        ]
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        return .init(client: client, cache: cache, path: "players/opportunity", query: query)
+    }
+
+    var template: CachedEndpoint<TemplateTeam> { .init(client: client, cache: cache, path: "players/template") }
+    var injuries: CachedEndpoint<InjuryList> { .init(client: client, cache: cache, path: "players/injuries") }
+}
+

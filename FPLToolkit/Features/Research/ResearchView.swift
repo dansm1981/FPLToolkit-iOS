@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// The Research tab: the website's research pages, in its groups: Fixtures (the ticker, the rotation
-/// planner and congestion) and Market (prices, predictions, trends, transfers and ownership). The
-/// server builds every table with the website's code.
+/// planner and congestion), Players (insights, the template team, injuries) and Market (prices,
+/// predictions, trends, transfers and ownership). The server builds every table with the website's
+/// code.
 struct ResearchView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int?
@@ -24,6 +25,24 @@ struct ResearchView: View {
                 }
             } header: {
                 Text("Fixtures")
+            }
+            .listRowBackground(ToolkitColor.surface)
+
+            Section {
+                row("Player insights", systemImage: "person.text.rectangle",
+                    detail: "Every player sorted by any stat, with the differential opportunity map.") {
+                    PlayerInsightsView()
+                }
+                row("Template team", systemImage: "person.3",
+                    detail: "The most-owned XI, and everyone owned by 20% or more.") {
+                    TemplateTeamView()
+                }
+                row("Injuries", systemImage: "cross.case",
+                    detail: "Every flagged player, most owned first, with the latest news.") {
+                    InjuriesView()
+                }
+            } header: {
+                Text("Players")
             }
             .listRowBackground(ToolkitColor.surface)
 
