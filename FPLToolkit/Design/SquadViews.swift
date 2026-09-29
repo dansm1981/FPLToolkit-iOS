@@ -112,6 +112,8 @@ struct PitchTile: View {
     let model: PitchTileModel
     var height: CGFloat = 91
     var onBench = false
+    /// Ringed in gold (the player chosen with "Swap with…").
+    var highlighted = false
 
     var body: some View {
         VStack(spacing: 3) {
@@ -133,6 +135,11 @@ struct PitchTile: View {
         .frame(height: height)
         .background(onBench ? ToolkitColor.canvas : ToolkitColor.tile, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(onBench ? ToolkitColor.border : ToolkitColor.tileLine))
+        .overlay {
+            if highlighted {
+                RoundedRectangle(cornerRadius: 12).strokeBorder(ToolkitColor.accent, lineWidth: 2.5)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             if let role = model.role {
                 Text(role)
@@ -199,13 +206,14 @@ struct SquadPitch: View {
                     ForEach(row) { model in
                         Button { onSelect(model) } label: { PitchTile(model: model) }
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(.isButton)
                     }
                 }
             }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 6)
-        .background(PitchMarkings())
+        .background(PitchBackground())
         .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.card))
         .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.pitchLine))
     }
@@ -239,7 +247,8 @@ struct TileRowLayout: Layout {
     }
 }
 
-private struct PitchMarkings: View {
+/// The pitch: a green gradient with its markings (decorative).
+struct PitchBackground: View {
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
@@ -280,10 +289,41 @@ struct BenchStrip: View {
                 ForEach(tiles) { model in
                     Button { onSelect(model) } label: { PitchTile(model: model, height: 83, onBench: true) }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(.isButton)
                 }
             }
         }
         .padding(9)
         .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+/// An empty place in a draft: "+" and the position, dashed, the size of a tile.
+struct EmptyPitchTile: View {
+    let position: Position
+    var height: CGFloat = 91
+    var onBench = false
+    /// Opens the picker; nil when the gameweek can't be edited.
+    var onTap: (() -> Void)?
+
+    var body: some View {
+        Button { onTap?() } label: {
+            VStack(spacing: 6) {
+                Image(systemName: "plus")
+                    .font(.body.weight(.semibold))
+                Text(position.rawValue)
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(onTap == nil ? ToolkitColor.secondaryText : ToolkitColor.link)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .background((onBench ? ToolkitColor.canvas : ToolkitColor.tile).opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(onTap == nil ? ToolkitColor.border : ToolkitColor.link, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .disabled(onTap == nil)
+        .accessibilityLabel("Add a \(position.spokenName)\(onBench ? " on the bench" : "")")
     }
 }

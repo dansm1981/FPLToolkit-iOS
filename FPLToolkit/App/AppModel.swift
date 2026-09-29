@@ -160,6 +160,11 @@ final class AppModel {
         return AppVersion.current < AppVersion(minimum)
     }
 
+    /// Whether the server offers an ability newer apps rely on, e.g. "plannerPreview".
+    func supports(_ capability: String) -> Bool {
+        bootstrap?.value.config.capabilities?.contains(capability) ?? false
+    }
+
     func club(_ id: Int?) -> Bootstrap.Club? {
         guard let id else { return nil }
         return bootstrap?.value.clubs.first { $0.id == id }

@@ -44,6 +44,8 @@ struct PlannerPickerView: View {
     @State private var result: PlannerPicker?
     @State private var loadError: ErrorCopy?
     @State private var picking: Int?
+    /// A replacement chosen: reviewed before it's saved to the plan (design pack p.16).
+    @State private var reviewing: PlannerPicker.Candidate?
 
     /// When replacing: every player, or the website's Explore (shortlist first, then the rest by price).
     enum Mode: Hashable { case all, explore }
@@ -160,6 +162,11 @@ struct PlannerPickerView: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search name")
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(item: $reviewing) { candidate in
+                if let replacing = slot.replacing {
+                    ReviewMoveView(draft: draft, outgoing: replacing, incoming: candidate, model: model) { dismiss() }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -290,6 +297,13 @@ struct PlannerPickerView: View {
     }
 
     private func pick(_ candidate: PlannerPicker.Candidate) async {
+        // Replacing a player is a decision: review the cost and fixtures first. Filling an empty
+        // place is building the squad, so it's made straight away. Only a server that previews
+        // without saving can offer the review (an older one would save the move).
+        if slot.replacing != nil, appModel.supports("plannerPreview") {
+            reviewing = candidate
+            return
+        }
         picking = candidate.id
         defer { picking = nil }
         let action = PlannerAction.pick(candidate.id, replacing: slot.replacing?.playerId, gw: draft.gw)

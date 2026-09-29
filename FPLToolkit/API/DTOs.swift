@@ -107,6 +107,8 @@ struct Bootstrap: Decodable, Sendable {
         let webBaseUrl: String
         let disclosure: String
         let features: Features
+        /// API abilities the server offers (happy-backend-pal#43); nil from older servers.
+        let capabilities: [String]?
     }
 
     let season: String

@@ -25,6 +25,13 @@ struct PlannerRepository: Sendable {
         return saved(fetched)
     }
 
+    /// The draft as it would be after one edit, checked by the server but not saved
+    /// (`?preview=1`, happy-backend-pal#43): the review step before "Save move to plan".
+    func preview(_ action: PlannerAction, to id: String) async throws -> PlannerDraft {
+        let query = Self.view + [URLQueryItem(name: "preview", value: "1")]
+        return try await session.send("POST", "\(Self.base)/\(id)/actions", query: query, body: action, as: PlannerDraft.self).envelope.data
+    }
+
     func update(_ id: String, _ patch: PlannerDraftPatch) async throws -> Loaded<PlannerDraft> {
         let fetched = try await session.send("PATCH", "\(Self.base)/\(id)", query: Self.view, body: patch, as: PlannerDraft.self)
         return saved(fetched)
@@ -163,6 +170,11 @@ final class DraftModel {
             history.clear()
         }
         return true
+    }
+
+    /// The draft as it would be after this edit, without saving it (the server checks it).
+    func preview(_ action: PlannerAction) async throws -> PlannerDraft {
+        try await repository.preview(action, to: id)
     }
 
     /// Back to the squad before the last edit in the gameweek shown.

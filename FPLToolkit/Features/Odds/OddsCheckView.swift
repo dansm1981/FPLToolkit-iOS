@@ -69,7 +69,7 @@ struct OddsCheckView: View {
 
     private func section(_ title: String, rows: [Row], empty: String) -> some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            MatchdaySectionTitle(title: title)
+            SectionHeader(title: title)
             ToolkitCard {
                 if rows.isEmpty {
                     Text(empty).foregroundStyle(ToolkitColor.secondaryText)

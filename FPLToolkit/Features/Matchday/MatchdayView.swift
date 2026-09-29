@@ -1,9 +1,13 @@
 import SwiftUI
 
-/// Matchday (Phase 3, P3-3; tasks/phase-3.md §4.2): the whole team as one live event. The score as
-/// it stands, what changed since you last looked, the points within reach, the moments, the live
-/// squad and the fixtures. Everything is the server's (contract §24); this lays it out, with
-/// every number labelled FPL-recorded, Toolkit estimate or football context.
+enum MatchdayMode: String, CaseIterable, Identifiable {
+    case team = "Your team", moments = "Moments", matches = "Matches"
+    var id: String { rawValue }
+}
+
+/// Matchday (S30/S31; design pack pp.24–25): one score, several clear ways to inspect it. The
+/// FPL-recorded total leads; provisional bonus is kept apart and never added to it. Everything is
+/// the server's (contract §24); this lays it out.
 struct MatchdayView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
@@ -12,21 +16,35 @@ struct MatchdayView: View {
     /// What the previous visit saw, captured once when this visit's first data arrives.
     @State private var since: MatchdayMemory.Seen?
     @State private var capturedSince = false
-    @State private var expanded: Set<Int> = []
+    @State private var mode: MatchdayMode = .team
+    @State private var sheet: MatchdaySheet?
     /// Whether the Live Activity is on the Lock Screen.
     @State private var following = false
     @State private var followError: String?
 
     static let refreshSeconds: UInt64 = 30
 
+    enum MatchdaySheet: Identifiable, Hashable {
+        case points(Int), bench, follow, estimates, sources
+        var id: String {
+            switch self {
+            case .points(let id): "points-\(id)"
+            case .bench: "bench"
+            case .follow: "follow"
+            case .estimates: "estimates"
+            case .sources: "sources"
+            }
+        }
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
+            VStack(alignment: .leading, spacing: ToolkitSpace.md) {
                 ResearchTableView(table: table, caption: "Loading your matchday…", retry: reload) { live in
                     content(live)
                 }
             }
-            .padding(.horizontal, ToolkitSpace.page)
+            .padding(.horizontal, 18)
             .padding(.bottom, ToolkitSpace.section)
         }
         .refreshable {
@@ -39,6 +57,16 @@ struct MatchdayView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                Button { sheet = .sources } label: {
+                    Label("Score sources and definitions", systemImage: "info.circle")
+                }
+            }
+        }
+        .sheet(item: $sheet) { which in
+            if let live = table.current?.loaded?.value {
+                sheetView(which, live: live)
             }
         }
         .task(id: entryId) {
@@ -89,31 +117,115 @@ struct MatchdayView: View {
 
     @ViewBuilder
     private func content(_ live: LiveTeam) -> some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
-            MatchdayScoreCard(live: live, updated: updated)
-            if Self.canFollow(live.status) {
-                MatchdayFollowCard(
-                    following: following,
-                    enabled: MatchdayActivity.isEnabled,
-                    error: followError,
-                    start: { follow(live) },
-                    stop: {
-                        Task {
-                            await MatchdayActivity.stop(entryId: entryId)
-                            following = false
-                        }
-                    })
+        Text("GW\(live.gameweek) · \(MatchdayText.status(live.status))")
+            .font(.subheadline)
+            .foregroundStyle(ToolkitColor.secondaryText)
+        MatchdayScoreHero(live: live, updated: updated,
+                          canFollow: Self.canFollow(live.status),
+                          onFollow: { sheet = .follow })
+        if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
+            MatchdayCatchUp(text: catchUp)
+        }
+        Picker("Show", selection: $mode) {
+            ForEach(MatchdayMode.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .padding(.vertical, 4)
+        switch mode {
+        case .team:
+            MatchdayTeamRows(live: live, players: live.squad.filter { $0.position <= 11 }) { sheet = .points($0) }
+            SectionHeader(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
+            CardGroup {
+                LinkRow(title: benchTitle(live), detail: benchDetail(live), systemImage: "tshirt") { sheet = .bench }
             }
-            if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
-                MatchdayCatchUp(text: catchUp)
-            }
-            if live.status == .live {
-                MatchdayNextPoints(live: live)
-            }
+        case .moments:
             MatchdayMoments(live: live)
-            MatchdaySquad(live: live, expanded: $expanded)
+        case .matches:
             MatchdayFixtures(live: live)
-            MatchdayTrustKey()
+        }
+        if live.total.provisionalBonus > 0 {
+            Button { sheet = .estimates } label: {
+                HStack {
+                    Text("Estimated additions")
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    Spacer()
+                    Text("+\(live.total.provisionalBonus) bonus")
+                        .foregroundStyle(ToolkitColor.link)
+                    Image(systemName: "info.circle").foregroundStyle(ToolkitColor.link)
+                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 15)
+                .frame(minHeight: 52)
+                .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Estimated additions: \(live.total.provisionalBonus) provisional bonus, not included in the score")
+            .padding(.top, ToolkitSpace.sm)
+        }
+    }
+
+    private func benchTitle(_ live: LiveTeam) -> String {
+        let bench = live.squad.filter { $0.position > 11 }
+        switch live.status {
+        case .finished, .awaitingBonus: return "\(live.total.benchPoints) bench point\(live.total.benchPoints == 1 ? "" : "s")"
+        default: return "\(bench.count) players on your bench"
+        }
+    }
+
+    private func benchDetail(_ live: LiveTeam) -> String {
+        if live.chip == "bboost" { return "Counting this gameweek" }
+        if !live.autoSubs.isEmpty { return "\(live.autoSubs.count) automatic sub\(live.autoSubs.count == 1 ? "" : "s") as it stands" }
+        switch live.status {
+        case .finished, .awaitingBonus: return "Not included in your \(live.total.confirmed) points"
+        default: return "Automatic subs are decided as matches finish"
+        }
+    }
+
+    @ViewBuilder private func sheetView(_ which: MatchdaySheet, live: LiveTeam) -> some View {
+        switch which {
+        case .points(let id):
+            if let player = live.squad.first(where: { $0.playerId == id }) {
+                PointsBreakdownSheet(player: player, live: live, onSources: { sheet = .sources })
+            }
+        case .bench:
+            NavigationStack {
+                ScrollView {
+                    MatchdayTeamRows(live: live, players: live.squad.filter { $0.position > 11 }) { sheet = .points($0) }
+                        .padding(.horizontal, 18)
+                }
+                .toolkitScreen()
+                .navigationTitle("Bench")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { sheet = nil } } }
+            }
+            .presentationDetents([.medium, .large])
+        case .follow:
+            NavigationStack {
+                ScrollView {
+                    MatchdayFollowCard(
+                        following: following,
+                        enabled: MatchdayActivity.isEnabled,
+                        error: followError,
+                        start: { follow(live) },
+                        stop: {
+                            Task {
+                                await MatchdayActivity.stop(entryId: entryId)
+                                following = false
+                            }
+                        })
+                        .padding(.horizontal, ToolkitSpace.page)
+                }
+                .toolkitScreen()
+                .navigationTitle("Follow Matchday")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { sheet = nil } } }
+            }
+            .presentationDetents([.medium])
+        case .estimates:
+            InfoSheet(title: "Estimated additions", message: MatchdayCopy.estimates)
+        case .sources:
+            InfoSheet(title: "Where the points come from", message: MatchdayCopy.sources)
         }
     }
 
@@ -131,105 +243,105 @@ struct MatchdayView: View {
     }
 }
 
+enum MatchdayCopy {
+    static let estimates = "Provisional bonus is Toolkit's estimate from the live BPS, kept apart from the FPL-recorded score. When FPL records the bonus, the estimate goes rather than being added a second time. Automatic subs are shown as they stand until the matches finish."
+    static let sources = """
+    FPL recorded: the points FPL has published, including the captain's multiplier and any transfer cost. FPL can still correct them.
+
+    Toolkit estimate: provisional bonus and automatic subs as they stand, never added to the recorded score.
+
+    Football context: match events and stats from our data provider. They explain what happened; they're never points.
+
+    Full time isn't final until FPL adds the bonus.
+    """
+}
+
 // MARK: - Score
 
-struct MatchdayScoreCard: View {
+struct MatchdayScoreHero: View {
     let live: LiveTeam
     let updated: Date?
+    let canFollow: Bool
+    let onFollow: () -> Void
 
     var body: some View {
-        ToolkitCard {
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                HStack(spacing: ToolkitSpace.sm) {
-                    Text("GW\(live.gameweek)")
-                        .font(.subheadline.weight(.semibold))
+        HeroCard {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .lastTextBaseline) {
+                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                        Text("\(live.total.confirmed)")
+                            .font(.system(size: 52, weight: .bold).monospacedDigit())
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        Text("pts")
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    Spacer()
+                    stateTag
+                }
+                HStack(alignment: .firstTextBaseline) {
+                    Text(recordedLine)
+                        .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
-                    MatchdayStatusPill(status: live.status)
-                    Spacer(minLength: 0)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                    if canFollow {
+                        Button(action: onFollow) {
+                            Image(systemName: "lock.iphone")
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(ToolkitColor.link)
+                        .accessibilityLabel("Follow on your Lock Screen")
+                    }
                 }
-                HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
-                    Text("\(live.total.estimated)")
-                        .font(.system(size: 48, weight: .bold, design: .rounded).monospacedDigit())
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Text(live.total.provisionalBonus > 0 ? "estimated points" : "points")
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                }
-                if live.total.provisionalBonus > 0 {
-                    TrustLine(kind: .estimate, text: "Includes \(live.total.provisionalBonus) projected bonus")
-                } else {
-                    TrustLine(kind: .fpl, text: live.status == .finished ? "Confirmed by FPL" : "FPL-recorded")
-                }
-                Text(details)
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let updated {
-                    Text("Updated \(updated.formatted(date: .omitted, time: .shortened))")
+                if !details.isEmpty {
+                    Text(details)
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var stateTag: some View {
+        switch live.status {
+        case .live, .between:
+            HStack(spacing: 5) {
+                Circle().frame(width: 6, height: 6)
+                Text("\(live.playing) playing")
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(ToolkitColor.positive)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(ToolkitColor.positiveFill, in: RoundedRectangle(cornerRadius: 8))
+        default:
+            Tag(text: MatchdayText.status(live.status))
+        }
+    }
+
+    private var recordedLine: String {
+        var line: String
+        switch live.status {
+        case .finished: line = "FPL final score"
+        case .awaitingBonus: line = "FPL recorded · bonus to come"
+        case .upcoming: line = "\(live.toPlay) players to play"
+        default: line = "FPL recorded · bonus may change"
+        }
+        if let updated, live.status == .live || live.status == .between {
+            line += " · \(updated.formatted(date: .omitted, time: .shortened))"
+        }
+        return line
     }
 
     private var details: String {
         var parts: [String] = []
-        if live.status == .live || live.status == .between || live.status == .upcoming {
-            parts.append("\(live.playing) playing · \(live.toPlay) to play")
-        }
         if let chip = MatchdayText.chip(live.chip) { parts.append(chip) }
-        if live.total.transferCost > 0 { parts.append("−\(live.total.transferCost) transfer cost") }
-        parts.append("Bench \(live.total.benchPoints)")
+        if live.total.transferCost > 0 { parts.append("includes −\(live.total.transferCost) transfer cost") }
         return parts.joined(separator: " · ")
-    }
-}
-
-struct MatchdayStatusPill: View {
-    let status: LiveTeam.Status
-
-    var body: some View {
-        Text(MatchdayText.status(status))
-            .font(.caption.weight(.bold))
-            .foregroundStyle(status == .live ? ToolkitColor.positive : ToolkitColor.secondaryText)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(status == .live ? ToolkitColor.positiveFill : ToolkitColor.raised,
-                        in: RoundedRectangle(cornerRadius: ToolkitRadius.pill))
-    }
-}
-
-/// A line tagged with where its number comes from.
-struct TrustLine: View {
-    enum Kind { case fpl, estimate, context }
-    let kind: Kind
-    let text: String
-
-    var body: some View {
-        Label {
-            Text(text)
-        } icon: {
-            Image(systemName: symbol)
-        }
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(colour)
-    }
-
-    private var symbol: String {
-        switch kind {
-        case .fpl: "checkmark.seal"
-        case .estimate: "hourglass"
-        case .context: "sportscourt"
-        }
-    }
-
-    private var colour: Color {
-        switch kind {
-        case .fpl: ToolkitColor.positive
-        case .estimate: ToolkitColor.warning
-        case .context: ToolkitColor.information
-        }
     }
 }
 
@@ -245,6 +357,7 @@ struct MatchdayCatchUp: View {
             Image(systemName: "clock.arrow.circlepath")
                 .foregroundStyle(ToolkitColor.information)
         }
+        .font(.subheadline)
         .padding(ToolkitSpace.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: 14))
@@ -262,298 +375,77 @@ struct MatchdayFollowCard: View {
     let stop: () -> Void
 
     var body: some View {
-        ToolkitCard {
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                if !enabled {
-                    Label("Live Activities are off for FPLToolkit. Turn them on in Settings → FPLToolkit to follow your team on the Lock Screen.",
-                          systemImage: "lock.iphone")
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else if following {
-                    HStack {
-                        Label("On your Lock Screen", systemImage: "lock.iphone")
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.positive)
-                        Spacer()
-                        Button("Stop", action: stop)
-                            .font(.subheadline.weight(.semibold))
-                            .frame(minWidth: 44, minHeight: 44)
-                            .contentShape(Rectangle())
-                    }
-                    Text("It updates while FPLToolkit is open. Once alerts are switched on it will update by itself.")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Button(action: start) {
-                        Label("Follow on your Lock Screen", systemImage: "lock.iphone")
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.link)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            .contentShape(Rectangle())
+        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+            if !enabled {
+                Label("Live Activities are off for FPLToolkit. Turn them on in Settings → FPLToolkit to follow your team on the Lock Screen.",
+                      systemImage: "lock.iphone")
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if following {
+                Label("On your Lock Screen", systemImage: "lock.iphone")
+                    .font(.headline)
+                    .foregroundStyle(ToolkitColor.positive)
+                Text("It updates while FPLToolkit is open. Once alerts are switched on it will update by itself.")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Stop following", action: stop)
+                    .buttonStyle(ToolkitSecondaryButtonStyle())
+            } else {
+                Text("Your whole squad's score and the moment that matters most, on the Lock Screen and in the Dynamic Island.")
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Follow on your Lock Screen", action: start)
+                    .buttonStyle(ToolkitPrimaryButtonStyle())
+            }
+            if let error {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(ToolkitColor.error)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.top, ToolkitSpace.sm)
+    }
+}
+
+// MARK: - Your team
+
+/// Squad rows: live players first by relevance is the server's order; finished players are quieter.
+struct MatchdayTeamRows: View {
+    @Environment(AppModel.self) private var appModel
+    let live: LiveTeam
+    let players: [LiveTeam.Player]
+    let onSelect: (Int) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
+                if index > 0 { Divider().overlay(ToolkitColor.border) }
+                if let summary = live.player(player.playerId) {
+                    Button { onSelect(player.playerId) } label: {
+                        PlayerListRow(player: summary,
+                                      role: player.isCaptain ? "C" : player.isViceCaptain ? "V" : nil,
+                                      detail: MatchdayRowText.state(player, live: live),
+                                      value: "\(player.points * max(player.multiplier, 1))",
+                                      valueDetail: player.provisionalBonus > 0 ? "+\(player.provisionalBonus * max(player.multiplier, 1)) est." : nil,
+                                      spokenDetail: MatchdayRowText.spoken(player, live: live))
+                            .opacity(player.counted || player.position > 11 ? 1 : 0.6)
                     }
                     .buttonStyle(.plain)
-                    Text("Your score and the moment that matters most, on the Lock Screen and in the Dynamic Island.")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if let error {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.error)
-                        .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHint("Shows how the points add up")
+                    .accessibilityAddTraits(.isButton)
                 }
             }
         }
+        .padding(.horizontal, 14)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
     }
 }
 
-// MARK: - Next points
-
-/// The points within reach for counted players whose match is on: thresholds from FPL's own counts.
-struct MatchdayNextPoints: View {
-    let live: LiveTeam
-
-    var body: some View {
-        let rows = live.squad.filter { $0.counted && $0.state == .inPlay }
-        if !rows.isEmpty {
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                MatchdaySectionTitle(title: "Next points")
-                ToolkitCard {
-                    VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                        ForEach(rows) { p in
-                            NextPointsRow(player: p, summary: live.player(p.playerId))
-                            if p.id != rows.last?.id { Divider().overlay(ToolkitColor.border) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct NextPointsRow: View {
-    let player: LiveTeam.Player
-    let summary: PlayerSummary?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(summary?.webName ?? "Player \(player.playerId)")
-                .font(.headline)
-                .foregroundStyle(ToolkitColor.primaryText)
-            if let d = player.next.defcon {
-                MatchdayProgressLine(label: d.reached ? "DEFCON reached" : "DEFCON \(d.count)/\(d.threshold)",
-                             value: Double(min(d.count, d.threshold)), total: Double(d.threshold),
-                             done: d.reached)
-            }
-            if let s = player.next.saves {
-                Text(s.toNextPoint == 1 ? "\(s.count) saves · one more for a save point" : "\(s.count) saves")
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            if let b = player.next.bonus {
-                TrustLine(kind: .estimate, text: bonusText(b))
-            }
-            if let cs = player.next.cleanSheet, summary?.position == .gk || summary?.position == .def || summary?.position == .mid {
-                Text(cs.alive ? "Clean sheet still on" : "Clean sheet gone (\(cs.conceded) conceded)")
-                    .font(.subheadline)
-                    .foregroundStyle(cs.alive ? ToolkitColor.positive : ToolkitColor.secondaryText)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func bonusText(_ b: LiveTeam.NextPoints.Bonus) -> String {
-        if b.provisional > 0 {
-            let gap = b.bpsToNext.map { $0 == 0 ? " · level for more" : " · \($0) BPS off more" } ?? ""
-            return "On \(b.provisional) bonus (\(b.bps) BPS)\(gap)"
-        }
-        return b.bpsToNext.map { "\(b.bps) BPS · \($0) off bonus" } ?? "\(b.bps) BPS"
-    }
-}
-
-private struct MatchdayProgressLine: View {
-    let label: String
-    let value: Double
-    let total: Double
-    let done: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.subheadline.weight(done ? .semibold : .regular))
-                .foregroundStyle(done ? ToolkitColor.positive : ToolkitColor.primaryText)
-            ProgressView(value: value, total: total)
-                .tint(done ? ToolkitColor.positive : ToolkitColor.accent)
-                .accessibilityHidden(true)
-        }
-    }
-}
-
-// MARK: - Moments
-
-struct MatchdayMoments: View {
-    let live: LiveTeam
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            MatchdaySectionTitle(title: "What changed for you")
-            ToolkitCard {
-                if live.moments.isEmpty {
-                    Text(live.status == .upcoming ? "Nothing yet: moments appear here once your players' matches start." : "No moments for your players yet.")
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                        ForEach(live.moments) { m in
-                            MomentRow(moment: m, live: live)
-                            if m.id != live.moments.last?.id { Divider().overlay(ToolkitColor.border) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct MomentRow: View {
-    @Environment(AppModel.self) private var appModel
-    let moment: LiveTeam.Moment
-    let live: LiveTeam
-
-    var body: some View {
-        HStack(alignment: .top, spacing: ToolkitSpace.md) {
-            Image(systemName: MatchdayText.symbol(moment.kind))
-                .font(.body.weight(.semibold))
-                .foregroundStyle(moment.state == .withdrawn ? ToolkitColor.secondaryText : ToolkitColor.accent)
-                .frame(width: 24)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(MatchdayText.moment(moment, live: live))
-                    .foregroundStyle(ToolkitColor.primaryText)
-                    .strikethrough(moment.state == .withdrawn)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(caption)
-                    .font(.footnote)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var caption: String {
-        var parts: [String] = []
-        if let minute = moment.minute { parts.append("\(minute)′") }
-        if let f = live.fixture(moment.fixtureId) {
-            parts.append(MatchdayText.fixtureName(f) { appModel.club($0)?.shortName })
-        }
-        switch moment.state {
-        case .reported: parts.append(moment.kind == .goal ? "FPL points updating" : "Football context")
-        case .withdrawn: parts.append("Disallowed")
-        default: break
-        }
-        return parts.joined(separator: " · ")
-    }
-}
-
-// MARK: - Squad
-
-struct MatchdaySquad: View {
-    @Environment(AppModel.self) private var appModel
-    let live: LiveTeam
-    @Binding var expanded: Set<Int>
-
-    var body: some View {
-        let starting = live.squad.filter { $0.position <= 11 }
-        let bench = live.squad.filter { $0.position > 11 }
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            MatchdaySectionTitle(title: "Your team")
-            ToolkitCard { rows(starting) }
-            MatchdaySectionTitle(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
-            ToolkitCard { rows(bench) }
-        }
-    }
-
-    private func rows(_ players: [LiveTeam.Player]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(players) { p in
-                SquadLiveRow(player: p, live: live, isExpanded: expanded.contains(p.id)) {
-                    if expanded.contains(p.id) { expanded.remove(p.id) } else { expanded.insert(p.id) }
-                }
-                if p.id != players.last?.id { Divider().overlay(ToolkitColor.border) }
-            }
-        }
-    }
-}
-
-private struct SquadLiveRow: View {
-    @Environment(AppModel.self) private var appModel
-    let player: LiveTeam.Player
-    let live: LiveTeam
-    let isExpanded: Bool
-    let toggle: () -> Void
-
-    var body: some View {
-        let summary = live.player(player.playerId)
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            Button(action: toggle) {
-                HStack(spacing: ToolkitSpace.md) {
-                    PlayerPhoto(path: summary?.photo, clubLogo: appModel.club(summary?.clubId)?.logo, size: 36)
-                        .opacity(player.counted ? 1 : 0.55)
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: ToolkitSpace.sm) {
-                            Text(summary?.webName ?? "Player \(player.playerId)")
-                                .font(.headline)
-                                .foregroundStyle(player.counted ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
-                            if player.isCaptain { RoleBadge(letter: "C") }
-                            if player.isViceCaptain { RoleBadge(letter: "V") }
-                        }
-                        Text(stateText)
-                            .font(.subheadline)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: ToolkitSpace.sm)
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text("\(player.points * max(player.multiplier, 1))")
-                            .font(.title3.weight(.bold).monospacedDigit())
-                            .foregroundStyle(player.counted ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
-                        if player.provisionalBonus > 0 {
-                            Text("+\(player.provisionalBonus * max(player.multiplier, 1)) bonus")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(ToolkitColor.warning)
-                        } else if player.multiplier > 1 {
-                            Text("×\(player.multiplier)")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(ToolkitColor.secondaryText)
-                        }
-                    }
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .accessibilityHidden(true)
-                }
-                .frame(minHeight: 44)
-                .padding(.vertical, ToolkitSpace.sm)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(spoken(summary))
-            .accessibilityHint(isExpanded ? "Hides the points breakdown" : "Shows how the points add up")
-            // Combining the row into one element drops the button role; put it back.
-            .accessibilityAddTraits(isExpanded ? [.isButton, .isSelected] : .isButton)
-            if isExpanded {
-                breakdown
-                    .padding(.leading, 48)
-                    .padding(.bottom, ToolkitSpace.sm)
-            }
-        }
-    }
-
-    private var stateText: String {
+enum MatchdayRowText {
+    /// "67′ · DEFCON 8/10", "Finished · 90 min", "Kick-off Sat 15:00".
+    static func state(_ player: LiveTeam.Player, live: LiveTeam) -> String {
         var parts: [String] = []
         if player.autoSub == .in { parts.append("Auto-sub in") }
         if player.autoSub == .out { parts.append("Auto-sub out") }
@@ -564,98 +456,313 @@ private struct SquadLiveRow: View {
             if let kickoff = fixture?.kickoff { parts.append("Kick-off \(Format.deadline(kickoff))") }
             if let lineup = player.lineup, let text = MatchdayText.lineup(lineup) { parts.append(text) }
         case .inPlay:
-            parts.append(fixture?.minute.map { "Playing · \($0)′" } ?? "Playing")
+            parts.append(fixture?.minute.map { "\($0)′" } ?? "Playing")
+            if let d = player.next.defcon, !d.reached { parts.append("DEFCON \(d.count)/\(d.threshold)") }
+            else if player.isCaptain { parts.append("captain ×\(max(player.multiplier, 2))") }
         case .done:
             parts.append(player.minutes > 0 ? "Finished · \(player.minutes) min" : "Didn't play")
         case .unknown: break
         }
-        if !player.counted && player.position > 11 && player.autoSub == nil { parts.append("Bench") }
         return parts.joined(separator: " · ")
     }
 
-    @ViewBuilder
-    private var breakdown: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if player.breakdown.isEmpty {
-                Text("No points yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            ForEach(Array(player.breakdown.enumerated()), id: \.offset) { _, line in
-                HStack {
-                    Text(MatchdayText.stat(line.stat, value: line.value))
-                    Spacer()
-                    Text("\(line.points > 0 ? "+" : "")\(line.points)")
-                        .monospacedDigit()
-                }
-                .font(.subheadline)
-                .foregroundStyle(ToolkitColor.primaryText)
-            }
-            if player.multiplier > 1 {
-                Text("×\(player.multiplier) as captain")
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            if !player.breakdown.isEmpty {
-                TrustLine(kind: .fpl, text: "FPL-recorded")
-                    .font(.footnote)
-            }
-            if let c = player.context, let text = MatchdayText.context(c) {
-                TrustLine(kind: .context, text: text)
-                    .font(.footnote)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func spoken(_ summary: PlayerSummary?) -> String {
-        var parts = [summary?.webName ?? "Player"]
-        if player.isCaptain { parts.append("captain") }
-        if player.isViceCaptain { parts.append("vice-captain") }
-        parts.append(stateText)
+    static func spoken(_ player: LiveTeam.Player, live: LiveTeam) -> String {
         let points = player.points * max(player.multiplier, 1)
-        parts.append("\(points) point\(points == 1 ? "" : "s")")
-        if player.provisionalBonus > 0 { parts.append("plus \(player.provisionalBonus) projected bonus") }
-        if !player.counted { parts.append("not counting") }
+        var parts = [state(player, live: live), "\(points) FPL-recorded point\(points == 1 ? "" : "s")"]
+        if player.provisionalBonus > 0 { parts.append("plus \(player.provisionalBonus) estimated bonus, not included") }
+        if !player.counted && player.position <= 11 { parts.append("not counting") }
         return parts.filter { !$0.isEmpty }.joined(separator: ", ")
     }
 }
 
-// MARK: - Fixtures
+// MARK: - Points breakdown (S31)
+
+/// One player's points: the FPL-recorded total and its contributions, with provisional bonus in its
+/// own band ("not included") and the thresholds still in play.
+struct PointsBreakdownSheet: View {
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.dismiss) private var dismiss
+    let player: LiveTeam.Player
+    let live: LiveTeam
+    let onSources: () -> Void
+
+    var body: some View {
+        let summary = live.player(player.playerId)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    HeroCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("FPL-recorded")
+                                        .font(.caption.weight(.semibold))
+                                        .tracking(1.1)
+                                        .foregroundStyle(ToolkitColor.secondaryText)
+                                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                                        Text("\(player.points * max(player.multiplier, 1))")
+                                            .font(.system(size: 52, weight: .bold).monospacedDigit())
+                                            .foregroundStyle(ToolkitColor.primaryText)
+                                        Text("pts")
+                                            .font(.headline)
+                                            .foregroundStyle(ToolkitColor.secondaryText)
+                                    }
+                                }
+                                Spacer()
+                                if let summary {
+                                    PlayerPhoto(path: summary.photo, clubLogo: appModel.club(summary.clubId)?.logo, size: 56, scalesWithText: false)
+                                }
+                            }
+                            if player.provisionalBonus > 0 {
+                                Divider().overlay(ToolkitColor.heroLine)
+                                HStack {
+                                    Text("Provisional bonus")
+                                        .foregroundStyle(ToolkitColor.secondaryText)
+                                    Spacer()
+                                    Text("+\(player.provisionalBonus * max(player.multiplier, 1)) not included")
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(ToolkitColor.accent)
+                                }
+                                .font(.subheadline)
+                            }
+                        }
+                    }
+                    SectionHeader(title: "Points breakdown")
+                    VStack(spacing: 0) {
+                        if player.breakdown.isEmpty {
+                            Text("No points yet.")
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        }
+                        ForEach(Array(player.breakdown.enumerated()), id: \.offset) { index, line in
+                            if index > 0 { Divider().overlay(ToolkitColor.border) }
+                            HStack {
+                                Text(MatchdayText.stat(line.stat, value: line.value))
+                                Spacer()
+                                Text("\(line.points > 0 ? "+" : "")\(line.points)")
+                                    .fontWeight(.semibold)
+                                    .monospacedDigit()
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .frame(minHeight: 44)
+                        }
+                        if player.multiplier > 1 {
+                            Divider().overlay(ToolkitColor.border)
+                            HStack {
+                                Text(player.multiplier == 3 ? "Triple captain" : "Captain")
+                                Spacer()
+                                Text("×\(player.multiplier)").fontWeight(.semibold)
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .frame(minHeight: 44)
+                        }
+                    }
+                    .padding(.horizontal, 15)
+                    .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+
+                    if player.state == .inPlay, player.next.defcon != nil || player.next.saves != nil || player.next.bonus != nil {
+                        SectionHeader(title: "Still in play")
+                        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                            if let d = player.next.defcon {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(d.reached ? "DEFCON reached" : "\(d.threshold - d.count) away from DEFCON")
+                                        .font(.headline)
+                                        .foregroundStyle(ToolkitColor.primaryText)
+                                    Text("\(d.count) / \(d.threshold) defensive contributions")
+                                        .font(.subheadline)
+                                        .foregroundStyle(ToolkitColor.secondaryText)
+                                    ProgressLine(fraction: Double(d.count) / Double(max(d.threshold, 1)), tint: ToolkitColor.positive)
+                                }
+                                .accessibilityElement(children: .combine)
+                            }
+                            if let s = player.next.saves {
+                                Text(s.toNextPoint == 1 ? "\(s.count) saves · one more for a save point" : "\(s.count) saves")
+                                    .font(.subheadline)
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                            }
+                            if let b = player.next.bonus {
+                                Text(bonusText(b))
+                                    .font(.subheadline)
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                            }
+                        }
+                        .padding(17)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+                    }
+                    if let c = player.context, let text = MatchdayText.context(c) {
+                        Label(text, systemImage: "sportscourt")
+                            .font(.footnote)
+                            .foregroundStyle(ToolkitColor.information)
+                    }
+                    Button {
+                        dismiss()
+                        onSources()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("Score sources & definitions")
+                            Image(systemName: "info.circle").imageScale(.small)
+                        }
+                        .frame(minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.link)
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, ToolkitSpace.xl)
+            }
+            .toolkitScreen()
+            .navigationTitle(summary?.webName ?? "Player")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private var subtitle: String {
+        var parts = ["GW\(live.gameweek)"]
+        parts.append(MatchdayRowText.state(player, live: live))
+        return parts.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private func bonusText(_ b: LiveTeam.NextPoints.Bonus) -> String {
+        if b.provisional > 0 {
+            let gap = b.bpsToNext.map { $0 == 0 ? " · level for more" : " · \($0) BPS off more" } ?? ""
+            return "Estimated \(b.provisional) bonus (\(b.bps) BPS)\(gap)"
+        }
+        return b.bpsToNext.map { "\(b.bps) BPS · \($0) off bonus" } ?? "\(b.bps) BPS"
+    }
+}
+
+// MARK: - Moments
+
+struct MatchdayMoments: View {
+    let live: LiveTeam
+
+    var body: some View {
+        if live.moments.isEmpty {
+            Text(live.status == .upcoming ? "Nothing yet: moments appear here once your players' matches start." : "No moments for your players yet.")
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(17)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(live.moments.reversed().enumerated()), id: \.element.id) { index, m in
+                    if index > 0 { Divider().overlay(ToolkitColor.border) }
+                    MomentRow(moment: m, live: live)
+                }
+            }
+            .padding(.horizontal, 15)
+            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+        }
+    }
+}
+
+private struct MomentRow: View {
+    @Environment(AppModel.self) private var appModel
+    let moment: LiveTeam.Moment
+    let live: LiveTeam
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 11) {
+            Text(moment.minute.map { "\($0)′" } ?? "")
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .frame(width: 34, alignment: .leading)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(MatchdayText.moment(moment, live: live))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .strikethrough(moment.state == .withdrawn)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(caption)
+                    .font(.caption)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            }
+            Spacer(minLength: 0)
+            IconBadge(systemImage: MatchdayText.symbol(moment.kind))
+        }
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var caption: String {
+        var parts: [String] = []
+        if let f = live.fixture(moment.fixtureId) {
+            parts.append(MatchdayText.fixtureName(f) { appModel.club($0)?.shortName })
+        }
+        switch moment.state {
+        case .reported: parts.append(moment.kind == .goal ? "FPL points updating" : "Football context")
+        case .confirmed: parts.append("Recorded by FPL")
+        case .withdrawn: parts.append("Disallowed")
+        case .unknown: break
+        }
+        return parts.joined(separator: " · ")
+    }
+}
+
+// MARK: - Matches
 
 struct MatchdayFixtures: View {
     @Environment(AppModel.self) private var appModel
     let live: LiveTeam
 
     var body: some View {
-        if !live.fixtures.isEmpty {
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                MatchdaySectionTitle(title: "Your players' matches")
-                ToolkitCard {
-                    VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                        ForEach(live.fixtures.sorted { ($0.kickoff ?? .distantFuture) < ($1.kickoff ?? .distantFuture) }) { f in
-                            row(f)
-                        }
-                    }
+        if live.fixtures.isEmpty {
+            Text("No matches for your players this gameweek.")
+                .foregroundStyle(ToolkitColor.secondaryText)
+        } else {
+            VStack(spacing: 0) {
+                let sorted = live.fixtures.sorted { ($0.kickoff ?? .distantFuture) < ($1.kickoff ?? .distantFuture) }
+                ForEach(Array(sorted.enumerated()), id: \.element.id) { index, f in
+                    if index > 0 { Divider().overlay(ToolkitColor.border) }
+                    row(f)
                 }
             }
+            .padding(.horizontal, 15)
+            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
         }
     }
 
     private func row(_ f: LiveTeam.Fixture) -> some View {
         HStack(spacing: ToolkitSpace.sm) {
             ClubLabel(clubId: f.homeClubId, text: appModel.club(f.homeClubId)?.shortName ?? "?", logoSize: 18)
-            Spacer(minLength: 0)
-            Text(centre(f))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(score(f))
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(ToolkitColor.primaryText)
-            Spacer(minLength: 0)
             ClubLabel(clubId: f.awayClubId, text: appModel.club(f.awayClubId)?.shortName ?? "?", logoSize: 18)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            Tag(text: state(f))
         }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(ToolkitColor.primaryText)
+        .frame(minHeight: 52)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken(f))
+    }
+
+    private func score(_ f: LiveTeam.Fixture) -> String {
+        f.state == .notStarted ? "v" : "\(f.homeScore ?? 0) – \(f.awayScore ?? 0)"
+    }
+
+    private func state(_ f: LiveTeam.Fixture) -> String {
+        switch f.state {
+        case .notStarted: return f.kickoff.map { $0.formatted(date: .omitted, time: .shortened) } ?? "TBC"
+        case .inPlay: return f.minute.map { "\($0)′" } ?? "Live"
+        case .finished: return f.bonusConfirmed ? "FT" : "FT · bonus to come"
+        case .unknown: return ""
+        }
     }
 
     private func spoken(_ f: LiveTeam.Fixture) -> String {
@@ -668,110 +775,6 @@ struct MatchdayFixtures: View {
             return "\(home) \(f.homeScore ?? 0), \(away) \(f.awayScore ?? 0), \(f.minute.map { "\($0) minutes" } ?? "in play")"
         default:
             return "\(home) \(f.homeScore ?? 0), \(away) \(f.awayScore ?? 0), full time"
-        }
-    }
-
-    private func centre(_ f: LiveTeam.Fixture) -> String {
-        switch f.state {
-        case .notStarted: return f.kickoff.map { $0.formatted(date: .omitted, time: .shortened) } ?? "TBC"
-        case .inPlay: return "\(f.homeScore ?? 0)–\(f.awayScore ?? 0)  \(f.minute.map { "\($0)′" } ?? "")"
-        default: return "\(f.homeScore ?? 0)–\(f.awayScore ?? 0)  FT"
-        }
-    }
-}
-
-// MARK: - Trust key
-
-struct MatchdayTrustKey: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            TrustLine(kind: .fpl, text: "FPL-recorded: official, can still be corrected")
-            TrustLine(kind: .estimate, text: "Toolkit estimate: projected bonus and automatic subs as they stand")
-            TrustLine(kind: .context, text: "Football context: match events and stats from our data provider, never points")
-            Text("Full time isn't final until FPL adds bonus.")
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.secondaryText)
-        }
-        .font(.footnote)
-    }
-}
-
-struct MatchdaySectionTitle: View {
-    let title: String
-
-    var body: some View {
-        Text(title.uppercased())
-            .font(.caption.weight(.bold))
-            .tracking(0.6)
-            .foregroundStyle(ToolkitColor.secondaryText)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-// MARK: - Entry card (Today)
-
-/// Today's way into Matchday: the score as it stands and the gameweek's state, one tap from the
-/// full screen.
-struct MatchdayCard: View {
-    @Environment(AppModel.self) private var appModel
-    let entryId: Int
-    @State private var resource: Resource<LiveTeam>?
-
-    var body: some View {
-        Button {
-            appModel.router.showingMatchday = true
-        } label: {
-            ToolkitCard {
-                HStack(spacing: ToolkitSpace.md) {
-                    Image(systemName: "sportscourt")
-                        .font(.title2)
-                        .foregroundStyle(ToolkitColor.accent)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        Text(subtitle)
-                            .font(.subheadline)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: ToolkitSpace.sm)
-                    if let live = resource?.loaded?.value {
-                        Text("\(live.total.estimated)")
-                            .font(.title.weight(.bold).monospacedDigit())
-                            .foregroundStyle(ToolkitColor.primaryText)
-                    }
-                    Image(systemName: "chevron.right")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .accessibilityHidden(true)
-                }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens Matchday")
-        .task(id: entryId) {
-            let resource = Resource(appModel.liveRepository.team(entryId: entryId))
-            self.resource = resource
-            await resource.load()
-        }
-    }
-
-    private var title: String {
-        guard let live = resource?.loaded?.value else { return "Matchday" }
-        return "GW\(live.gameweek) · \(MatchdayText.status(live.status))"
-    }
-
-    private var subtitle: String {
-        guard let live = resource?.loaded?.value else { return "Your team, live, on match days" }
-        switch live.status {
-        case .live, .between: return "\(live.playing) playing · \(live.toPlay) to play"
-        case .upcoming: return "\(live.toPlay) players to play"
-        case .awaitingBonus: return "All played · waiting for FPL's bonus"
-        default: return live.total.provisionalBonus > 0 ? "Includes projected bonus" : "Points, moments and your team"
         }
     }
 }

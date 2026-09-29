@@ -187,25 +187,28 @@ final class ScreenAuditTests: XCTestCase {
 
     func test02TodayWithSomethingToReview() {
         let app = launch(["-entryId", attentionTeam])
-        waitFor(app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'to review' OR label CONTAINS[c] 'good shape'")).firstMatch, "Today")
+        waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'No new squad alerts' OR label CONTAINS 'In your GW'")).firstMatch, "Today")
         check(app, "03-today")
     }
 
     func test03Team() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
-        waitFor(app.staticTexts["Goalkeeper"], "Team")
+        waitFor(app.buttons["Pitch"].firstMatch, "Team")
+        waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch, "Squad", timeout: 30)
+        settle()
         check(app, "04-team")
     }
 
     func test04PlayerSheet() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
-        let firstPlayer = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · GK · '")).firstMatch
-        waitFor(firstPlayer, "a player row")
+        let firstPlayer = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch
+        waitFor(firstPlayer, "a goalkeeper on the pitch", timeout: 30)
         firstPlayer.tap()
-        waitFor(app.buttons["Done"], "Player sheet")
-        waitFor(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH[c] 'Next fixtures'")).firstMatch, "Player sheet content")
+        waitFor(app.buttons["Overview"].firstMatch, "Player page")
+        waitFor(app.staticTexts["Next fixtures"].firstMatch, "Player page content")
+        settle()
         check(app, "05-player", sizesAndLists: false)
     }
 
@@ -245,7 +248,7 @@ final class ScreenAuditTests: XCTestCase {
         } else {
             importButton.tap()
         }
-        waitFor(app.staticTexts["Starting XI"].firstMatch, "Draft pitch", timeout: 40)
+        waitFor(app.staticTexts["This week's fixtures · xFDR"].firstMatch, "Draft pitch", timeout: 40)
         settle()
         // Text sizes and clipping are audited below, with the bench in full: here the bench is cut
         // by the screen's edge, which the audit reports as clipping it can't place (checked by eye
@@ -299,7 +302,7 @@ final class ScreenAuditTests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(firstDraft, "Drafts list")
         // Audit only once the draft has finished sliding away.
-        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["Starting XI"].firstMatch)
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["This week's fixtures · xFDR"].firstMatch)
         waitForExpectations(timeout: 10)
         check(app, "12-planner-list", sizesAndLists: false)
     }
@@ -432,9 +435,11 @@ final class ScreenAuditTests: XCTestCase {
     func test10Leagues() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
+        let leaguesButton = app.buttons["Your leagues"].firstMatch
+        waitFor(leaguesButton, "Your leagues button", timeout: 40)
+        leaguesButton.tap()
         let addLeague = app.buttons["Add a league"].firstMatch
-        for _ in 0..<8 where !(addLeague.exists && addLeague.isHittable) { app.swipeUp() }
-        waitFor(addLeague, "Leagues on the Team tab", timeout: 40)
+        waitFor(addLeague, "Your leagues", timeout: 40)
         waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Elite 100'")).firstMatch, "Elite 100", timeout: 40)
 
         let league = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'LEAGUE OF EXPERTS'")).firstMatch
@@ -484,7 +489,7 @@ final class ScreenAuditTests: XCTestCase {
             check(app, shot)
         }
 
-        // Back on the Team tab: touch and hold to remove the league again.
+        // Back on Your leagues: touch and hold to remove the league again.
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(league, "Back on Leagues")
         league.press(forDuration: 1.2)
@@ -616,10 +621,11 @@ final class ScreenAuditTests: XCTestCase {
         app.tabBars.buttons["Team"].tap()
         // The position as a player row writes it: a looser match also finds "Odds check: captain,
         // defence, bench" while the odds overlay is on (test20 leaves it on).
-        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · DEF · '")).firstMatch
-        waitFor(player, "a defender")
+        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Defender'")).firstMatch
+        waitFor(player, "a defender", timeout: 30)
         player.tap()
-        waitFor(app.buttons["Done"], "Player sheet")
+        waitFor(app.buttons["Stats"].firstMatch, "Player page")
+        app.buttons["Stats"].firstMatch.tap()
         let sections: [(String, NSPredicate, String)] = [
             ("Gameweek history", NSPredicate(format: "label ==[c] 'Every gameweek'"), "46-player-history"),
             ("Form trends", NSPredicate(format: "label ==[c] 'Rolling windows'"), "47-player-form"),
@@ -797,10 +803,10 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'GW'")).firstMatch
-        waitFor(card, "Matchday card on Today", timeout: 60)
+        let card = app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch
+        waitFor(card, "Gameweek on Today", timeout: 60)
         card.tap()
-        let moments = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'What changed for you'")).firstMatch
+        let moments = app.buttons["Your team"].firstMatch
         waitFor(moments, "Matchday", timeout: 60)
         settle()
         check(app, "76-matchday")
@@ -821,13 +827,15 @@ final class ScreenAuditTests: XCTestCase {
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
         app.tabBars.buttons["Team"].tap()
-        let toggle = app.switches.firstMatch
-        waitFor(toggle, "Show odds", timeout: 60)
-        if (toggle.value as? String) != "1" {
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
-        }
-        waitFor(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'clean sheet' OR label CONTAINS[c] 'to score'")).firstMatch,
-                "Odds on the rows")
+        app.buttons["Pitch"].firstMatch.tap()
+        let layer = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on squad'")).firstMatch
+        waitFor(layer, "Show on squad", timeout: 60)
+        layer.tap()
+        let odds = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Odds'")).firstMatch
+        waitFor(odds, "Odds layer")
+        odds.tap()
+        waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'clean sheet' OR label CONTAINS[c] 'to score'")).firstMatch,
+                "Odds on the tiles")
         settle()
         check(app, "78-team-odds")
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Odds check'")).firstMatch.tap()

@@ -54,6 +54,7 @@ private struct DraftContent: View {
     @State private var showingNews = false
     /// The player tapped in Team news, opened once the sheet has closed.
     @State private var newsPlayer: Int?
+    @State private var showingPlanSource = false
     @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr
     @AppStorage(FixtureView.lensKey) private var fixtureLens = FixtureView.Lens.position
 
@@ -86,7 +87,7 @@ private struct DraftContent: View {
                 if let from = model.swapFrom {
                     SwapBanner(name: draft.player(from)?.webName ?? "this player") { model.swapFrom = nil }
                 }
-                MoneySummary(draft: draft)
+                DraftStatusLine(draft: draft, onMoney: { editingMoney = true }, onSource: { showingPlanSource = true })
                 if !draft.check.ok {
                     IssuesCard(issues: draft.check.issues)
                 }
@@ -147,6 +148,10 @@ private struct DraftContent: View {
         }
         .sheet(isPresented: $editingMoney) {
             DraftMoneySheet(draft: draft, model: model)
+        }
+        .sheet(isPresented: $showingPlanSource) {
+            InfoSheet(title: "A plan, not an FPL submission",
+                      message: "Changes here affect this draft only; your FPL team is unchanged. Make the real changes in FPL when you're ready. The squad you imported and the gameweek you're planning are kept separate.")
         }
         .sheet(isPresented: $showingNews, onDismiss: {
             if let id = newsPlayer {
@@ -359,74 +364,6 @@ private struct GameweekStepper: View {
 
 // MARK: - Money and rules
 
-private struct MoneySummary: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
-    let draft: PlannerDraft
-
-    var body: some View {
-        ToolkitCard {
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) { stats }
-            } else {
-                Grid(alignment: .leading, horizontalSpacing: ToolkitSpace.lg, verticalSpacing: ToolkitSpace.md) {
-                    GridRow {
-                        bank
-                        value
-                    }
-                    GridRow {
-                        transfers
-                        rules
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder private var stats: some View {
-        bank
-        value
-        transfers
-        rules
-    }
-    private var bank: some View {
-        stat("Bank", Format.price(draft.money.bank), tint: draft.money.bank < 0 ? ToolkitColor.error : ToolkitColor.primaryText)
-    }
-    private var value: some View { stat("Squad value", Format.price(draft.money.squadValue)) }
-    private var transfers: some View {
-        stat(draft.freeTransfers.estimated ? "Free transfers*" : "Free transfers", freeTransfers)
-    }
-    private var rules: some View {
-        let players = draft.check.players
-        return Group {
-            if !draft.check.ok {
-                stat("Squad rules", "\(draft.check.issues.count) to fix", tint: ToolkitColor.warning)
-            } else if players < 15 {
-                // Nothing broken yet, but not a full squad: say how far along it is.
-                stat("Squad", "\(players) of 15 players")
-            } else {
-                stat("Squad rules", "OK", tint: ToolkitColor.positive)
-            }
-        }
-    }
-
-    private var freeTransfers: String {
-        draft.freeTransfersThisWeek.map(String.init) ?? "–"
-    }
-
-    private func stat(_ label: String, _ value: String, tint: Color = ToolkitColor.primaryText) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(ToolkitColor.secondaryText)
-            Text(value)
-                .font(.headline.monospacedDigit())
-                .foregroundStyle(tint)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 private struct IssuesCard: View {
     let issues: [String]
 
@@ -478,69 +415,170 @@ private struct WeekTransfers: View {
 
 // MARK: - Pitch
 
+/// The draft's XI on the shared pitch (design pack p.15): the same tiles as Team, with empty
+/// places to fill while the squad is being built.
 private struct PitchCard: View {
+    @Environment(AppModel.self) private var appModel
     let draft: PlannerDraft
     let actions: TileActions
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
             HStack {
-                SectionLabel(text: "Starting XI")
+                Text("This week's fixtures · xFDR")
+                    .font(.footnote)
+                    .foregroundStyle(ToolkitColor.secondaryText)
                 Spacer()
                 Text(draft.formation)
-                    .font(.subheadline.monospacedDigit())
+                    .font(.footnote.monospacedDigit())
                     .foregroundStyle(ToolkitColor.secondaryText)
                     .accessibilityLabel("Formation \(draft.formation)")
             }
-            VStack(spacing: ToolkitSpace.md) {
+            VStack(spacing: 10) {
                 ForEach(draft.rows(), id: \.position) { row in
-                    HStack(alignment: .top, spacing: ToolkitSpace.xs) {
+                    TileRowLayout {
                         ForEach(row.picks) { pick in
-                            PlannerTile(pick: pick, draft: draft, highlighted: actions.highlighted == pick.playerId) {
-                                actions.tap(pick)
+                            Button { actions.tap(pick) } label: {
+                                PitchTile(model: DraftTile.model(pick, draft: draft, appModel: appModel),
+                                          highlighted: actions.highlighted == pick.playerId)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityHint(draft.isEditable ? "Shows what you can do with this player" : "Opens the player")
+                            .accessibilityAddTraits(actions.highlighted == pick.playerId ? [.isButton, .isSelected] : .isButton)
                         }
                         ForEach(0..<row.empty, id: \.self) { _ in
-                            EmptyTile(position: row.position, onTap: actions.add.map { add in { add(row.position, false) } })
+                            EmptyPitchTile(position: row.position, onTap: actions.add.map { add in { add(row.position, false) } })
                         }
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.vertical, ToolkitSpace.lg)
-            .padding(.horizontal, ToolkitSpace.xs)
-            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: ToolkitRadius.card)
-                    .strokeBorder(ToolkitColor.border)
-            )
+            .padding(.vertical, 12)
+            .padding(.horizontal, 6)
+            .background(PitchBackground())
+            .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.pitchLine))
         }
     }
 }
 
 private struct BenchCard: View {
+    @Environment(AppModel.self) private var appModel
     let draft: PlannerDraft
     let actions: TileActions
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            SectionLabel(text: "Bench")
-            HStack(alignment: .top, spacing: ToolkitSpace.xs) {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text("Bench")
+                Spacer()
+                Text("GK · 1 · 2 · 3")
+                    .accessibilityLabel("Goalkeeper, then substitutes 1, 2 and 3")
+            }
+            .font(.caption2.weight(.semibold))
+            .tracking(1)
+            .foregroundStyle(ToolkitColor.secondaryText)
+            TileRowLayout {
                 ForEach(draft.bench) { pick in
-                    PlannerTile(pick: pick, draft: draft, highlighted: actions.highlighted == pick.playerId) {
-                        actions.tap(pick)
+                    Button { actions.tap(pick) } label: {
+                        PitchTile(model: DraftTile.model(pick, draft: draft, appModel: appModel), height: 83, onBench: true,
+                                  highlighted: actions.highlighted == pick.playerId)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(draft.isEditable ? "Shows what you can do with this player" : "Opens the player")
+                    .accessibilityAddTraits(actions.highlighted == pick.playerId ? [.isButton, .isSelected] : .isButton)
                 }
                 ForEach(PlannerDraft.pitchOrder, id: \.self) { position in
                     ForEach(0..<draft.emptyBench(position), id: \.self) { _ in
-                        EmptyTile(position: position, onTap: actions.add.map { add in { add(position, true) } })
+                        EmptyPitchTile(position: position, height: 83, onBench: true,
+                                       onTap: actions.add.map { add in { add(position, true) } })
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, ToolkitSpace.md)
-            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
         }
+        .padding(9)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+/// A draft pick as a pitch tile: this gameweek's opponent and xFDR, captaincy and availability.
+enum DraftTile {
+    @MainActor
+    static func model(_ pick: PlannerDraft.Pick, draft: PlannerDraft, appModel: AppModel) -> PitchTileModel {
+        let player = draft.player(pick.playerId)
+        let fixtures = draft.fixtures(for: pick.playerId)
+        let real = fixtures.filter { !$0.blank }
+        let metric: PitchTileModel.Metric
+        if fixtures.isEmpty {
+            metric = .text("–")
+        } else if real.isEmpty {
+            metric = .text("No fixture")
+        } else {
+            let first = real[0]
+            let label = (appModel.club(first.opponentClubId)?.shortName ?? "TBC") + (first.home.map { $0 ? " H" : " A" } ?? "")
+            metric = .fixture(label: real.count > 1 ? label + " +\(real.count - 1)" : label,
+                              value: real.count > 1 ? nil : first.xfdr?.display,
+                              tone: DifficultyTone(band: draft.strip(for: pick.playerId).first?.band ?? first.xfdr?.band))
+        }
+        var spoken = [player?.webName ?? "Player \(pick.playerId)"]
+        if pick.isCaptain { spoken.append("captain") }
+        if pick.isVice { spoken.append("vice-captain") }
+        if let club = player.flatMap({ appModel.club($0.clubId)?.name }) { spoken.append(club) }
+        if let player { spoken.append(Format.price(player.price)) }
+        if let a = player?.availability, a.level == .doubt || a.level == .out {
+            spoken.append(a.chanceNext.map { "\($0) percent chance of playing" } ?? (a.level == .out ? "out" : "doubtful"))
+        }
+        if !fixtures.isEmpty && real.isEmpty { spoken.append("no fixture this gameweek") }
+        for f in real {
+            let name = appModel.club(f.opponentClubId)?.name ?? "opponent to be confirmed"
+            let venue = f.home.map { $0 ? "at home" : "away" } ?? ""
+            spoken.append("\(name) \(venue)" + (f.xfdr.map { ", \($0.modelLabel) \($0.display)" } ?? ""))
+        }
+        let flagged = player.map { $0.availability.level == .doubt || $0.availability.level == .out } ?? false
+        return PitchTileModel(playerId: pick.playerId, name: player?.webName ?? "Player", colors: appModel.club(player?.clubId)?.colors,
+                              isGoalkeeper: player?.position == .gk, role: pick.isCaptain ? "C" : pick.isVice ? "V" : nil,
+                              flagged: flagged, metric: metric, accessibilityLabel: spoken.joined(separator: ", "))
+    }
+}
+
+/// "Plan only ⓘ · GW6 onwards" and "1 FT · £2.2m bank", with squad status when it isn't full.
+private struct DraftStatusLine: View {
+    let draft: PlannerDraft
+    let onMoney: () -> Void
+    let onSource: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                ContextLine(lead: "Plan only", parts: ["GW\(draft.firstEditableGw) onwards"],
+                            leadHint: "Explains that a plan doesn't change your FPL team", onInfo: onSource)
+                Spacer(minLength: ToolkitSpace.sm)
+                Button(action: onMoney) {
+                    Text(summary)
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(draft.money.bank < 0 ? ToolkitColor.error : ToolkitColor.link)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(spokenFreeTransfers), \(Format.price(draft.money.bank)) in the bank")
+                .accessibilityHint("Opens the budget")
+            }
+            if draft.check.players < 15 {
+                Text("\(draft.check.players) of 15 players")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            }
+        }
+    }
+
+    private var summary: String {
+        let ft = draft.freeTransfersThisWeek.map { "\($0)\(draft.freeTransfers.estimated ? "*" : "") FT · " } ?? ""
+        return ft + "\(Format.price(draft.money.bank)) bank"
+    }
+
+    private var spokenFreeTransfers: String {
+        guard let ft = draft.freeTransfersThisWeek else { return "Free transfers unknown" }
+        return "\(ft) free transfer\(ft == 1 ? "" : "s")\(draft.freeTransfers.estimated ? ", estimated" : "")"
     }
 }
 
