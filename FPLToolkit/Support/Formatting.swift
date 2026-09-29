@@ -33,8 +33,10 @@ enum Format {
     }
 
     /// £m with one decimal place: "£7.5m".
+    /// A negative amount (an overspent bank) as "−£0.2m", not "£-0.2m".
     static func price(_ value: Double) -> String {
-        "£" + value.formatted(.number.precision(.fractionLength(1))) + "m"
+        let amount = "£" + abs(value).formatted(.number.precision(.fractionLength(1))) + "m"
+        return value < -0.049 ? "−" + amount : amount
     }
 
     /// "+1.2%": a signed percentage with up to one decimal place.

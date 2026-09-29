@@ -150,3 +150,11 @@ struct DecodingTests {
 }
 
 private final class BundleToken {}
+
+struct PriceFormatTests {
+    @Test func negativeBankReadsAsMinus() {
+        #expect(Format.price(2.2) == "£2.2m")
+        #expect(Format.price(-0.2) == "−£0.2m")
+        #expect(Format.price(0) == "£0.0m")
+    }
+}

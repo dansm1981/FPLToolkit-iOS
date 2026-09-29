@@ -161,7 +161,7 @@ struct ReviewMoveView: View {
                     Text(line.1)
                         .fontWeight(.bold)
                         .monospacedDigit()
-                        .foregroundStyle(ToolkitColor.primaryText)
+                        .foregroundStyle(line.1.hasPrefix("−") ? ToolkitColor.error : ToolkitColor.primaryText)
                 }
                 .font(.subheadline)
                 .frame(minHeight: 44)
