@@ -201,7 +201,7 @@ final class ScreenAuditTests: XCTestCase {
     func test04PlayerSheet() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
-        let firstPlayer = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'GK'")).firstMatch
+        let firstPlayer = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · GK · '")).firstMatch
         waitFor(firstPlayer, "a player row")
         firstPlayer.tap()
         waitFor(app.buttons["Done"], "Player sheet")
@@ -614,7 +614,9 @@ final class ScreenAuditTests: XCTestCase {
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
         app.tabBars.buttons["Team"].tap()
-        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'DEF'")).firstMatch
+        // The position as a player row writes it: a looser match also finds "Odds check: captain,
+        // defence, bench" while the odds overlay is on (test20 leaves it on).
+        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · DEF · '")).firstMatch
         waitFor(player, "a defender")
         player.tap()
         waitFor(app.buttons["Done"], "Player sheet")
