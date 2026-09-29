@@ -18,3 +18,6 @@ xcuserdata/
 
 # App Store screenshots show a real team; keep them out of this public repo
 AppStore/screenshots/
+
+# Design-review screenshots show a real team too
+Review/
