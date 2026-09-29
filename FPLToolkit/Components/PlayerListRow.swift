@@ -47,7 +47,8 @@ struct PlayerListRow: View {
                     ClubLabel(clubId: player.clubId, text: metaLine, logoSize: 13)
                         .font(.caption)
                         .foregroundStyle(ToolkitColor.secondaryText)
-                        .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: ToolkitSpace.sm) }

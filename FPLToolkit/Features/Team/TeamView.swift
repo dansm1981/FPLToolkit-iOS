@@ -201,7 +201,7 @@ struct TeamOverview: View {
             Button { onSheet(.metric) } label: {
                 HStack(spacing: 4) {
                     Text(metric.rawValue)
-                    Image(systemName: "chevron.down").font(.caption.weight(.semibold))
+                    Image(systemName: "chevron.down").font(.caption.weight(.semibold)).accessibilityHidden(true)
                 }
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
@@ -227,7 +227,7 @@ struct TeamOverview: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Text(title)
-                Image(systemName: "info.circle").imageScale(.small)
+                Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
             }
             .frame(minHeight: 44)
             .contentShape(Rectangle())

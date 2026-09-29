@@ -62,9 +62,9 @@ struct FixtureCell: View {
                 ForEach(Array(model.games.enumerated()), id: \.offset) { _, game in
                     VStack(spacing: 1) {
                         Text(game.label)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.caption2.weight(.medium))
                         Text(game.value ?? "–")
-                            .font(.system(size: model.games.count > 1 ? 11 : 13, weight: .bold).monospacedDigit())
+                            .font((model.games.count > 1 ? Font.caption2 : Font.footnote).weight(.bold).monospacedDigit())
                     }
                     .foregroundStyle(game.tone.text)
                     .lineLimit(1)
@@ -115,11 +115,13 @@ struct FixtureRunGrid: View {
     let rows: [Row]
     var onSelectRow: ((Row) -> Void)?
 
-    private let cellWidth: CGFloat = 62
+    @ScaledMetric(relativeTo: .caption2) private var cellWidth: CGFloat = 62
+    @ScaledMetric(relativeTo: .caption2) private var rowHeight: CGFloat = 48
+    @ScaledMetric(relativeTo: .caption) private var nameWidth: CGFloat = 96
     private let spacing: CGFloat = 5
 
     private func height(_ row: Row) -> CGFloat {
-        (row.cells.map(\.games.count).max() ?? 1) > 1 ? 72 : 48
+        (row.cells.map(\.games.count).max() ?? 1) > 1 ? rowHeight * 1.5 : rowHeight
     }
 
     var body: some View {
@@ -144,7 +146,7 @@ struct FixtureRunGrid: View {
                                     .lineLimit(1)
                             }
                         }
-                        .frame(width: 96, height: height(row), alignment: .leading)
+                        .frame(width: nameWidth, height: height(row), alignment: .leading)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

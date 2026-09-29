@@ -104,7 +104,7 @@ struct TeamFixturesView: View {
                 Button(action: onInfo) {
                     HStack(spacing: 4) {
                         Text("xFDR")
-                        Image(systemName: "info.circle").imageScale(.small)
+                        Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
                     }
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())

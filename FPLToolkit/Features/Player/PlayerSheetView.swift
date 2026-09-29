@@ -252,10 +252,12 @@ struct PlayerDetailContent: View {
             Button { info = .fdr } label: {
                 HStack(spacing: 4) {
                     Text(label)
-                    Image(systemName: "info.circle").imageScale(.small)
+                    Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
                 }
                 .font(.footnote)
                 .foregroundStyle(ToolkitColor.secondaryText)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityHint("What fixture difficulty means")
@@ -402,7 +404,7 @@ struct PlayerDetailContent: View {
         case .history: return "Points and match-by-match stats"
         case .form: return "Rolling windows of form"
         case .underlying: return "Totals and per 90"
-        case .fixtures: return "Returns by fixture difficulty"
+        case .fixtures: return "Past returns against easier and harder fixtures"
         case .price:
             let owned = sheet.market.selectedByPct.map { "\(Self.percent($0)) owned · " } ?? ""
             return owned + Format.price(player.price)
@@ -425,9 +427,10 @@ struct PlayerDetailContent: View {
                 Button { info = .fdr } label: {
                     HStack(spacing: 4) {
                         Text(label)
-                        Image(systemName: "info.circle").imageScale(.small)
+                        Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
                     }
                     .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .font(.subheadline.weight(.semibold))

@@ -156,7 +156,7 @@ struct TodayContent: View {
                 Button(action: onSource) {
                     HStack(spacing: 4) {
                         Text(TodayText.footer(snapshot))
-                        Image(systemName: "info.circle").imageScale(.small)
+                        Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
                     }
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
@@ -207,10 +207,14 @@ struct TodayContent: View {
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     InlineNotice(text: "Some of the data we rely on is missing or out of date, so we can't confirm your squad is clear yet.")
-                    Button("See Data & sources", action: onSources)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.link)
-                        .frame(minHeight: 44)
+                    Button(action: onSources) {
+                        Text("See Data & sources")
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.link)
                 }
             }
         }
@@ -341,7 +345,7 @@ private struct AttentionRow: View {
                         Spacer()
                         HStack(spacing: 4) {
                             Text("Review")
-                            Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
                         }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(ToolkitColor.link)
@@ -361,6 +365,7 @@ private struct AttentionRow: View {
 struct PhaseHero: View {
     let live: Resource<LiveTeam>?
     let onOpen: () -> Void
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 58
 
     var body: some View {
         if let team = live?.loaded?.value {
@@ -452,7 +457,7 @@ struct PhaseHero: View {
                 Button(action: onOpen) {
                     HStack(spacing: 4) {
                         Text("View gameweek")
-                        Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
                     }
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
@@ -472,7 +477,7 @@ struct PhaseHero: View {
     private func score(_ value: Int, unit: String?) -> some View {
         HStack(alignment: .lastTextBaseline, spacing: 8) {
             Text(String(value))
-                .font(.system(size: 58, weight: .bold, design: .default).monospacedDigit())
+                .font(.system(size: scoreSize, weight: .bold).monospacedDigit())
                 .foregroundStyle(ToolkitColor.primaryText)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)

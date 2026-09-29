@@ -151,7 +151,7 @@ struct MatchdayView: View {
                     Spacer()
                     Text("+\(live.total.provisionalBonus) bonus")
                         .foregroundStyle(ToolkitColor.link)
-                    Image(systemName: "info.circle").foregroundStyle(ToolkitColor.link)
+                    Image(systemName: "info.circle").foregroundStyle(ToolkitColor.link).accessibilityHidden(true)
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 15)
@@ -263,6 +263,7 @@ struct MatchdayScoreHero: View {
     let updated: Date?
     let canFollow: Bool
     let onFollow: () -> Void
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 52
 
     var body: some View {
         HeroCard {
@@ -270,7 +271,7 @@ struct MatchdayScoreHero: View {
                 HStack(alignment: .lastTextBaseline) {
                     HStack(alignment: .lastTextBaseline, spacing: 6) {
                         Text("\(live.total.confirmed)")
-                            .font(.system(size: 52, weight: .bold).monospacedDigit())
+                            .font(.system(size: scoreSize, weight: .bold).monospacedDigit())
                             .foregroundStyle(ToolkitColor.primaryText)
                         Text("pts")
                             .font(.subheadline)
@@ -485,6 +486,7 @@ struct PointsBreakdownSheet: View {
     let player: LiveTeam.Player
     let live: LiveTeam
     let onSources: () -> Void
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 52
 
     var body: some View {
         let summary = live.player(player.playerId)
@@ -500,18 +502,19 @@ struct PointsBreakdownSheet: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("FPL-recorded")
                                         .font(.caption.weight(.semibold))
-                                        .tracking(1.1)
                                         .foregroundStyle(ToolkitColor.secondaryText)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     HStack(alignment: .lastTextBaseline, spacing: 6) {
                                         Text("\(player.points * max(player.multiplier, 1))")
-                                            .font(.system(size: 52, weight: .bold).monospacedDigit())
+                                            .font(.system(size: scoreSize, weight: .bold).monospacedDigit())
                                             .foregroundStyle(ToolkitColor.primaryText)
                                         Text("pts")
                                             .font(.headline)
                                             .foregroundStyle(ToolkitColor.secondaryText)
                                     }
                                 }
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .layoutPriority(1)
                                 if let summary {
                                     PlayerPhoto(path: summary.photo, clubLogo: appModel.club(summary.clubId)?.logo, size: 56, scalesWithText: false)
                                 }
@@ -606,9 +609,10 @@ struct PointsBreakdownSheet: View {
                     } label: {
                         HStack(spacing: 4) {
                             Text("Score sources & definitions")
-                            Image(systemName: "info.circle").imageScale(.small)
+                            Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
                         }
                         .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .font(.subheadline.weight(.semibold))

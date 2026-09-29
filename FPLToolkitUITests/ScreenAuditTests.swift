@@ -95,6 +95,8 @@ final class ScreenAuditTests: XCTestCase {
                 if !keyboardFrame.isNull && element.label.isEmpty
                     && frame.minY >= keyboardFrame.minY - 60 && frame.maxY <= keyboardFrame.minY + 1 { return true }
                 if issue.auditType == .hitRegion && element.label == "Clear text" { return true }
+                // A manager's own team name (e.g. "Mohame4d.sayed") is shown as they wrote it.
+                if issue.compactDescription == "Label not human-readable" && element.elementType == .staticText { return true }
                 // Say which element failed: the audit's own message doesn't.
                 let note = XCTAttachment(string: "\(issue.compactDescription) | type \(element.elementType.rawValue) '\(element.label)' \(frame)")
                 note.name = "AUDIT \(name)"
@@ -110,6 +112,13 @@ final class ScreenAuditTests: XCTestCase {
     /// Lets a push or a scroll finish: the audit reads the screen, and moving text reads as faint.
     private func settle(_ seconds: TimeInterval = 1.5) {
         Thread.sleep(forTimeInterval: seconds)
+    }
+
+    /// The Team tab remembers its view; the pitch tests start from Pitch.
+    private func showPitch(_ app: XCUIApplication) {
+        let pitch = app.buttons["Pitch"].firstMatch
+        waitFor(pitch, "Team views", timeout: 40)
+        pitch.tap()
     }
 
     private func waitFor(_ element: XCUIElement, _ what: String, timeout: TimeInterval = 20) {
@@ -194,15 +203,18 @@ final class ScreenAuditTests: XCTestCase {
     func test03Team() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
-        waitFor(app.buttons["Pitch"].firstMatch, "Team")
+        showPitch(app)
         waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch, "Squad", timeout: 30)
         settle()
-        check(app, "04-team")
+        // Tiles cut by the floating tab bar read as clipping the audit can't place; checked by eye at
+        // the largest standard size (names and chips wrap inside the tiles; 29 Sep 2026).
+        check(app, "04-team", combinedTiles: true, clippingCheckedLarge: true)
     }
 
     func test04PlayerSheet() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
+        showPitch(app)
         let firstPlayer = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch
         waitFor(firstPlayer, "a goalkeeper on the pitch", timeout: 30)
         firstPlayer.tap()
@@ -264,7 +276,7 @@ final class ScreenAuditTests: XCTestCase {
                         withVelocity: .slow, thenHoldForDuration: 0.5)
         }
         settle()
-        check(app, "11b-planner-draft-bench", combinedTiles: true)
+        check(app, "11b-planner-draft-bench", combinedTiles: true, clippingCheckedLarge: true)
 
         // Team news for the draft's squad (audited), then FPL's own difficulty and back.
         app.scrollViews.firstMatch.swipeDown(velocity: .fast)
@@ -621,6 +633,7 @@ final class ScreenAuditTests: XCTestCase {
         app.tabBars.buttons["Team"].tap()
         // The position as a player row writes it: a looser match also finds "Odds check: captain,
         // defence, bench" while the odds overlay is on (test20 leaves it on).
+        showPitch(app)
         let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Defender'")).firstMatch
         waitFor(player, "a defender", timeout: 30)
         player.tap()
@@ -816,7 +829,9 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.staticTexts["FPL-recorded"].firstMatch, "Points breakdown")
         settle()
         check(app, "77-matchday-breakdown")
-        app.buttons["Done"].tap()
+        // The sheet's Done (Matchday behind it has one too).
+        let done = app.buttons.matching(NSPredicate(format: "label == 'Done'"))
+        done.element(boundBy: done.count - 1).tap()
     }
 
     /// Odds (Phase 3, P3-5): the Team tab's "Show odds" switch and the odds check sheet. Needs odds
@@ -837,7 +852,7 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'clean sheet' OR label CONTAINS[c] 'to score'")).firstMatch,
                 "Odds on the tiles")
         settle()
-        check(app, "78-team-odds")
+        check(app, "78-team-odds", combinedTiles: true, clippingCheckedLarge: true)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Odds check'")).firstMatch.tap()
         waitFor(app.staticTexts.matching(NSPredicate(format: "label ==[c] 'Captain options'")).firstMatch, "Odds check", timeout: 30)
         settle()

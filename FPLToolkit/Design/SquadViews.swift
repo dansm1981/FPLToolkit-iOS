@@ -114,17 +114,19 @@ struct PitchTile: View {
     var onBench = false
     /// Ringed in gold (the player chosen with "Swap with…").
     var highlighted = false
+    /// Text follows Dynamic Type (the Team tab shows the list at accessibility sizes instead).
+    @ScaledMetric(relativeTo: .caption2) private var badge: CGFloat = 17
 
     var body: some View {
         VStack(spacing: 3) {
             KitShirt(colors: model.colors, goalkeeper: model.isGoalkeeper, size: 25)
                 .padding(.top, 2)
+            // Wraps rather than being cut off (a long surname at a larger text size).
             Text(model.name)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(ToolkitColor.primaryText)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .minimumScaleFactor(0.9)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             metric
         }
@@ -132,7 +134,7 @@ struct PitchTile: View {
         .padding(.top, 6)
         .padding(.bottom, 5)
         .frame(maxWidth: .infinity)
-        .frame(height: height)
+        .frame(minHeight: height)
         .background(onBench ? ToolkitColor.canvas : ToolkitColor.tile, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(onBench ? ToolkitColor.border : ToolkitColor.tileLine))
         .overlay {
@@ -143,9 +145,9 @@ struct PitchTile: View {
         .overlay(alignment: .topTrailing) {
             if let role = model.role {
                 Text(role)
-                    .font(.system(size: 9, weight: .heavy))
+                    .font(.caption2.weight(.heavy))
                     .foregroundStyle(ToolkitColor.onAccent)
-                    .frame(width: 17, height: 17)
+                    .frame(width: badge, height: badge)
                     .background(ToolkitColor.accent, in: Circle())
                     .padding(4)
             }
@@ -153,7 +155,7 @@ struct PitchTile: View {
         .overlay(alignment: .topLeading) {
             if model.flagged {
                 Text("!")
-                    .font(.system(size: 12, weight: .heavy))
+                    .font(.caption.weight(.heavy))
                     .foregroundStyle(ToolkitColor.accent)
                     .padding(.leading, 6)
                     .padding(.top, 3)
@@ -167,22 +169,30 @@ struct PitchTile: View {
     @ViewBuilder private var metric: some View {
         switch model.metric {
         case .fixture(let label, let value, let tone):
-            HStack(spacing: 3) {
-                Text(label)
-                if let value { Text(value).fontWeight(.bold) }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 3) {
+                    Text(label)
+                    if let value { Text(value).fontWeight(.bold) }
+                }
+                VStack(spacing: 0) {
+                    Text(label)
+                    if let value { Text(value).fontWeight(.bold) }
+                }
             }
-            .font(.system(size: 11, weight: .semibold).monospacedDigit())
+            .font(.caption2.weight(.semibold).monospacedDigit())
             .foregroundStyle(tone.text)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 2)
             .frame(maxWidth: .infinity, minHeight: 21)
             .background(tone.fill, in: RoundedRectangle(cornerRadius: 5))
         case .text(let text):
             Text(text)
-                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .font(.caption2.weight(.semibold).monospacedDigit())
                 .foregroundStyle(ToolkitColor.midText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 2)
                 .frame(maxWidth: .infinity, minHeight: 21)
                 .background(ToolkitColor.mid, in: RoundedRectangle(cornerRadius: 5))
         case .none:

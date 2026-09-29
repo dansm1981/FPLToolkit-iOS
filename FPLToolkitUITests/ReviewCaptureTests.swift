@@ -43,44 +43,51 @@ final class ReviewCaptureTests: XCTestCase {
 
     func testR02Today() {
         var app = launch(["-entryId", team])
-        waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'GW'")).firstMatch, "Today", timeout: 60)
+        waitFor(app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch, "Today", timeout: 60)
         settle(3)
         capture(app, "r10-today")
 
         app = launch(["-entryId", attentionTeam])
-        waitFor(app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'to review' OR label CONTAINS[c] 'good shape'")).firstMatch, "Today")
+        waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'No new squad alerts' OR label CONTAINS 'In your GW'")).firstMatch, "Today")
         settle(3)
         capture(app, "r11-today-other-team")
     }
 
     func testR03TeamAndPlayer() {
-        // A fresh launch for each visit: the Team tab from its top, without dragging back up (a
-        // drag down at the top would refresh it).
-        func openTeam() -> XCUIApplication {
+        func openTeam(_ layout: String = "Pitch") -> XCUIApplication {
             let app = launch(["-entryId", team])
             app.tabBars.buttons["Team"].tap()
-            waitFor(app.staticTexts["Goalkeeper"], "Team")
-            waitFor(app.switches.firstMatch, "Show odds", timeout: 60)
+            waitFor(app.buttons[layout].firstMatch, "Team")
+            app.buttons[layout].firstMatch.tap()
+            settle(2)
             return app
         }
-        func setOdds(_ app: XCUIApplication, _ on: Bool) {
-            let toggle = app.switches.firstMatch
-            if ((toggle.value as? String) == "1") != on {
-                toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
-                settle()
-            }
+        func setMetric(_ app: XCUIApplication, _ metric: String) {
+            let layer = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on squad'")).firstMatch
+            waitFor(layer, "Show on squad", timeout: 30)
+            layer.tap()
+            let option = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", metric)).firstMatch
+            waitFor(option, metric)
+            option.tap()
+            settle()
         }
         var app = openTeam()
-        setOdds(app, false)
-        settle(3)
+        setMetric(app, "Fixtures")
         capture(app, "r20-team")
-
         app = openTeam()
-        setOdds(app, true)
-        settle(3)
+        setMetric(app, "Odds")
         capture(app, "r21-team-odds")
+        app = openTeam()
+        setMetric(app, "Price")
+        capture(app, "r21b-team-price")
+        app = openTeam("List")
+        capture(app, "r21c-team-list")
+        app = openTeam("Fixtures")
+        settle(3)
+        capture(app, "r21d-team-fixtures")
 
         app = openTeam()
+        setMetric(app, "Odds")
         let oddsCheck = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Odds check'")).firstMatch
         reveal(oddsCheck, in: app)
         oddsCheck.tap()
@@ -88,15 +95,20 @@ final class ReviewCaptureTests: XCTestCase {
         settle()
         capture(app, "r22-odds-check")
 
-        for (position, name) in [("DEF", "r23-player-defender"), ("FWD", "r24-player-forward")] {
+        for (position, name) in [("Defender", "r23-player-defender"), ("Forward", "r24-player-forward")] {
             app = openTeam()
-            let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", " · \(position) · ")).firstMatch
-            reveal(row, in: app)
-            row.tap()
-            waitFor(app.buttons["Done"], "Player sheet")
-            waitFor(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH[c] 'Next fixtures'")).firstMatch, "Player sheet content")
+            setMetric(app, "Fixtures")
+            let tile = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", ", \(position)")).firstMatch
+            reveal(tile, in: app)
+            tile.tap()
+            waitFor(app.buttons["Overview"].firstMatch, "Player page")
             settle(3)
             capture(app, name)
+            for tab in ["Stats", "Fixtures"] {
+                app.buttons[tab].firstMatch.tap()
+                settle(2)
+                capture(app, name + "-" + tab.lowercased())
+            }
         }
     }
 
@@ -104,10 +116,11 @@ final class ReviewCaptureTests: XCTestCase {
     func testR04PlayerMore() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
-        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · DEF · '")).firstMatch
-        waitFor(player, "a defender")
+        let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Defender'")).firstMatch
+        waitFor(player, "a defender", timeout: 30)
         player.tap()
-        waitFor(app.buttons["Done"], "Player sheet")
+        waitFor(app.buttons["Stats"].firstMatch, "Player page")
+        app.buttons["Stats"].firstMatch.tap()
         let pages: [(String, NSPredicate, String)] = [
             ("Gameweek history", NSPredicate(format: "label ==[c] 'Every gameweek'"), "r25-player-history"),
             ("Form trends", NSPredicate(format: "label ==[c] 'Rolling windows'"), "r26-player-form"),
@@ -132,9 +145,13 @@ final class ReviewCaptureTests: XCTestCase {
     func testR05Leagues() {
         let app = launch(["-entryId", team])
         app.tabBars.buttons["Team"].tap()
+        let leaguesButton = app.buttons["Your leagues"].firstMatch
+        waitFor(leaguesButton, "Your leagues button", timeout: 40)
+        leaguesButton.tap()
         let addLeague = app.buttons["Add a league"].firstMatch
-        reveal(addLeague, in: app)
-        waitFor(addLeague, "Leagues on the Team tab", timeout: 40)
+        waitFor(addLeague, "Your leagues", timeout: 40)
+        settle()
+        capture(app, "r39-your-leagues", pages: 2)
         let league = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'LEAGUE OF EXPERTS'")).firstMatch
         let added = !league.exists
         if added {
@@ -193,12 +210,18 @@ final class ReviewCaptureTests: XCTestCase {
 
     func testR06Matchday() {
         let app = launch(["-entryId", team])
-        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'GW'")).firstMatch
-        waitFor(card, "Matchday card on Today", timeout: 60)
+        let card = app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch
+        waitFor(card, "Gameweek on Today", timeout: 60)
         card.tap()
-        waitFor(app.staticTexts.matching(NSPredicate(format: "label ==[c] 'What changed for you'")).firstMatch, "Matchday", timeout: 60)
+        waitFor(app.buttons["Your team"].firstMatch, "Matchday", timeout: 60)
         settle()
         capture(app, "r50-matchday")
+        for mode in ["Moments", "Matches"] {
+            app.buttons[mode].firstMatch.tap()
+            settle()
+            capture(app, "r50-matchday-" + mode.lowercased())
+        }
+        app.buttons["Your team"].firstMatch.tap()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch
         reveal(row, in: app)
         row.tap()
