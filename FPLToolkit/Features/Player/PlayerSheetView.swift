@@ -268,6 +268,8 @@ struct PlayerDetailContent: View {
             priceWatch(prediction)
         }
 
+        PlayerOwnershipSection(sheet: sheet) { info = .elite }
+
         let links = overviewLinks
         if !links.isEmpty {
             CardGroup {
@@ -361,13 +363,6 @@ struct PlayerDetailContent: View {
         if let workload, workload.lastMatch != nil {
             links.append(OverviewLink(title: "\(workload.last14) minutes in 14 days", detail: "All competitions",
                                       systemImage: "clock") { info = .workload })
-        }
-        if let elite = sheet.elite {
-            let title = elite.boughtPct >= 1
-                ? "\(Self.percent(elite.boughtPct)) of the top \(elite.cohortSize) bought him"
-                : "Owned by \(Self.percent(elite.ownedPct)) of the top \(elite.cohortSize)"
-            links.append(OverviewLink(title: title, detail: "GW\(elite.gw) · top \(elite.cohortSize) managers",
-                                      systemImage: "trophy") { info = .elite })
         }
         return links
     }

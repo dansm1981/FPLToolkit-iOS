@@ -157,11 +157,48 @@ final class DraftModel {
     private(set) var history = SquadHistory()
     var canUndo: Bool { draft.map { $0.isEditable && history.canUndo(gw: $0.gw) } ?? false }
     var canRedo: Bool { draft.map { $0.isEditable && history.canRedo(gw: $0.gw) } ?? false }
+    /// Names of the players seen in this draft, so an undo can name one who has since left it.
+    private var names: [Int: String] = [:]
+
+    /// The edit an undo would take back, e.g. "Salah → Palmer".
+    var undoSummary: String? {
+        guard let d = draft, let old = history.previous(gw: d.gw) else { return nil }
+        return summary(from: old, to: d.restorePicks)
+    }
+
+    /// The edit a redo would make again.
+    var redoSummary: String? {
+        guard let d = draft, let new = history.next(gw: d.gw) else { return nil }
+        return summary(from: d.restorePicks, to: new)
+    }
+
+    private func summary(from old: SquadHistory.Squad, to new: SquadHistory.Squad) -> String {
+        let before = Set(old.map(\.playerId)), after = Set(new.map(\.playerId))
+        let out = old.map(\.playerId).filter { !after.contains($0) }
+        let added = new.map(\.playerId).filter { !before.contains($0) }
+        func name(_ id: Int) -> String { names[id] ?? "a player" }
+        switch (out.count, added.count) {
+        case (0, 0):
+            return old.first(where: \.isCaptain)?.playerId != new.first(where: \.isCaptain)?.playerId
+                ? "captain change" : "line-up change"
+        case (1, 1): return "\(name(out[0])) → \(name(added[0]))"
+        case (0, 1): return "adding \(name(added[0]))"
+        case (1, 0): return "removing \(name(out[0]))"
+        default: return "\(max(out.count, added.count)) changes"
+        }
+    }
+
+    private func rememberNames() {
+        for (key, player) in draft?.players ?? [:] {
+            if let id = Int(key) { names[id] = player.webName }
+        }
+    }
 
     /// Sends one edit; true when it was made (the draft on screen is then the server's answer).
     /// Squad edits can be undone; a reset clears the history, since every week changes.
     @discardableResult
     func apply(_ action: PlannerAction) async -> Bool {
+        rememberNames()
         let before = draft.flatMap { $0.gw == action.gw ? $0.restorePicks : nil }
         guard await send(action) else { return false }
         if action.isSquadEdit, let before, let gw = action.gw {
@@ -180,12 +217,14 @@ final class DraftModel {
     /// Back to the squad before the last edit in the gameweek shown.
     func undo() async {
         guard let d = draft, let squad = history.previous(gw: d.gw) else { return }
+        rememberNames()
         if await send(.restore(squad, gw: d.gw)) { history.didUndo(gw: d.gw, from: d.restorePicks) }
     }
 
     /// Forward again to the squad the last undo left.
     func redo() async {
         guard let d = draft, let squad = history.next(gw: d.gw) else { return }
+        rememberNames()
         if await send(.restore(squad, gw: d.gw)) { history.didRedo(gw: d.gw, from: d.restorePicks) }
     }
 

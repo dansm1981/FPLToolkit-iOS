@@ -68,6 +68,29 @@ struct LiveTeam: Decodable, Sendable {
             let value: Double
             let points: Int
         }
+        /// FPL's counts for the gameweek (happy-backend-pal#47): everything the player did,
+        /// points or not; a double gameweek adds both matches.
+        struct Line: Decodable, Sendable, Hashable {
+            let minutes: Int
+            let goals: Int
+            let assists: Int
+            let cleanSheets: Int
+            let goalsConceded: Int
+            let ownGoals: Int
+            let penaltiesSaved: Int
+            let penaltiesMissed: Int
+            let yellowCards: Int
+            let redCards: Int
+            let saves: Int
+            let bonus: Int
+            let bps: Int
+            let defensiveContribution: Int
+            let clearancesBlocksInterceptions: Int
+            let recoveries: Int
+            let tackles: Int
+            let expectedGoals: Double
+            let expectedAssists: Double
+        }
         struct Context: Decodable, Sendable, Hashable {
             let rating: String?
             let shots: Int?
@@ -97,6 +120,8 @@ struct LiveTeam: Decodable, Sendable {
         let fixtureIds: [Int]
         let next: NextPoints
         let breakdown: [Breakdown]
+        /// Nil from servers before happy-backend-pal#47.
+        let line: Line?
         let context: Context?
 
         var id: Int { playerId }
@@ -170,4 +195,54 @@ struct LiveTeam: Decodable, Sendable {
 
     func player(_ id: Int?) -> PlayerSummary? { id.flatMap { players[String($0)] } }
     func fixture(_ id: Int) -> Fixture? { fixtures.first { $0.id == id } }
+}
+
+// MARK: - One match's stats (happy-backend-pal#47)
+
+/// A match's FPL tables for the Matches tab: most first in each list.
+struct MatchStats: Decodable, Sendable {
+    enum Side: String, FallbackDecodable {
+        case home, away
+        case unknown
+        static let fallback = Self.unknown
+    }
+
+    struct Entry: Decodable, Sendable, Hashable {
+        let playerId: Int
+        let side: Side
+        let value: Int
+    }
+
+    struct Defcon: Decodable, Sendable, Hashable {
+        let playerId: Int
+        let side: Side
+        let value: Int
+        let threshold: Int
+        let reached: Bool
+    }
+
+    let fixtureId: Int
+    let homeClubId: Int
+    let awayClubId: Int
+    let homeScore: Int?
+    let awayScore: Int?
+    let state: LiveTeam.Fixture.State
+    let minute: Int?
+    let goals: [Entry]
+    let assists: [Entry]
+    let ownGoals: [Entry]
+    let penaltiesSaved: [Entry]
+    let penaltiesMissed: [Entry]
+    let yellowCards: [Entry]
+    let redCards: [Entry]
+    let saves: [Entry]
+    /// FPL's bonus once added; before that the Toolkit's estimate from BPS.
+    let bonus: [Entry]
+    let bonusProvisional: Bool
+    let bps: [Entry]
+    /// Every outfield player with a DEFCON count, misses included.
+    let defcon: [Defcon]
+    let players: [String: PlayerSummary]
+
+    func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
 }

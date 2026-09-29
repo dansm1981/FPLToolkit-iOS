@@ -64,6 +64,10 @@ struct TeamRepository: Sendable {
     func today(entryId: Int) -> CachedEndpoint<Today> {
         .init(client: client, cache: cache, path: "team/\(entryId)/today")
     }
+
+    func history(entryId: Int) -> CachedEndpoint<SeasonHistory> {
+        .init(client: client, cache: cache, path: "team/\(entryId)/history")
+    }
 }
 
 struct PlayerRepository: Sendable {
@@ -286,6 +290,12 @@ struct LiveRepository: Sendable {
     func team(entryId: Int, gw: Int? = nil) -> CachedEndpoint<LiveTeam> {
         .init(client: client, cache: cache, path: "live/team/\(entryId)",
               query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
+    }
+
+    /// One match's FPL stats (goals, cards, saves, bonus, BPS, every DEFCON count).
+    func match(fixtureId: Int, gw: Int) -> CachedEndpoint<MatchStats> {
+        .init(client: client, cache: cache, path: "live/fixtures/\(fixtureId)",
+              query: [URLQueryItem(name: "gw", value: String(gw))])
     }
 
     /// Chances from bookmaker odds; the next gameweek unless `gw` is given.

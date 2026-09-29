@@ -166,8 +166,57 @@ struct CompactFormatTests {
         #expect(Format.compactCountdown(to: now.addingTimeInterval(8 * 3_600 + 20 * 60), now: now) == "8h 20m")
         #expect(Format.compactCountdown(to: now.addingTimeInterval(-5), now: now) == "Passed")
         #expect(Format.spokenCountdown(to: now.addingTimeInterval(86_400 + 3_600), now: now) == "in 1 day 1 hour")
-        #expect(Format.rank(1_203_456) == "1.2m")
-        #expect(Format.rank(345_726) == "346k")
-        #expect(Format.rank(8_431) == "8,431")
+        #expect(Format.rank(1_203_456) == 1_203_456.formatted())
+        #expect(Format.rank(345_726) == 345_726.formatted())
+    }
+}
+
+struct SeasonHistoryDecodingTests {
+    /// The shape happy-backend-pal#46 sends (made by its seasonHistoryDto from FPL's history).
+    @Test func decodesSeasonHistory() throws {
+        let json = #"""
+        {"entryId":22615,"weeks":[
+          {"gw":1,"points":63,"totalPoints":63,"gwRank":1282719,"overallRank":1282717,"benchPoints":0,
+           "transfers":0,"hitPoints":0,"value":100,"bank":1.5,"chip":"bboost","average":51,"highest":121},
+          {"gw":2,"points":102,"totalPoints":165,"gwRank":null,"overallRank":724567,"benchPoints":13,
+           "transfers":0,"hitPoints":0,"value":100.1,"bank":1.5,"chip":null,"average":null,"highest":null}],
+         "past":[{"season":"2025/26","totalPoints":2242,"rank":516192}]}
+        """#
+        let history = try APIClient.decode(SeasonHistory.self, from: Data(json.utf8))
+        #expect(history.weeks.count == 2)
+        #expect(history.weeks[0].chip == "bboost")
+        #expect(history.weeks[0].value == 100)
+        #expect(history.weeks[1].gwRank == nil)
+        #expect(history.weeks[1].average == nil)
+        #expect(history.past.first?.rank == 516192)
+    }
+
+    @Test func rankMoveSpeaksTheChange() {
+        #expect(RankMoveArrow.spoken(current: 345_727, previous: 219_072) == "down \(126_655.formatted()) places")
+        #expect(RankMoveArrow.spoken(current: 219_072, previous: 463_077) == "up \(244_005.formatted()) places")
+        #expect(RankMoveArrow.spoken(current: 5, previous: nil) == nil)
+        #expect(SeasonText.axisRank(1_282_717) == "1.3m")
+        #expect(SeasonText.axisRank(345_727) == "346k")
+    }
+}
+
+struct MatchStatsDecodingTests {
+    /// The shape happy-backend-pal#47 sends for GET live/fixtures/{id}.
+    @Test func decodesMatchStats() throws {
+        let json = #"""
+        {"fixtureId":51,"homeClubId":1,"awayClubId":2,"homeScore":2,"awayScore":1,"state":"inPlay","minute":70,
+         "goals":[{"playerId":10,"side":"home","value":2}],"assists":[],"ownGoals":[],"penaltiesSaved":[],
+         "penaltiesMissed":[],"yellowCards":[],"redCards":[],"saves":[{"playerId":22,"side":"away","value":4}],
+         "bonus":[{"playerId":10,"side":"home","value":3}],"bonusProvisional":true,
+         "bps":[{"playerId":10,"side":"home","value":40}],
+         "defcon":[{"playerId":13,"side":"home","value":9,"threshold":10,"reached":false}],
+         "players":{}}
+        """#
+        let stats = try APIClient.decode(MatchStats.self, from: Data(json.utf8))
+        #expect(stats.state == .inPlay)
+        #expect(stats.goals.first?.value == 2)
+        #expect(stats.bonusProvisional)
+        #expect(stats.defcon.first?.reached == false)
+        #expect(stats.defcon.first?.side == .home)
     }
 }

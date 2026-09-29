@@ -72,7 +72,7 @@ struct MainView: View {
                 if let entryId {
                     TeamView(entryId: entryId)
                 } else {
-                    NoTeamView(title: "My team", message: "Add your FPL team to see your published squad here, with each player's next fixture, price and availability.")
+                    NoTeamView(title: "My Team", message: "Add your FPL team to see your published squad here, with each player's next fixture, price and availability.")
                 }
             }
             .tabItem { Label("Team", systemImage: "tshirt") }

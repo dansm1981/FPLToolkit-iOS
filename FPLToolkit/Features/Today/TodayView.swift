@@ -18,6 +18,7 @@ struct TodayView: View {
     @State private var showingLeagues = false
     @State private var showingSource = false
     @State private var showingSources = false
+    @State private var showingHistory = false
 
     var body: some View {
         Group {
@@ -46,7 +47,8 @@ struct TodayView: View {
                                 onLeague: { pushedLeague = $0 },
                                 onLeagues: { showingLeagues = true },
                                 onSource: { showingSource = true },
-                                onSources: { showingSources = true })
+                                onSources: { showingSources = true },
+                                onHistory: { showingHistory = true })
                         }
                         .padding(.horizontal, 18)
                         .padding(.bottom, ToolkitSpace.section)
@@ -68,6 +70,7 @@ struct TodayView: View {
         .navigationDestination(item: $pushedLeague) { league in LeagueView(league: league) }
         .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
         .navigationDestination(isPresented: $showingSources) { DataSourcesView(entryId: entryId) }
+        .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
         .sheet(isPresented: $showingSource) {
             if let snapshot = resource?.loaded?.value.snapshot {
                 InfoSheet(title: "Your published squad", message: TodayText.sourceMessage(snapshot), links: [
@@ -112,6 +115,7 @@ struct TodayContent: View {
     let onLeagues: () -> Void
     let onSource: () -> Void
     let onSources: () -> Void
+    let onHistory: () -> Void
 
     private var today: Today { loaded.value }
 
@@ -124,7 +128,7 @@ struct TodayContent: View {
             }
 
             GameweekCard(live: live, entry: today.entry, snapshot: team?.snapshot,
-                         onOpen: { appModel.router.showingMatchday = true })
+                         onOpen: { appModel.router.showingMatchday = true }, onHistory: onHistory)
 
             status
 
@@ -144,23 +148,6 @@ struct TodayContent: View {
 
             SectionHeader(title: "Your next move")
             nextMoveTiles
-
-            Button { appModel.router.selectedTab = .research } label: {
-                HStack {
-                    Text("Explore research")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .accessibilityHidden(true)
-                }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Divider().overlay(ToolkitColor.border)
 
             SectionHeader(title: "Your leagues", actionTitle: "View all", action: onLeagues)
             leagues
@@ -236,6 +223,7 @@ struct TodayContent: View {
 
     // MARK: Next move
 
+    /// Three tiles of one size (v2 mock): side by side, stacked at the accessibility text sizes.
     @ViewBuilder private var nextMoveTiles: some View {
         let next = today.gameweek.next?.id
         let layout = typeSize.isAccessibilitySize
@@ -248,11 +236,16 @@ struct TodayContent: View {
                 if let draft = latestDraft { appModel.router.pendingDraftId = draft.id }
                 appModel.router.selectedTab = .planner
             }
-            NextMoveTile(systemImage: "calendar", title: "View fixtures", detail: "Your next 6 GWs") {
+            NextMoveTile(systemImage: "tshirt", title: "View fixtures", detail: "Your squad, next 6 GWs") {
                 UserDefaults.standard.set(TeamLayout.fixtures.rawValue, forKey: "team.layout")
                 appModel.router.selectedTab = .team
             }
+            NextMoveTile(systemImage: "chart.bar.fill", title: "Check research", detail: "Form, stats & more") {
+                appModel.router.selectedTab = .research
+            }
         }
+        // Every tile as tall as the tallest.
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func planDetail(_ next: Int?) -> String {
@@ -331,6 +324,8 @@ struct GameweekCard: View {
     /// The published squad, for team value and bank.
     let snapshot: Team.Snapshot?
     let onOpen: () -> Void
+    /// The season history page (tapping the score, rank or points).
+    let onHistory: () -> Void
     @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 58
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -339,7 +334,10 @@ struct GameweekCard: View {
             HeroCard {
                 VStack(alignment: .leading, spacing: 12) {
                     header(team)
-                    scoreRow(team)
+                    // The score and the season's standing open the season history (Dan, 29 Sep).
+                    Button(action: onHistory) { scoreRow(team) }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens your season history")
                     let week = weekStats(team)
                     if !week.isEmpty {
                         Divider().overlay(ToolkitColor.heroLine)
@@ -451,9 +449,14 @@ struct GameweekCard: View {
                             Text(stat.label)
                                 .font(.caption)
                                 .foregroundStyle(ToolkitColor.secondaryText)
-                            Text(stat.value)
-                                .font(.title3.weight(.bold).monospacedDigit())
-                                .foregroundStyle(ToolkitColor.primaryText)
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(stat.value)
+                                    .font(.title3.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(ToolkitColor.primaryText)
+                                if let move = stat.move {
+                                    RankMoveArrow(current: move.current, previous: move.previous)
+                                }
+                            }
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("\(stat.label): \(stat.spoken)")
@@ -468,13 +471,18 @@ struct GameweekCard: View {
         let label: String
         let value: String
         let spoken: String
+        /// A rank and last week's, for the up/down arrow.
+        var move: (current: Int, previous: Int?)?
     }
 
     /// Overall rank and season points (FPL's entry summary).
     private var seasonStats: [Stat] {
         var stats: [Stat] = []
         if let rank = entry.overallRank {
-            stats.append(Stat(label: "Overall rank", value: Format.rank(rank), spoken: rank.formatted()))
+            let moved = RankMoveArrow.spoken(current: rank, previous: entry.previousOverallRank)
+            stats.append(Stat(label: "Overall rank", value: Format.rank(rank),
+                              spoken: [rank.formatted(), moved].compactMap { $0 }.joined(separator: ", "),
+                              move: (rank, entry.previousOverallRank)))
         }
         if let points = entry.totalPoints {
             stats.append(Stat(label: "Season points", value: points.formatted(), spoken: points.formatted()))
@@ -540,7 +548,7 @@ struct GameweekCard: View {
 
 // MARK: - Pieces
 
-/// One of "Your next move"'s two tiles.
+/// One of "Your next move"'s three tiles.
 private struct NextMoveTile: View {
     let systemImage: String
     let title: String
@@ -550,22 +558,27 @@ private struct NextMoveTile: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(ToolkitColor.accent)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.primaryText)
+                IconBadge(systemImage: systemImage)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                HStack(alignment: .bottom, spacing: 4) {
                     Text(detail)
                         .font(.caption)
                         .foregroundStyle(ToolkitColor.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .accessibilityHidden(true)
                 }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(minHeight: 132)
             .toolkitCard(radius: 16)
             .contentShape(RoundedRectangle(cornerRadius: 16))
         }

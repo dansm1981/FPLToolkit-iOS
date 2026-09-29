@@ -1,54 +1,80 @@
 import SwiftUI
 
-/// The website's bank control and free-transfer setting: the budget the plan starts from, and the
-/// free transfers for the first week you can plan. The server re-works the bank and ledger.
+/// The bank and free transfers (Dan, 29 Sep: "easily adjust the bank balance by tapping"). FPL
+/// doesn't publish what players would sell for, so the planner's bank can be a little out: set it
+/// to the bank FPL shows. The plan's starting budget moves by the same amount, so every week's
+/// bank follows; the server re-works the bank and ledger.
 struct DraftMoneySheet: View {
     @Environment(\.dismiss) private var dismiss
     let draft: PlannerDraft
     let model: DraftModel
 
-    @State private var budget: String
+    @State private var bank: String
     @State private var freeTransfers: Int
 
     init(draft: PlannerDraft, model: DraftModel) {
         self.draft = draft
         self.model = model
-        _budget = State(initialValue: draft.money.startBudget.formatted(.number.precision(.fractionLength(1))))
+        _bank = State(initialValue: Self.text(draft.money.bank))
         _freeTransfers = State(initialValue: draft.freeTransfers.starting)
     }
 
-    /// £m, 0–200 in steps of 0.1 (the server checks too).
-    private var parsedBudget: Double? {
-        let text = budget.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
-        guard let value = Double(text), (0...200).contains(value) else { return nil }
+    private static func text(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(1)).grouping(.never))
+    }
+
+    /// £m in steps of 0.1 (a draft's bank can go below zero).
+    private var parsedBank: Double? {
+        let text = bank.trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: ",", with: ".").replacingOccurrences(of: "−", with: "-")
+        guard let value = Double(text) else { return nil }
         return (value * 10).rounded() / 10
     }
 
+    /// The starting budget that gives this bank; nil outside the £0–200m the server accepts.
+    private var startBudget: Double? {
+        guard let parsedBank else { return nil }
+        let value = ((draft.money.startBudget + parsedBank - draft.money.bank) * 10).rounded() / 10
+        return (0...200).contains(value) ? value : nil
+    }
+
     private var patch: PlannerDraftPatch? {
-        guard let parsedBudget else { return nil }
+        guard let startBudget else { return nil }
         var patch = PlannerDraftPatch()
-        if abs(parsedBudget - draft.money.startBudget) > 0.001 { patch.startBudget = parsedBudget }
+        if abs(startBudget - draft.money.startBudget) > 0.001 { patch.startBudget = startBudget }
         if freeTransfers != draft.freeTransfers.starting { patch.startingFt = freeTransfers }
         return patch
+    }
+
+    private func step(_ delta: Double) {
+        bank = Self.text((((parsedBank ?? draft.money.bank) + delta) * 10).rounded() / 10)
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    HStack(spacing: ToolkitSpace.xs) {
-                        Text("£").foregroundStyle(ToolkitColor.secondaryText)
-                        TextField("100.0", text: $budget)
-                            .keyboardType(.decimalPad)
-                            .accessibilityLabel("Starting budget in millions of pounds")
-                        Text("m").foregroundStyle(ToolkitColor.secondaryText)
+                    Stepper {
+                        HStack(spacing: ToolkitSpace.xs) {
+                            Text("£").foregroundStyle(ToolkitColor.secondaryText)
+                            TextField("0.0", text: $bank)
+                                .keyboardType(.numbersAndPunctuation)
+                                .font(.title3.weight(.semibold).monospacedDigit())
+                                .accessibilityLabel("Bank in millions of pounds")
+                            Text("m").foregroundStyle(ToolkitColor.secondaryText)
+                        }
+                    } onIncrement: {
+                        step(0.1)
+                    } onDecrement: {
+                        step(-0.1)
                     }
+                    .accessibilityValue(parsedBank.map(Format.price) ?? "")
                 } header: {
-                    SectionLabel(text: "Starting budget")
+                    SectionLabel(text: "In the bank in GW\(draft.gw)")
                 } footer: {
-                    Text(budgetFooter)
+                    Text(bankFooter)
                         .font(.footnote)
-                        .foregroundStyle(parsedBudget == nil ? ToolkitColor.error : ToolkitColor.secondaryText)
+                        .foregroundStyle(startBudget == nil ? ToolkitColor.error : ToolkitColor.secondaryText)
                 }
                 .listRowBackground(ToolkitColor.surface)
 
@@ -76,7 +102,7 @@ struct DraftMoneySheet: View {
             }
             .scrollContentBackground(.hidden)
             .background(ToolkitColor.canvas.ignoresSafeArea())
-            .navigationTitle("Budget")
+            .navigationTitle("Bank")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -95,12 +121,10 @@ struct DraftMoneySheet: View {
         }
     }
 
-    private var budgetFooter: String {
-        if parsedBudget == nil { return "Enter an amount from £0.0m to £200.0m." }
-        let why = draft.entryId == nil
-            ? "A new FPL squad starts with £100.0m."
-            : "For an imported team it's worked out from your FPL history. Change it if your bank looks wrong."
-        return "What the squad had to spend when the plan starts. \(why) Your bank follows from it."
+    private var bankFooter: String {
+        if parsedBank == nil { return "Enter an amount, e.g. 2.3." }
+        if startBudget == nil { return "That's more than the planner allows for this squad." }
+        return "Tap − or + for £0.1m steps, or type it. FPL doesn't publish what your players would sell for, so set this to the bank FPL shows; every later week moves with it."
     }
 
     private var transfersFooter: String {

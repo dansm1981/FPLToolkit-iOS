@@ -200,6 +200,42 @@ struct Entry: Decodable, Sendable, Hashable {
     var summaryGw: Int?
     var gwPoints: Int?
     var gwRank: Int?
+    /// Overall rank after the week before `summaryGw` (happy-backend-pal#46), for the up/down arrow.
+    var previousOverallRank: Int?
+}
+
+// MARK: - Season history (happy-backend-pal#46)
+
+/// An entry's season week by week, with each gameweek's FPL average and highest score.
+struct SeasonHistory: Decodable, Sendable {
+    struct Week: Decodable, Sendable, Hashable, Identifiable {
+        let gw: Int
+        let points: Int
+        let totalPoints: Int
+        let gwRank: Int?
+        let overallRank: Int?
+        let benchPoints: Int
+        let transfers: Int
+        /// Points deducted for extra transfers (positive, e.g. 4).
+        let hitPoints: Int
+        let value: Double?
+        let bank: Double?
+        /// "wildcard", "freehit", "bboost" or "3xc".
+        let chip: String?
+        let average: Int?
+        let highest: Int?
+        var id: Int { gw }
+    }
+
+    struct Past: Decodable, Sendable, Hashable {
+        let season: String
+        let totalPoints: Int
+        let rank: Int?
+    }
+
+    let entryId: Int
+    let weeks: [Week]
+    let past: [Past]
 }
 
 // MARK: - Team (§3.2)
@@ -575,4 +611,28 @@ extension FallbackDecodable {
         let raw = try decoder.singleValueContainer().decode(String.self)
         self = Self(rawValue: raw) ?? Self.fallback
     }
+}
+
+// MARK: - A player in your mini-leagues (happy-backend-pal#48)
+
+struct PlayerLeagues: Decodable, Sendable {
+    struct Row: Decodable, Sendable, Identifiable, Hashable {
+        struct League: Decodable, Sendable, Hashable {
+            let id: Int
+            let name: String
+            let syncedGw: Int?
+        }
+        let league: League
+        /// Managers counted (those with picks for the league's synced gameweek).
+        let counted: Int
+        let ownedPct: Double
+        let startedPct: Double
+        let captainedPct: Double
+        /// Effective ownership: starts plus captain shares.
+        let eo: Double
+        var id: Int { league.id }
+    }
+
+    let playerId: Int
+    let leagues: [Row]
 }

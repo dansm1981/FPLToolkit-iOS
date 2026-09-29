@@ -54,11 +54,9 @@ enum Format {
         return "in " + unit(max(minutes, 1), "minute")
     }
 
-    /// A rank in a small space: "1.2m", "346k", "8,431".
+    /// A rank in full, "345,727": the exact position, never rounded to "346k".
     static func rank(_ value: Int) -> String {
-        if value >= 1_000_000 { return (Double(value) / 1_000_000).formatted(.number.precision(.fractionLength(1))) + "m" }
-        if value >= 100_000 { return (Double(value) / 1_000).formatted(.number.precision(.fractionLength(0))) + "k" }
-        return value.formatted()
+        value.formatted()
     }
 
     /// A negative amount (an overspent bank) as "−£0.2m", not "£-0.2m".

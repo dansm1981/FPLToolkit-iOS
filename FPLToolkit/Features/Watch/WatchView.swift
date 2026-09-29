@@ -235,7 +235,8 @@ private struct WatchContent: View {
                     }
                 }
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: ToolkitSpace.sm, trailing: 0))
+                // A little room above: with none, the row clips the top of the first line's capitals.
+                .listRowInsets(EdgeInsets(top: ToolkitSpace.sm, leading: 0, bottom: ToolkitSpace.sm, trailing: 0))
             }
 
             if appModel.entryId != nil {

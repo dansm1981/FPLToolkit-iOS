@@ -385,7 +385,8 @@ final class ScreenAuditTests: XCTestCase {
         let addKeeper = app.buttons["Add a goalkeeper"].firstMatch
         waitFor(addKeeper, "Blank draft", timeout: 40)
         addKeeper.tap()
-        let firstKeeper = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · GK · '")).firstMatch
+        // A picker row reads "Name, Club, £4.5m, 34 points, …".
+        let firstKeeper = app.buttons.matching(NSPredicate(format: "label MATCHES '.*, £[0-9.]+m, [0-9]+ points.*'")).firstMatch
         waitFor(firstKeeper, "Picker", timeout: 40)
         settle()
         check(app, "13-planner-picker", sizesAndLists: false)
@@ -450,8 +451,8 @@ final class ScreenAuditTests: XCTestCase {
 
         // The draft menu: budget and free transfers (audited), rename, then delete.
         app.buttons["Draft options"].firstMatch.tap()
-        app.buttons["Budget and free transfers…"].firstMatch.tap()
-        waitFor(app.navigationBars["Budget"].firstMatch, "Budget sheet")
+        app.buttons["Bank and free transfers…"].firstMatch.tap()
+        waitFor(app.navigationBars["Bank"].firstMatch, "Bank sheet")
         settle()
         check(app, "15-draft-money")
         app.buttons["Cancel"].firstMatch.tap()

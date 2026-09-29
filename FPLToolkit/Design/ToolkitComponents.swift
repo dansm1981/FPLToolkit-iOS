@@ -284,6 +284,65 @@ struct FlowLayout: Layout {
     }
 }
 
+/// A green ▲ or red ▼ beside a rank: whether it rose or fell since the week before (Dan, 29 Sep).
+/// Decorative; `spoken` says it.
+struct RankMoveArrow: View {
+    let current: Int
+    let previous: Int?
+
+    var body: some View {
+        if let previous, previous != current {
+            Image(systemName: current < previous ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
+                .font(.caption)
+                .foregroundStyle(current < previous ? ToolkitColor.positive : ToolkitColor.error)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// "up 125,655 places", "down 3,210 places", or nil when there's nothing to compare.
+    static func spoken(current: Int, previous: Int?) -> String? {
+        guard let previous, previous != current else { return nil }
+        let places = abs(previous - current).formatted()
+        return current < previous ? "up \(places) places" : "down \(places) places"
+    }
+}
+
+/// Up to four small figures in one card (the Team header's rank, points, value and bank), two
+/// by two: four across, the labels wrap and the figures stop lining up.
+struct FigureGrid: View {
+    struct Item: Identifiable {
+        let label: String
+        let value: String
+        /// What VoiceOver reads for the value (e.g. a rank in full).
+        var spoken: String?
+        var id: String { label }
+    }
+    let items: [Item]
+
+    var body: some View {
+        let columns = min(2, items.count)
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .topLeading), count: max(columns, 1)),
+                  alignment: .leading, spacing: 12) {
+            ForEach(items) { item in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.label)
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    Text(item.value)
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(ToolkitColor.primaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(item.label): \(item.spoken ?? item.value)")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .toolkitCard()
+    }
+}
+
 /// The team as a team, not a stray line of text (Dan, 29 Sep): a shirt badge, the name in
 /// weight, and the manager under it.
 struct TeamIdentity: View {

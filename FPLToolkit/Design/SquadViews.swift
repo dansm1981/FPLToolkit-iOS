@@ -94,15 +94,28 @@ struct PitchTileModel: Identifiable, Hashable {
         case none
     }
 
+    /// Doubtful and out show as a dot before the name.
+    enum Status: Hashable { case available, doubtful, out }
+
+    /// One gameweek of the run down the tile's edge: a band per game, none in a blank, two in a double.
+    struct RunWeek: Hashable {
+        let gw: Int
+        let bands: [Int?]
+    }
+
     let playerId: Int
     let name: String
     let colors: Bootstrap.Club.Colors?
     let isGoalkeeper: Bool
+    /// The player's photo; without one the tile shows the club-colour shirt alone.
+    var photo: String?
     /// "C" or "V".
     var role: String?
-    var flagged = false
+    var status: Status = .available
     var metric: Metric = .none
-    /// The full description VoiceOver reads (name, role, opponent, venue, metric).
+    /// The next few gameweeks' difficulty, as the website's planner shows it (Dan, 29 Sep).
+    var run: [RunWeek] = []
+    /// The full description VoiceOver reads (name, role, opponent, venue, metric, run).
     let accessibilityLabel: String
 
     var id: Int { playerId }
@@ -118,19 +131,35 @@ struct PitchTile: View {
     @ScaledMetric(relativeTo: .caption2) private var badge: CGFloat = 17
 
     var body: some View {
-        VStack(spacing: 3) {
-            KitShirt(colors: model.colors, goalkeeper: model.isGoalkeeper, size: 30)
-                .padding(.top, 1)
-            // Wraps rather than being cut off (a long surname at a larger text size).
-            Text(model.name)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(ToolkitColor.primaryText)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-            metric
+        HStack(spacing: 3) {
+            VStack(spacing: 3) {
+                face
+                    .padding(.top, 1)
+                // Wraps rather than being cut off (a long surname at a larger text size).
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    if model.status != .available {
+                        Circle()
+                            .fill(model.status == .out ? ToolkitColor.error : ToolkitColor.warning)
+                            .frame(width: 6, height: 6)
+                            .accessibilityHidden(true)
+                    }
+                    Text(model.name)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                metric
+            }
+            .frame(maxWidth: .infinity)
+            if !model.run.isEmpty {
+                FixtureRunColumn(weeks: model.run)
+                    .frame(width: 8)
+            }
         }
-        .padding(.horizontal, 4)
+        .padding(.leading, 4)
+        .padding(.trailing, model.run.isEmpty ? 4 : 3)
         .padding(.top, 6)
         .padding(.bottom, 5)
         .frame(maxWidth: .infinity)
@@ -152,18 +181,23 @@ struct PitchTile: View {
                     .padding(4)
             }
         }
-        .overlay(alignment: .topLeading) {
-            if model.flagged {
-                Text("!")
-                    .font(.caption.weight(.heavy))
-                    .foregroundStyle(ToolkitColor.accent)
-                    .padding(.leading, 6)
-                    .padding(.top, 3)
-            }
-        }
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(model.accessibilityLabel)
+    }
+
+    /// The photo with a small club-colour shirt at its shoulder ("face and strip"), or the shirt
+    /// alone when there's no photo.
+    @ViewBuilder private var face: some View {
+        if let photo = model.photo {
+            PlayerPhoto(path: photo, size: 36, scalesWithText: false)
+                .overlay(alignment: .bottomTrailing) {
+                    KitShirt(colors: model.colors, goalkeeper: model.isGoalkeeper, size: 17)
+                        .offset(x: 8, y: 3)
+                }
+        } else {
+            KitShirt(colors: model.colors, goalkeeper: model.isGoalkeeper, size: 30)
+        }
     }
 
     @ViewBuilder private var metric: some View {
@@ -198,6 +232,44 @@ struct PitchTile: View {
         case .none:
             EmptyView()
         }
+    }
+}
+
+/// The next gameweeks' difficulty as a column of cells down a tile's edge (the website planner):
+/// a double splits its cell, a blank is an empty outline. Decorative: the tile's label reads the run.
+struct FixtureRunColumn: View {
+    let weeks: [PitchTileModel.RunWeek]
+
+    var body: some View {
+        VStack(spacing: 2) {
+            ForEach(weeks, id: \.gw) { week in
+                if week.bands.isEmpty {
+                    RoundedRectangle(cornerRadius: 2)
+                        .strokeBorder(ToolkitColor.border, lineWidth: 1)
+                        .frame(minHeight: 8)
+                } else {
+                    VStack(spacing: 1) {
+                        ForEach(Array(week.bands.enumerated()), id: \.offset) { _, band in
+                            // The website's five solid colours, bright enough to read at this size.
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(band.map(DifficultyColor.fill) ?? ToolkitColor.mid)
+                        }
+                    }
+                    .frame(minHeight: 8)
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// "Next 6 gameweeks: GW6 3.5, GW7 1.0 and 2.1, GW8 no game", for a tile's label.
+    static func spoken(_ cells: [ResearchTicker.Cell]) -> String? {
+        guard !cells.isEmpty else { return nil }
+        let weeks = cells.map { cell in
+            "GW\(cell.gw) " + (cell.blank || cell.fixtures.isEmpty ? "no game"
+                : cell.fixtures.map { $0.value == nil ? "unrated" : $0.display }.joined(separator: " and "))
+        }
+        return "next \(cells.count) gameweeks: " + weeks.joined(separator: ", ")
     }
 }
 

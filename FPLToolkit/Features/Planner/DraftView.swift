@@ -98,6 +98,9 @@ private struct DraftContent: View {
                            chipLabels: Dictionary(uniqueKeysWithValues: draft.chips.map { ($0.key, $0.label) })) {
                     showingNews = true
                 }
+                if draft.isEditable && (model.canUndo || model.canRedo) {
+                    UndoBar(model: model)
+                }
                 if typeSize.isAccessibilitySize {
                     SquadList(draft: draft, actions: actions)
                 } else {
@@ -120,16 +123,6 @@ private struct DraftContent: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if model.isApplying {
                     ProgressView().accessibilityLabel("Saving")
-                }
-                if draft.isEditable {
-                    Button { Task { await model.undo() } } label: {
-                        Label("Undo", systemImage: "arrow.uturn.backward")
-                    }
-                    .disabled(!model.canUndo || model.isApplying)
-                    Button { Task { await model.redo() } } label: {
-                        Label("Redo", systemImage: "arrow.uturn.forward")
-                    }
-                    .disabled(!model.canRedo || model.isApplying)
                 }
                 Menu { draftMenu } label: {
                     Label("Draft options", systemImage: "ellipsis")
@@ -209,7 +202,7 @@ private struct DraftContent: View {
             Label("Rename…", systemImage: "pencil")
         }
         Button { editingMoney = true } label: {
-            Label("Budget and free transfers…", systemImage: "sterlingsign.circle")
+            Label("Bank and free transfers…", systemImage: "sterlingsign.circle")
         }
         Button {
             Task {
@@ -533,10 +526,61 @@ enum DraftTile {
             let venue = f.home.map { $0 ? "at home" : "away" } ?? ""
             spoken.append("\(name) \(venue)" + (f.xfdr.map { ", \($0.modelLabel) \($0.display)" } ?? ""))
         }
-        let flagged = player.map { $0.availability.level == .doubt || $0.availability.level == .out } ?? false
+        let strip = draft.strip(for: pick.playerId)
+        if let upcoming = FixtureStrip.spoken(strip) { spoken.append(upcoming) }
+        let status: PitchTileModel.Status = switch player?.availability.level {
+        case .out: .out
+        case .doubt: .doubtful
+        default: .available
+        }
         return PitchTileModel(playerId: pick.playerId, name: player?.webName ?? "Player", colors: appModel.club(player?.clubId)?.colors,
-                              isGoalkeeper: player?.position == .gk, role: pick.isCaptain ? "C" : pick.isVice ? "V" : nil,
-                              flagged: flagged, metric: metric, accessibilityLabel: spoken.joined(separator: ", "))
+                              isGoalkeeper: player?.position == .gk, photo: player?.photo,
+                              role: pick.isCaptain ? "C" : pick.isVice ? "V" : nil, status: status, metric: metric,
+                              run: strip.map { week in
+                                  .init(gw: week.gw, bands: week.fixtures.filter { !$0.blank }.map { $0.xfdr?.band ?? week.band })
+                              },
+                              accessibilityLabel: spoken.joined(separator: ", "))
+    }
+}
+
+/// Undo and redo beside the pitch (as on the website), each naming the change it takes back or
+/// makes again: "Undo Salah → Palmer". VoiceOver hears "Undo" with the change as its value.
+private struct UndoBar: View {
+    let model: DraftModel
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button { Task { await model.undo() } } label: {
+                Label(model.undoSummary.map { "Undo \($0)" } ?? "Undo", systemImage: "arrow.uturn.backward")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(UndoButtonStyle())
+            .disabled(!model.canUndo || model.isApplying)
+            .accessibilityLabel("Undo")
+            .accessibilityValue(model.undoSummary ?? "")
+            Button { Task { await model.redo() } } label: {
+                Label("Redo", systemImage: "arrow.uturn.forward")
+            }
+            .buttonStyle(UndoButtonStyle())
+            .disabled(!model.canRedo || model.isApplying)
+            .accessibilityLabel("Redo")
+            .accessibilityValue(model.redoSummary ?? "")
+        }
+    }
+}
+
+private struct UndoButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(isEnabled ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(minHeight: 44)
+            .toolkitCard(radius: 12)
+            .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
 

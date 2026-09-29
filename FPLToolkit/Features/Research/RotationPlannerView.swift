@@ -101,13 +101,17 @@ struct RotationPlannerView: View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
             SectionLabel(text: "Players (\(picks.count) of \(Self.maxPlayers))")
             ForEach(picks) { pick in
+                let player = (table.current?.loaded ?? table.previous)?.value.player(pick.id)
                 HStack(spacing: ToolkitSpace.md) {
-                    Text(pick.name)
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Text(pickDetails(pick.id))
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+                    PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo, size: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(pick.name)
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        ClubLabel(clubId: player?.clubId, text: pickDetails(pick.id), logoSize: 13)
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
                     Spacer(minLength: 0)
                     Button {
                         setPicks(picks.filter { $0.id != pick.id })

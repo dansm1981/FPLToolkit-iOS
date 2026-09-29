@@ -21,6 +21,7 @@ struct MatchdayView: View {
     /// Whether the Live Activity is on the Lock Screen.
     @State private var following = false
     @State private var followError: String?
+    @State private var showingHistory = false
 
     static let refreshSeconds: UInt64 = 30
 
@@ -69,6 +70,7 @@ struct MatchdayView: View {
                 sheetView(which, live: live)
             }
         }
+        .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
         .task(id: entryId) {
             await load()
             // Keep it live while matches are on; the server refreshes every 15 seconds.
@@ -125,6 +127,12 @@ struct MatchdayView: View {
                           onFollow: { sheet = .follow })
         if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
             MatchdayCatchUp(text: catchUp)
+        }
+        // The season behind this week (Dan, 29 Sep): points and rank over time.
+        CardGroup {
+            LinkRow(title: "Season history", detail: "Points and rank, week by week", systemImage: "chart.xyaxis.line") {
+                showingHistory = true
+            }
         }
         Picker("Show", selection: $mode) {
             ForEach(MatchdayMode.allCases) { Text($0.rawValue).tag($0) }
@@ -480,6 +488,50 @@ enum MatchdayRowText {
 
 /// One player's points: the FPL-recorded total and its contributions, with provisional bonus in its
 /// own band ("not included") and the thresholds still in play.
+/// Everything the player did in FPL's counts (Dan, 29 Sep: "almost the total action for the
+/// player"): the scoring stats, then DEFCON and its parts, BPS and expected goals, points or not.
+private struct StatLineGrid: View {
+    let line: LiveTeam.Player.Line
+    let goalkeeper: Bool
+    let defconThreshold: Int?
+
+    private var items: [FigureGrid.Item] {
+        var items: [FigureGrid.Item] = [.init(label: "Minutes", value: "\(line.minutes)")]
+        func add(_ label: String, _ value: Int, always: Bool = false) {
+            if always || value != 0 { items.append(.init(label: label, value: "\(value)")) }
+        }
+        add("Goals", line.goals)
+        add("Assists", line.assists)
+        add("Clean sheets", line.cleanSheets)
+        add("Goals conceded", line.goalsConceded)
+        add("Saves", line.saves, always: goalkeeper)
+        add("Penalties saved", line.penaltiesSaved)
+        add("Penalties missed", line.penaltiesMissed)
+        add("Own goals", line.ownGoals)
+        add("Yellow cards", line.yellowCards)
+        add("Red cards", line.redCards)
+        add("Bonus", line.bonus)
+        add("BPS", line.bps, always: true)
+        if !goalkeeper {
+            items.append(.init(label: "DEFCON actions",
+                               value: defconThreshold.map { "\(line.defensiveContribution)/\($0)" } ?? "\(line.defensiveContribution)",
+                               spoken: defconThreshold.map { "\(line.defensiveContribution) of \($0)" } ?? "\(line.defensiveContribution)"))
+            add("Clearances, blocks, interceptions", line.clearancesBlocksInterceptions, always: true)
+            add("Tackles", line.tackles, always: true)
+            add("Recoveries", line.recoveries, always: true)
+        }
+        let xg = line.expectedGoals.formatted(.number.precision(.fractionLength(2)))
+        let xa = line.expectedAssists.formatted(.number.precision(.fractionLength(2)))
+        items.append(.init(label: "xG", value: xg, spoken: "expected goals \(xg)"))
+        items.append(.init(label: "xA", value: xa, spoken: "expected assists \(xa)"))
+        return items
+    }
+
+    var body: some View {
+        FigureGrid(items: items)
+    }
+}
+
 struct PointsBreakdownSheet: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
@@ -567,6 +619,12 @@ struct PointsBreakdownSheet: View {
                     }
                     .padding(.horizontal, 15)
                     .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+
+                    if let line = player.line, line.minutes > 0 {
+                        SectionHeader(title: player.fixtureIds.count > 1 ? "Match stats (both matches)" : "Match stats")
+                        StatLineGrid(line: line, goalkeeper: summary?.position == .gk,
+                                     defconThreshold: player.next.defcon?.threshold)
+                    }
 
                     if player.state == .inPlay, player.next.defcon != nil || player.next.saves != nil || player.next.bonus != nil {
                         SectionHeader(title: "Still in play")
@@ -684,11 +742,16 @@ private struct MomentRow: View {
                 .foregroundStyle(ToolkitColor.secondaryText)
                 .frame(width: 34, alignment: .leading)
             VStack(alignment: .leading, spacing: 3) {
-                Text(MatchdayText.moment(moment, live: live))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(ToolkitColor.primaryText)
-                    .strikethrough(moment.state == .withdrawn)
-                    .fixedSize(horizontal: false, vertical: true)
+                // The player's club badge first, so a scan down the list finds a club's moments.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    ClubLogo(clubId: live.player(moment.playerId)?.clubId, size: 16)
+                        .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 3 }
+                    Text(MatchdayText.moment(moment, live: live))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .strikethrough(moment.state == .withdrawn)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Text(caption)
                     .font(.caption)
                     .foregroundStyle(ToolkitColor.secondaryText)
@@ -720,6 +783,8 @@ private struct MomentRow: View {
 struct MatchdayFixtures: View {
     @Environment(AppModel.self) private var appModel
     let live: LiveTeam
+    /// The match opened to show its stats (Dan, 29 Sep: "click a particular game").
+    @State private var expanded: Int?
 
     var body: some View {
         if live.fixtures.isEmpty {
@@ -730,11 +795,26 @@ struct MatchdayFixtures: View {
                 let sorted = live.fixtures.sorted { ($0.kickoff ?? .distantFuture) < ($1.kickoff ?? .distantFuture) }
                 ForEach(Array(sorted.enumerated()), id: \.element.id) { index, f in
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
-                    row(f)
+                    Button {
+                        withAnimation(.snappy) { expanded = expanded == f.id ? nil : f.id }
+                    } label: {
+                        row(f)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(f.state == .notStarted)
+                    .accessibilityHint(f.state == .notStarted ? "" : expanded == f.id ? "Hides the match stats" : "Shows the match stats")
+                    .accessibilityAddTraits(expanded == f.id ? .isSelected : [])
+                    if expanded == f.id {
+                        MatchStatsPanel(fixtureId: f.id, gameweek: live.gameweek, squad: Set(live.squad.map(\.playerId)))
+                            .padding(.bottom, ToolkitSpace.md)
+                    }
                 }
             }
             .padding(.horizontal, 15)
             .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            Text("Tap a match for its goals, assists, cards, saves, bonus and DEFCON counts.")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
         }
     }
 
@@ -748,10 +828,17 @@ struct MatchdayFixtures: View {
             ClubLabel(clubId: f.awayClubId, text: appModel.club(f.awayClubId)?.shortName ?? "?", logoSize: 18)
                 .frame(maxWidth: .infinity, alignment: .trailing)
             Tag(text: state(f))
+            if f.state != .notStarted {
+                Image(systemName: expanded == f.id ? "chevron.up" : "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .accessibilityHidden(true)
+            }
         }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(ToolkitColor.primaryText)
         .frame(minHeight: 52)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken(f))
     }

@@ -15,6 +15,11 @@ struct LeaguesRepository: Sendable {
         try await session.send("PUT", "leagues/\(leagueId)", as: LeagueList.self).envelope.data
     }
 
+    /// One player in each mini-league saved on this device (happy-backend-pal#48).
+    func playerOwnership(_ playerId: Int) async throws -> PlayerLeagues {
+        try await session.send("GET", "players/\(playerId)/leagues", as: PlayerLeagues.self).envelope.data
+    }
+
     func remove(_ leagueId: Int) async throws -> LeagueList {
         try await session.send("DELETE", "leagues/\(leagueId)", as: LeagueList.self).envelope.data
     }

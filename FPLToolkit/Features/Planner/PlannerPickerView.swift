@@ -70,6 +70,7 @@ struct PlannerPickerView: View {
             URLQueryItem(name: "sort", value: sort.rawValue),
             URLQueryItem(name: "dir", value: "desc"),
             URLQueryItem(name: "limit", value: "60"),
+            URLQueryItem(name: "strip", value: "4"),
         ]
         if let replacing = slot.replacing { items.append(URLQueryItem(name: "replace", value: String(replacing.playerId))) }
         if let club { items.append(URLQueryItem(name: "club", value: String(club))) }
@@ -115,6 +116,8 @@ struct PlannerPickerView: View {
                         .pickerStyle(.segmented)
                     }
                     summary
+                    filterBar
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                     if let error = model.actionError {
                         ErrorBanner(copy: error)
                             .listRowBackground(Color.clear)
@@ -171,7 +174,6 @@ struct PlannerPickerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) { filterMenu }
             }
             .task(id: taskKey) {
                 // A short pause while typing; a newer query cancels this one.
@@ -244,37 +246,63 @@ struct PlannerPickerView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var filterMenu: some View {
-        Menu {
-            if mode == .explore {
-                Picker("Price", selection: $cheapestFirst) {
-                    Text("Dearest first").tag(false)
-                    Text("Cheapest first").tag(true)
-                }
-                Toggle("Affordable only", isOn: $affordableOnly)
-            } else {
-                Picker("Sort by", selection: $sort) {
-                    ForEach(Sort.allCases) { Text($0.label).tag($0) }
-                }
-            }
-            Picker("Club", selection: $club) {
-                Text("All clubs").tag(Int?.none)
-                ForEach(clubs, id: \.id) { club in
-                    Text(club.shortName).tag(Int?.some(club.id))
-                }
-            }
-            if mode == .all {
-                Picker("Max price", selection: $maxPrice) {
-                    Text("Any price").tag(Double?.none)
-                    ForEach(Array(stride(from: 4.5, through: 15.0, by: 0.5)), id: \.self) { price in
-                        Text("Up to \(Format.price(price))").tag(Double?.some(price))
+    /// The filters in plain view (Dan, 29 Sep): sort, club, price and availability as chips, each
+    /// showing its current choice, wrapping onto a second line rather than scrolling out of sight.
+    private var filterBar: some View {
+        FlowLayout(spacing: 8) {
+                if mode == .explore {
+                    Menu {
+                        Picker("Price order", selection: $cheapestFirst) {
+                            Text("Dearest first").tag(false)
+                            Text("Cheapest first").tag(true)
+                        }
+                    } label: {
+                        FilterChipLabel(text: cheapestFirst ? "Cheapest first" : "Dearest first", active: false, menu: true)
                     }
+                    Button { affordableOnly.toggle() } label: {
+                        FilterChipLabel(text: "Affordable", active: affordableOnly, menu: false)
+                    }
+                    .accessibilityAddTraits(affordableOnly ? .isSelected : [])
+                } else {
+                    Menu {
+                        Picker("Sort by", selection: $sort) {
+                            ForEach(Sort.allCases) { Text($0.label).tag($0) }
+                        }
+                    } label: {
+                        FilterChipLabel(text: sort.label, active: false, menu: true)
+                    }
+                    .accessibilityLabel("Sort by \(sort.label)")
                 }
-                Toggle("Available only", isOn: $availableOnly)
-            }
-        } label: {
-            Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                Menu {
+                    Picker("Club", selection: $club) {
+                        Text("All clubs").tag(Int?.none)
+                        ForEach(clubs, id: \.id) { club in
+                            Text(club.name).tag(Int?.some(club.id))
+                        }
+                    }
+                } label: {
+                    FilterChipLabel(text: club.flatMap { appModel.club($0)?.shortName } ?? "All clubs", active: club != nil, menu: true)
+                }
+                .accessibilityLabel("Club: \(club.flatMap { appModel.club($0)?.name } ?? "all clubs")")
+                if mode == .all {
+                    Menu {
+                        Picker("Max price", selection: $maxPrice) {
+                            Text("Any price").tag(Double?.none)
+                            ForEach(Array(stride(from: 4.5, through: 15.0, by: 0.5)), id: \.self) { price in
+                                Text("Up to \(Format.price(price))").tag(Double?.some(price))
+                            }
+                        }
+                    } label: {
+                        FilterChipLabel(text: maxPrice.map { "Up to \(Format.price($0))" } ?? "Any price", active: maxPrice != nil, menu: true)
+                    }
+                    .accessibilityLabel("Price: \(maxPrice.map { "up to \(Format.price($0))" } ?? "any")")
+                    Button { availableOnly.toggle() } label: {
+                        FilterChipLabel(text: "Available", active: availableOnly, menu: false)
+                    }
+                    .accessibilityAddTraits(availableOnly ? .isSelected : [])
+                }
         }
+        .padding(.vertical, 2)
     }
 
     private var clubs: [Bootstrap.Club] {
@@ -313,6 +341,7 @@ struct PlannerPickerView: View {
 
 private struct CandidateRow: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     let candidate: PlannerPicker.Candidate
     let replacing: Bool
     let busy: Bool
@@ -321,89 +350,121 @@ private struct CandidateRow: View {
     let pick: () -> Void
     let toggleShortlist: () -> Void
 
+    /// A quick list to scroll, as on the website (Dan, 29 Sep): photo, name, club, price and the
+    /// next four fixtures' ratings in one line; the reason a player can't be picked under it.
     var body: some View {
         let player = candidate.player
-        HStack(alignment: .top, spacing: ToolkitSpace.sm) {
+        HStack(spacing: 6) {
             Button(action: pick) {
-                HStack(alignment: .top, spacing: ToolkitSpace.md) {
-                    PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
+                HStack(spacing: 10) {
+                    PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 30)
                         .opacity(candidate.reason == nil ? 1 : 0.6)
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: ToolkitSpace.sm) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        HStack(spacing: 4) {
                             Text(player.webName)
-                                .font(.headline)
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(candidate.reason == nil ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
                             AvailabilityBadge(availability: player.availability)
                         }
-                        ClubLabel(clubId: player.clubId, text: details)
-                            .font(.subheadline)
+                        ClubLabel(clubId: player.clubId, text: details, logoSize: 12)
+                            .font(.caption)
                             .foregroundStyle(ToolkitColor.secondaryText)
-                        if let strip = candidate.fixtureStrip, !strip.isEmpty {
+                        if typeSize >= .xxLarge, let strip = candidate.fixtureStrip, !strip.isEmpty {
                             FixtureStrip(weeks: strip, roomy: true)
                                 .padding(.top, 2)
                         }
                         if let reason = candidate.reason {
                             Text(reason)
-                                .font(.footnote)
+                                .font(.caption)
                                 .foregroundStyle(ToolkitColor.secondaryText)
                         } else if candidate.inSquad {
                             Text("In your squad: swaps places")
-                                .font(.footnote)
+                                .font(.caption)
                                 .foregroundStyle(ToolkitColor.link)
                         }
                     }
                     .multilineTextAlignment(.leading)
-                    Spacer(minLength: ToolkitSpace.sm)
-                    VStack(alignment: .trailing, spacing: 3) {
+                    Spacer(minLength: 4)
+                    if typeSize < .xxLarge, let strip = candidate.fixtureStrip, !strip.isEmpty {
+                        FixtureStrip(weeks: strip, roomy: true)
+                    }
+                    Group {
                         if busy {
                             ProgressView()
                         } else {
-                            Text("\(candidate.totalPoints) pts")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(ToolkitColor.primaryText)
-                            if let form = candidate.form {
-                                Text("Form \(form.formatted(.number.precision(.fractionLength(1))))")
-                                    .font(.footnote.monospacedDigit())
+                            VStack(alignment: .trailing, spacing: 0) {
+                                Text("\(candidate.totalPoints)")
+                                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(ToolkitColor.primaryText)
+                                Text("pts")
+                                    .font(.caption2)
                                     .foregroundStyle(ToolkitColor.secondaryText)
                             }
                         }
                     }
+                    .frame(minWidth: 28, alignment: .trailing)
                 }
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.borderless)
             .disabled(!pickable)
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(spoken)
             .accessibilityHint(candidate.reason == nil ? (candidate.inSquad ? "Swaps places with this player" : (replacing ? "Transfers this player in" : "Adds this player")) : "")
+            .accessibilityAddTraits(.isButton)
 
             Button(action: toggleShortlist) {
                 Image(systemName: shortlisted ? "star.fill" : "star")
                     .foregroundStyle(shortlisted ? ToolkitColor.accent : ToolkitColor.secondaryText)
-                    .frame(minWidth: 44, minHeight: 44)
+                    .frame(minWidth: 36, minHeight: 44)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(shortlisted ? "Remove \(player.webName) from the shortlist" : "Add \(player.webName) to the shortlist")
         }
     }
 
+    private var spoken: String {
+        let player = candidate.player
+        var parts = [player.webName, appModel.club(player.clubId)?.name ?? "", Format.price(player.price),
+                     "\(candidate.totalPoints) points"]
+        if player.availability.level == .doubt || player.availability.level == .out {
+            parts.append(player.availability.chanceNext.map { "\($0) percent chance of playing" } ?? "availability concern")
+        }
+        if let strip = candidate.fixtureStrip, let run = FixtureStrip.spoken(strip) { parts.append(run) }
+        if let reason = candidate.reason { parts.append(reason) } else if candidate.inSquad { parts.append("in your squad") }
+        return parts.filter { !$0.isEmpty }.joined(separator: ", ")
+    }
+
     private var details: String {
         let player = candidate.player
-        var parts: [String] = []
-        if let club = appModel.club(player.clubId) { parts.append(club.shortName) }
-        parts.append(player.position.rawValue)
-        parts.append(Format.price(player.price))
-        if let f = player.nextFixture {
-            if f.blank {
-                parts.append("no game")
-            } else {
-                let opponent = appModel.club(f.opponentClubId)?.shortName ?? "TBC"
-                let venue = f.home.map { $0 ? "H" : "A" } ?? ""
-                var text = "\(opponent) (\(venue))"
-                if let x = f.xfdr { text += " \(x.display)" }
-                parts.append(text)
+        return [appModel.club(player.clubId)?.shortName, Format.price(player.price)].compactMap { $0 }.joined(separator: " · ")
+    }
+}
+
+/// A filter as a chip: its current choice, gold when it narrows the list, a chevron when it opens
+/// a menu.
+struct FilterChipLabel: View {
+    let text: String
+    let active: Bool
+    let menu: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if !menu && active {
+                Image(systemName: "checkmark").font(.caption.weight(.bold)).accessibilityHidden(true)
+            }
+            Text(text)
+            if menu {
+                Image(systemName: "chevron.down").font(.caption2.weight(.bold)).accessibilityHidden(true)
             }
         }
-        return parts.joined(separator: " · ")
+        .font(.subheadline.weight(.medium))
+        .foregroundStyle(active ? ToolkitColor.onAccent : ToolkitColor.primaryText)
+        .padding(.horizontal, 12)
+        .frame(minHeight: 36)
+        .background(active ? ToolkitColor.accent : ToolkitColor.raised, in: Capsule())
+        .contentShape(Capsule())
+        .frame(minHeight: 44)
     }
 }

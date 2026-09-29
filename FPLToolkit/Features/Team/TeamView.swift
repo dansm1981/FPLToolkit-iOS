@@ -68,7 +68,7 @@ struct TeamView: View {
             }
         }
         .toolkitScreen()
-        .navigationTitle("My team")
+        .navigationTitle("My Team")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showingLeagues = true } label: {
@@ -136,8 +136,11 @@ struct TeamOverview: View {
     /// The fixture choice is the app's one (shared with the Planner).
     @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr
     @AppStorage(FixtureView.lensKey) private var fixtureLens = FixtureView.Lens.position
-    /// Club runs for a view other than xFDR by position (which comes with the team).
-    @State private var ticker: Resource<ResearchTicker>?
+    /// Club runs for the tiles' six-week column: Defence and Attack for xFDR by position (goalkeepers
+    /// and defenders read Defence), otherwise the chosen view in both. Outside xFDR by position the
+    /// tiles' next fixture comes from them too (by position, it comes with the team).
+    @State private var defenceRun: Resource<ResearchTicker>?
+    @State private var attackRun: Resource<ResearchTicker>?
 
     private var fixtureView: FixtureView { FixtureView(model: fixtureModel, lens: fixtureLens) }
     /// xFDR by position: the team's own next fixtures, rated for each player's position.
@@ -152,6 +155,8 @@ struct TeamOverview: View {
                         onSheet(.source)
                     }
                 }
+                let figures = headerFigures(snapshot)
+                if !figures.isEmpty { FigureGrid(items: figures) }
                 if let freeHit = snapshot.freeHitGw {
                     InlineNotice(text: "You played your Free Hit in GW\(freeHit), so this is the GW\(snapshot.gw) squad it reverts to.",
                                  systemImage: "arrow.uturn.backward")
@@ -187,20 +192,40 @@ struct TeamOverview: View {
             }
         }
         .task(id: fixtureView) {
-            guard !usesTeamFixtures else { ticker = nil; return }
             let clubs = Array(Set(team.players.values.map(\.clubId)))
-            let ticker = Resource(appModel.researchRepository.ticker(horizon: 6, fuzzy: false, sort: .sum, hardestFirst: false,
-                                                                     clubs: clubs, view: fixtureView))
-            self.ticker = ticker
-            await ticker.load()
+            let research = appModel.researchRepository
+            @MainActor func run(_ view: FixtureView) -> Resource<ResearchTicker> {
+                Resource(research.ticker(horizon: 6, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs, view: view))
+            }
+            if usesTeamFixtures {
+                let defence = run(FixtureView(model: .xfdr, lens: .cleanSheet))
+                let attack = run(FixtureView(model: .xfdr, lens: .attack))
+                defenceRun = defence
+                attackRun = attack
+                async let d: Void = defence.load()
+                async let a: Void = attack.load()
+                _ = await (d, a)
+            } else {
+                let chosen = run(fixtureView)
+                defenceRun = chosen
+                attackRun = chosen
+                await chosen.load()
+            }
         }
     }
 
     private func contextParts(_ snapshot: Team.Snapshot) -> [String] {
-        var parts: [String] = []
-        if let next = nextGw { parts.append("GW\(next) fixtures") }
-        if let bank = snapshot.bank { parts.append("\(Format.price(bank)) ITB") }
-        return parts
+        nextGw.map { ["GW\($0) fixtures"] } ?? []
+    }
+
+    /// The season so far and the squad's money (FPL's entry summary and the published squad).
+    private func headerFigures(_ snapshot: Team.Snapshot) -> [FigureGrid.Item] {
+        var items: [FigureGrid.Item] = []
+        if let rank = team.entry.overallRank { items.append(.init(label: "Overall rank", value: Format.rank(rank))) }
+        if let points = team.entry.totalPoints { items.append(.init(label: "Season points", value: points.formatted())) }
+        if let value = snapshot.value { items.append(.init(label: "Team value", value: Format.price(value))) }
+        if let bank = snapshot.bank { items.append(.init(label: "In the bank", value: Format.price(bank))) }
+        return items
     }
 
     private var nextGw: Int? {
@@ -307,7 +332,12 @@ struct TeamOverview: View {
         let player = team.player(pick.playerId)
         let club = appModel.club(player?.clubId)
         let role: String? = pick.isCaptain ? "C" : pick.isViceCaptain ? "V" : nil
-        let flagged = player.map { $0.availability.level == .doubt || $0.availability.level == .out } ?? false
+        let status: PitchTileModel.Status = switch player?.availability.level {
+        case .out: .out
+        case .doubt: .doubtful
+        default: .available
+        }
+        let flagged = status != .available
         var spoken = [player?.webName ?? "Player", player?.position.displayName ?? ""]
         if role == "C" { spoken.append("captain") }
         if role == "V" { spoken.append("vice-captain") }
@@ -356,17 +386,27 @@ struct TeamOverview: View {
             metricModel = .text(text)
             spoken.append(player.map { TeamText.oddsSpoken($0, odds: odds) } ?? "")
         }
+        let cells = player.map(runCells) ?? []
+        if let run = FixtureRunColumn.spoken(cells) { spoken.append(run) }
         return PitchTileModel(playerId: pick.playerId, name: player?.webName ?? "Player", colors: club?.colors,
-                              isGoalkeeper: player?.position == .gk, role: role, flagged: flagged,
+                              isGoalkeeper: player?.position == .gk, photo: player?.photo, role: role, status: status,
                               metric: metricModel,
+                              run: cells.map { .init(gw: $0.gw, bands: $0.blank ? [] : $0.fixtures.map(\.band)) },
                               accessibilityLabel: spoken.filter { !$0.isEmpty }.joined(separator: ", "))
     }
 
     /// This player's next gameweek in the chosen view's club runs.
     private func tickerCell(for player: PlayerSummary) -> FixtureCellModel? {
-        guard let ticker = ticker?.loaded?.value,
-              let cell = ticker.rows.first(where: { $0.clubId == player.clubId })?.cells.first else { return nil }
+        guard !usesTeamFixtures, let cell = runCells(for: player).first else { return nil }
         return FixtureCellModel(tickerCell: cell, club: appModel.club, model: fixtureView.summary, subject: player.webName)
+    }
+
+    /// The player's club run for the next six gameweeks (Defence for goalkeepers and defenders,
+    /// Attack otherwise, when by position).
+    private func runCells(for player: PlayerSummary) -> [ResearchTicker.Cell] {
+        let defensive = player.position == .gk || player.position == .def
+        guard let ticker = (defensive ? defenceRun : attackRun)?.loaded?.value else { return [] }
+        return ticker.rows.first { $0.clubId == player.clubId }?.cells ?? []
     }
 
     // MARK: List
