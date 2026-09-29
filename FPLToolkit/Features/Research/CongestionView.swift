@@ -21,6 +21,9 @@ struct CongestionView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
+                if let entryId = appModel.entryId {
+                    SquadMinutesCard(entryId: entryId)
+                }
                 controls
                 ResearchTableView(table: table, caption: "Loading every club's games…", retry: reload) { congestion in
                     VStack(alignment: .leading, spacing: ToolkitSpace.md) {

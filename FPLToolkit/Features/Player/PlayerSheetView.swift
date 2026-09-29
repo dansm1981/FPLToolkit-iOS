@@ -93,6 +93,8 @@ struct PlayerSheetContent: View {
                                     source: freshness(.availability))
             }
 
+            WorkloadSection(playerId: player.id)
+
             if !otherInsights.isEmpty {
                 VStack(alignment: .leading, spacing: ToolkitSpace.md) {
                     SectionLabel(text: "What's worth knowing")

@@ -104,6 +104,12 @@ struct ResearchRepository: Sendable {
     let client: APIClient
     let cache: ResponseCache
 
+    /// Minutes in all competitions for up to 30 players (contract §26).
+    func workload(playerIds: [Int]) -> CachedEndpoint<WorkloadPage> {
+        .init(client: client, cache: cache, path: "workload",
+              query: [URLQueryItem(name: "players", value: playerIds.prefix(30).map(String.init).joined(separator: ","))])
+    }
+
     func ticker(horizon: Int, fuzzy: Bool, sort: ResearchTicker.SortKey, hardestFirst: Bool,
                 clubs: [Int]?, view: FixtureView) -> CachedEndpoint<ResearchTicker> {
         var query = view.queryItems + [
