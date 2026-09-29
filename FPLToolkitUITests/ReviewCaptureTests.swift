@@ -63,10 +63,10 @@ final class ReviewCaptureTests: XCTestCase {
             return app
         }
         func setMetric(_ app: XCUIApplication, _ metric: String) {
-            let layer = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on squad'")).firstMatch
-            waitFor(layer, "Show on squad", timeout: 30)
-            layer.tap()
-            let option = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", metric)).firstMatch
+            let menu = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on tiles'")).firstMatch
+            waitFor(menu, "Show on tiles", timeout: 30)
+            menu.tap()
+            let option = app.buttons[metric].firstMatch
             waitFor(option, metric)
             option.tap()
             settle()
@@ -88,8 +88,9 @@ final class ReviewCaptureTests: XCTestCase {
 
         app = openTeam()
         setMetric(app, "Odds")
-        let oddsCheck = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Odds check'")).firstMatch
-        reveal(oddsCheck, in: app)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on tiles'")).firstMatch.tap()
+        let oddsCheck = app.buttons["Odds check"].firstMatch
+        waitFor(oddsCheck, "Odds check in the menu")
         oddsCheck.tap()
         waitFor(app.staticTexts.matching(NSPredicate(format: "label ==[c] 'Captain options'")).firstMatch, "Odds check", timeout: 30)
         settle()

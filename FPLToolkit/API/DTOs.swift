@@ -193,6 +193,13 @@ enum NoSnapshotReason: String, FallbackDecodable {
 struct Entry: Decodable, Sendable, Hashable {
     let id: Int
     let name: String
+    // FPL's entry summary (happy-backend-pal#44); nil from older servers or before any points.
+    var manager: String?
+    var overallRank: Int?
+    var totalPoints: Int?
+    var summaryGw: Int?
+    var gwPoints: Int?
+    var gwRank: Int?
 }
 
 // MARK: - Team (§3.2)

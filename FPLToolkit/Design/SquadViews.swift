@@ -119,8 +119,8 @@ struct PitchTile: View {
 
     var body: some View {
         VStack(spacing: 3) {
-            KitShirt(colors: model.colors, goalkeeper: model.isGoalkeeper, size: 25)
-                .padding(.top, 2)
+            KitShirt(colors: model.colors, goalkeeper: model.isGoalkeeper, size: 30)
+                .padding(.top, 1)
             // Wraps rather than being cut off (a long surname at a larger text size).
             Text(model.name)
                 .font(.caption.weight(.semibold))
@@ -273,6 +273,13 @@ struct PitchBackground: View {
                 Rectangle().fill(line).frame(height: 1).padding(.horizontal, 12)
                 Ellipse().strokeBorder(line)
                     .frame(width: size.width * 0.3, height: 70)
+                // The penalty area behind the keeper.
+                VStack {
+                    Rectangle().strokeBorder(line)
+                        .frame(width: size.width * 0.42, height: 54)
+                        .padding(.top, 13)
+                    Spacer()
+                }
             }
         }
         .accessibilityHidden(true)
@@ -285,16 +292,18 @@ struct BenchStrip: View {
     let onSelect: (PitchTileModel) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Bench")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .accessibilityAddTraits(.isHeader)
                 Spacer()
                 Text("GK · 1 · 2 · 3")
+                    .font(.caption)
+                    .foregroundStyle(ToolkitColor.secondaryText)
                     .accessibilityLabel("Goalkeeper, then substitutes 1, 2 and 3")
             }
-            .font(.caption2.weight(.semibold))
-            .tracking(1)
-            .foregroundStyle(ToolkitColor.secondaryText)
             TileRowLayout {
                 ForEach(tiles) { model in
                     Button { onSelect(model) } label: { PitchTile(model: model, height: 83, onBench: true) }
@@ -303,8 +312,7 @@ struct BenchStrip: View {
                 }
             }
         }
-        .padding(9)
-        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.top, 6)
     }
 }
 

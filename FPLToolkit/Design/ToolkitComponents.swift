@@ -24,6 +24,19 @@ extension ToolkitColor {
     static let tileLine = Color("tk.tileLine")
     static let you = Color("tk.you")
     static let goldTag = Color("tk.goldTag")
+    /// A card's hairline edge and its slightly lighter top (design v2's quiet depth).
+    static let cardLine = Color("tk.cardLine")
+    static let cardTop = Color("tk.cardTop")
+}
+
+extension View {
+    /// A raised card: surface with a faint lift towards the top and a hairline edge.
+    func toolkitCard(radius: CGFloat = ToolkitRadius.card) -> some View {
+        background(
+            LinearGradient(colors: [ToolkitColor.cardTop, ToolkitColor.surface], startPoint: .top, endPoint: .bottom),
+            in: RoundedRectangle(cornerRadius: radius))
+            .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(ToolkitColor.cardLine))
+    }
 }
 
 extension Color {
@@ -111,7 +124,7 @@ struct CardGroup<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            .toolkitCard()
             .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.card))
     }
 }
@@ -271,6 +284,37 @@ struct FlowLayout: Layout {
     }
 }
 
+/// The team as a team, not a stray line of text (Dan, 29 Sep): a shirt badge, the name in
+/// weight, and the manager under it.
+struct TeamIdentity: View {
+    let name: String
+    var manager: String?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "tshirt.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(ToolkitColor.accent)
+                .frame(width: 30, height: 30)
+                .background(ToolkitColor.goldTag, in: RoundedRectangle(cornerRadius: 9))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name)
+                    .font(.headline)
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let manager {
+                    Text(manager)
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(manager.map { "Team \(name), managed by \($0)" } ?? "Team \(name)")
+    }
+}
+
 // MARK: - Explanations
 
 /// A row inside an explanation sheet that goes somewhere (the sheet closes first).
@@ -398,6 +442,7 @@ struct HeroCard<Content: View>: View {
                                startPoint: .topLeading, endPoint: .bottomTrailing),
                 in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
             .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.heroLine))
+            .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
     }
 }
 

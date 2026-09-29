@@ -49,10 +49,7 @@ struct ToolkitCard<Content: View>: View {
         content
             .padding(ToolkitSpace.page)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(ToolkitColor.surface)
-            .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.card))
-            .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card)
-                .strokeBorder(ToolkitColor.border, lineWidth: 1))
+            .toolkitCard()
     }
 }
 
@@ -160,12 +157,24 @@ extension TeamInsight.Tone {
 }
 
 extension View {
-    /// The app's page background (tk.bg) behind scrolling content.
+    /// The app's page background: rich navy with a quiet glow at the top (design v2), behind
+    /// scrolling content.
     func toolkitScreen() -> some View {
         self
             .scrollContentBackground(.hidden)
-            .background(ToolkitColor.canvas.ignoresSafeArea())
+            .background(ToolkitScreenBackground().ignoresSafeArea())
             .toolbarBackground(ToolkitColor.canvas, for: .navigationBar)
+    }
+}
+
+/// tk.bgTop fading into tk.bg over the first few hundred points.
+struct ToolkitScreenBackground: View {
+    var body: some View {
+        ZStack(alignment: .top) {
+            ToolkitColor.canvas
+            LinearGradient(colors: [Color("tk.bgTop"), ToolkitColor.canvas], startPoint: .top, endPoint: .bottom)
+                .frame(height: 420)
+        }
     }
 }
 

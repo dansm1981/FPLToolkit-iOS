@@ -28,7 +28,7 @@ struct TeamView: View {
     @State private var showingSources = false
 
     enum TeamSheet: String, Identifiable {
-        case source, metric, fdr, odds, oddsCheck
+        case source, fdr, odds, oddsCheck
         var id: String { rawValue }
     }
 
@@ -109,9 +109,6 @@ struct TeamView: View {
                         InfoSheetLink(title: "Plan changes", detail: "Keep a separate draft", systemImage: "calendar") { appModel.router.selectedTab = .planner },
                     ])
             }
-        case .metric:
-            MetricLayerSheet(metric: $metric, oddsAvailable: odds?.loaded?.value.available == true,
-                             onOddsCheck: { sheet = .oddsCheck })
         case .fdr:
             InfoSheet(title: "Fixture difficulty", message: TeamText.fdrMessage)
         case .odds:
@@ -136,14 +133,21 @@ struct TeamOverview: View {
     let onPlayer: (Int) -> Void
     let onSheet: (TeamView.TeamSheet) -> Void
     let onPlan: () -> Void
+    /// The fixture choice is the app's one (shared with the Planner).
+    @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr
+    @AppStorage(FixtureView.lensKey) private var fixtureLens = FixtureView.Lens.position
+    /// Club runs for a view other than xFDR by position (which comes with the team).
+    @State private var ticker: Resource<ResearchTicker>?
+
+    private var fixtureView: FixtureView { FixtureView(model: fixtureModel, lens: fixtureLens) }
+    /// xFDR by position: the team's own next fixtures, rated for each player's position.
+    private var usesTeamFixtures: Bool { fixtureModel == .xfdr && fixtureLens == .position }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let snapshot = team.snapshot {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(team.entry.name)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+                VStack(alignment: .leading, spacing: 4) {
+                    TeamIdentity(name: team.entry.name, manager: team.entry.manager)
                     ContextLine(lead: "GW\(snapshot.gw) squad", parts: contextParts(snapshot)) {
                         onSheet(.source)
                     }
@@ -175,11 +179,20 @@ struct TeamOverview: View {
                 case .list:
                     listView(snapshot)
                 case .fixtures:
-                    TeamFixturesView(team: team, snapshot: snapshot, onPlayer: onPlayer, onInfo: { onSheet(.fdr) })
+                    TeamFixturesView(team: team, snapshot: snapshot, view: fixtureView, menu: { squadMenu },
+                                     onPlayer: onPlayer)
                 }
             } else {
                 noSnapshot
             }
+        }
+        .task(id: fixtureView) {
+            guard !usesTeamFixtures else { ticker = nil; return }
+            let clubs = Array(Set(team.players.values.map(\.clubId)))
+            let ticker = Resource(appModel.researchRepository.ticker(horizon: 6, fuzzy: false, sort: .sum, hardestFirst: false,
+                                                                     clubs: clubs, view: fixtureView))
+            self.ticker = ticker
+            await ticker.load()
         }
     }
 
@@ -196,51 +209,79 @@ struct TeamOverview: View {
 
     // MARK: Pitch
 
-    private func metricBar() -> some View {
+    private func metricBar(_ snapshot: Team.Snapshot) -> some View {
         HStack {
-            Button { onSheet(.metric) } label: {
-                HStack(spacing: 4) {
-                    Text(metric.rawValue)
-                    Image(systemName: "chevron.down").font(.caption.weight(.semibold)).accessibilityHidden(true)
-                }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(ToolkitColor.secondaryText)
-            .accessibilityLabel("Show on squad: \(metric.rawValue)")
-            .accessibilityHint("Choose fixtures, price or odds")
+            Text([nextGw.map { "GW\($0)" }, TeamSquad.formation(snapshot, team: team)].compactMap { $0 }.joined(separator: " · "))
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .accessibilityLabel("Formation \(TeamSquad.formation(snapshot, team: team))")
             Spacer()
-            switch metric {
-            case .fixtures:
-                infoButton("xFDR", hint: "What fixture difficulty means") { onSheet(.fdr) }
-            case .odds:
-                infoButton("Betting-market estimate", hint: "What these chances mean") { onSheet(.odds) }
-            case .price:
-                EmptyView()
-            }
+            squadMenu
         }
     }
 
-    private func infoButton(_ title: String, hint: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Text(title)
-                Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
+    /// What the tiles show, and which fixture difficulty: one gold menu (design v2).
+    private var squadMenu: some View {
+        Menu {
+            Section("Show on tiles") {
+                ForEach(SquadMetric.allCases) { option in
+                    Button {
+                        metric = option
+                    } label: {
+                        if metric == option { Label(option.rawValue, systemImage: "checkmark") } else { Text(option.rawValue) }
+                    }
+                }
             }
+            Section("Fixture difficulty") {
+                ForEach(TeamText.fixtureChoices, id: \.label) { choice in
+                    Button {
+                        fixtureModel = choice.view.model
+                        fixtureLens = choice.view.lens
+                        metric = .fixtures
+                    } label: {
+                        if metric == .fixtures && fixtureView == choice.view {
+                            Label(choice.label, systemImage: "checkmark")
+                        } else {
+                            Text(choice.label)
+                        }
+                    }
+                }
+            }
+            Section {
+                Button { onSheet(metric == .odds ? .odds : .fdr) } label: {
+                    Label(metric == .odds ? "About betting-market estimates" : "About fixture difficulty", systemImage: "info.circle")
+                }
+                if odds?.available == true {
+                    Button { onSheet(.oddsCheck) } label: {
+                        Label("Odds check", systemImage: "chart.bar.xaxis")
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(menuTitle)
+                Image(systemName: "chevron.down").font(.caption.weight(.semibold)).accessibilityHidden(true)
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(ToolkitColor.link)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(ToolkitColor.link)
-        .accessibilityHint(hint)
+        .accessibilityLabel("Show on tiles: \(menuTitle)")
+        .accessibilityHint("Choose fixtures, price or odds, and the fixture difficulty")
+    }
+
+    private var menuTitle: String {
+        switch metric {
+        case .fixtures: fixtureView.summary
+        case .price: "Price"
+        case .odds: "Odds"
+        }
     }
 
     private func pitchView(_ snapshot: Team.Snapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            metricBar()
+            metricBar(snapshot)
             SquadPitch(rows: TeamSquad.rows(snapshot, team: team).map { $0.map(tile) }) { onPlayer($0.playerId) }
             BenchStrip(tiles: TeamSquad.bench(snapshot).map(tile)) { onPlayer($0.playerId) }
             if metric == .odds, odds?.available == true {
@@ -276,6 +317,19 @@ struct TeamOverview: View {
         }
         let metricModel: PitchTileModel.Metric
         switch metric {
+        case .fixtures where !usesTeamFixtures:
+            if let player, let cell = tickerCell(for: player) {
+                if cell.games.isEmpty {
+                    metricModel = .text("No fixture")
+                } else {
+                    let first = cell.games[0]
+                    metricModel = .fixture(label: cell.games.count > 1 ? first.label + " +\(cell.games.count - 1)" : first.label,
+                                           value: cell.games.count > 1 ? nil : first.value, tone: first.tone)
+                }
+                spoken.append(cell.accessibilityLabel.replacingOccurrences(of: "\(player.webName), ", with: ""))
+            } else {
+                metricModel = .text("–")
+            }
         case .fixtures:
             if let fixture = player?.nextFixture {
                 if fixture.blank {
@@ -308,17 +362,18 @@ struct TeamOverview: View {
                               accessibilityLabel: spoken.filter { !$0.isEmpty }.joined(separator: ", "))
     }
 
+    /// This player's next gameweek in the chosen view's club runs.
+    private func tickerCell(for player: PlayerSummary) -> FixtureCellModel? {
+        guard let ticker = ticker?.loaded?.value,
+              let cell = ticker.rows.first(where: { $0.clubId == player.clubId })?.cells.first else { return nil }
+        return FixtureCellModel(tickerCell: cell, club: appModel.club, model: fixtureView.summary, subject: player.webName)
+    }
+
     // MARK: List
 
     private func listView(_ snapshot: Team.Snapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Starting XI · \(TeamSquad.formation(snapshot, team: team))")
-                    .font(.footnote)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                Spacer()
-                metricBar()
-            }
+            metricBar(snapshot)
             rows(TeamSquad.rows(snapshot, team: team).flatMap { $0 })
             SectionHeader(title: "Bench")
             rows(TeamSquad.bench(snapshot))
@@ -448,6 +503,15 @@ enum TeamText {
         if let value = snapshot.value { text += "\n\nSquad value \(Format.price(value))" + (snapshot.bank.map { ", \(Format.price($0)) in the bank." } ?? ".") }
         return text
     }
+
+    /// The fixture views the Team menu offers: xFDR's variants, then FPL's own rating.
+    static let fixtureChoices: [(label: String, view: FixtureView)] = [
+        ("xFDR · By position", FixtureView(model: .xfdr, lens: .position)),
+        ("xFDR · Overall", FixtureView(model: .xfdr, lens: .match)),
+        ("xFDR · Attack", FixtureView(model: .xfdr, lens: .attack)),
+        ("xFDR · Defence", FixtureView(model: .xfdr, lens: .cleanSheet)),
+        ("Official FDR", FixtureView(model: .fpl, lens: .position)),
+    ]
 
     static let fdrMessage = "xFDR is FPLToolkit's fixture difficulty: lower is easier, from 1 to 5. Each player gets the variant for their position: xFDR · Defence (clean-sheet difficulty) for goalkeepers and defenders, and xFDR · Attack for midfielders and forwards. FPL's official FDR is a separate rating; it's never made by rounding xFDR."
 

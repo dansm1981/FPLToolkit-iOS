@@ -33,6 +33,34 @@ enum Format {
     }
 
     /// £m with one decimal place: "£7.5m".
+    /// "10d 8h", "8h 20m", "12m", or "Passed": the deadline countdown in a small space.
+    static func compactCountdown(to date: Date, now: Date = .now) -> String {
+        let seconds = Int(date.timeIntervalSince(now))
+        guard seconds > 0 else { return "Passed" }
+        let minutes = seconds / 60, hours = minutes / 60, days = hours / 24
+        if days > 0 { return "\(days)d \(hours % 24)h" }
+        if hours > 0 { return "\(hours)h \(minutes % 60)m" }
+        return "\(max(minutes, 1))m"
+    }
+
+    /// The same countdown read aloud: "in 10 days 8 hours".
+    static func spokenCountdown(to date: Date, now: Date = .now) -> String {
+        let seconds = Int(date.timeIntervalSince(now))
+        guard seconds > 0 else { return "passed" }
+        let minutes = seconds / 60, hours = minutes / 60, days = hours / 24
+        func unit(_ n: Int, _ word: String) -> String { "\(n) \(word)\(n == 1 ? "" : "s")" }
+        if days > 0 { return "in " + unit(days, "day") + " " + unit(hours % 24, "hour") }
+        if hours > 0 { return "in " + unit(hours, "hour") + " " + unit(minutes % 60, "minute") }
+        return "in " + unit(max(minutes, 1), "minute")
+    }
+
+    /// A rank in a small space: "1.2m", "346k", "8,431".
+    static func rank(_ value: Int) -> String {
+        if value >= 1_000_000 { return (Double(value) / 1_000_000).formatted(.number.precision(.fractionLength(1))) + "m" }
+        if value >= 100_000 { return (Double(value) / 1_000).formatted(.number.precision(.fractionLength(0))) + "k" }
+        return value.formatted()
+    }
+
     /// A negative amount (an overspent bank) as "−£0.2m", not "£-0.2m".
     static func price(_ value: Double) -> String {
         let amount = "£" + abs(value).formatted(.number.precision(.fractionLength(1))) + "m"

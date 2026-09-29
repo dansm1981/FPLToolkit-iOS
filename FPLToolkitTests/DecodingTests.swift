@@ -158,3 +158,16 @@ struct PriceFormatTests {
         #expect(Format.price(0) == "£0.0m")
     }
 }
+
+struct CompactFormatTests {
+    @Test func countdownAndRank() {
+        let now = Date(timeIntervalSince1970: 0)
+        #expect(Format.compactCountdown(to: now.addingTimeInterval(10 * 86_400 + 8 * 3_600 + 59), now: now) == "10d 8h")
+        #expect(Format.compactCountdown(to: now.addingTimeInterval(8 * 3_600 + 20 * 60), now: now) == "8h 20m")
+        #expect(Format.compactCountdown(to: now.addingTimeInterval(-5), now: now) == "Passed")
+        #expect(Format.spokenCountdown(to: now.addingTimeInterval(86_400 + 3_600), now: now) == "in 1 day 1 hour")
+        #expect(Format.rank(1_203_456) == "1.2m")
+        #expect(Format.rank(345_726) == "346k")
+        #expect(Format.rank(8_431) == "8,431")
+    }
+}

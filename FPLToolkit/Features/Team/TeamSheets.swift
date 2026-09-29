@@ -1,98 +1,19 @@
 import SwiftUI
 
-/// "Show on squad": one metric layer at a time (design pack p.11).
-struct MetricLayerSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var metric: SquadMetric
-    let oddsAvailable: Bool
-    let onOddsCheck: () -> Void
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
-                    CardGroup {
-                        ForEach(Array(SquadMetric.allCases.enumerated()), id: \.element) { index, option in
-                            if index > 0 { RowDivider() }
-                            Button {
-                                metric = option
-                                dismiss()
-                            } label: {
-                                HStack(spacing: ToolkitSpace.md) {
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(option.rawValue)
-                                            .font(.body.weight(.semibold))
-                                            .foregroundStyle(ToolkitColor.primaryText)
-                                        if let detail = detail(option) {
-                                            Text(detail)
-                                                .font(.caption)
-                                                .foregroundStyle(ToolkitColor.secondaryText)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-                                    }
-                                    Spacer()
-                                    if metric == option {
-                                        Image(systemName: "checkmark")
-                                            .font(.body.weight(.semibold))
-                                            .foregroundStyle(ToolkitColor.accent)
-                                    }
-                                }
-                                .padding(.horizontal, 15)
-                                .padding(.vertical, ToolkitSpace.md)
-                                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityAddTraits(metric == option ? .isSelected : [])
-                        }
-                    }
-                    Text("One layer at a time. A missing chance shows a dash, not 0%.")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                    if oddsAvailable {
-                        CardGroup {
-                            LinkRow(title: "Odds check", detail: "Captain options, defence and bench by chance",
-                                    systemImage: "chart.bar.xaxis", action: onOddsCheck)
-                        }
-                    }
-                }
-                .padding(.horizontal, ToolkitSpace.page)
-                .padding(.bottom, ToolkitSpace.xl)
-            }
-            .toolkitScreen()
-            .navigationTitle("Show on squad")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func detail(_ option: SquadMetric) -> String? {
-        switch option {
-        case .fixtures: "Next opponent and xFDR"
-        case .price: "Current price"
-        case .odds: oddsAvailable
-            ? "Clean sheet for goalkeepers and defenders; scoring chance for midfielders and forwards"
-            : "Arrives 48 hours before the deadline"
-        }
-    }
-}
-
 /// Team → Fixtures (design pack p.10): each squad member's next six gameweeks, names pinned, with
 /// the xFDR variant for their position. Built from the fixture ticker's club runs.
-struct TeamFixturesView: View {
+struct TeamFixturesView<Menu: View>: View {
     @Environment(AppModel.self) private var appModel
     let team: Team
     let snapshot: Team.Snapshot
+    /// The chosen fixture view; "By position" uses Defence or Attack per player.
+    let view: FixtureView
+    @ViewBuilder let menu: () -> Menu
     let onPlayer: (Int) -> Void
-    let onInfo: () -> Void
     @State private var defence: Resource<ResearchTicker>?
     @State private var attack: Resource<ResearchTicker>?
+
+    private var byPosition: Bool { view.model == .xfdr && view.lens == .position }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -101,23 +22,12 @@ struct TeamFixturesView: View {
                     .font(.footnote)
                     .foregroundStyle(ToolkitColor.secondaryText)
                 Spacer()
-                Button(action: onInfo) {
-                    HStack(spacing: 4) {
-                        Text("xFDR")
-                        Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
-                    }
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.link)
-                .accessibilityHint("What fixture difficulty means")
+                menu()
             }
             if let d = defence?.loaded?.value, let a = attack?.loaded?.value {
                 FixtureRunGrid(heading: "Player", gameweeks: d.gws, rows: rows(defence: d, attack: a)) { onPlayer($0.id) }
                 HStack {
-                    Text("Lower is easier · xFDR")
+                    Text("Lower is easier · \(view.model == .fpl ? "Official FDR" : "xFDR")")
                     Spacer()
                     Text("Swipe for more weeks")
                 }
@@ -131,7 +41,7 @@ struct TeamFixturesView: View {
                 SkeletonCards(caption: "Loading fixtures…", count: 1)
             }
         }
-        .task { await load(force: false) }
+        .task(id: view) { await load(force: true) }
     }
 
     private func load(force: Bool) async {
@@ -141,8 +51,12 @@ struct TeamFixturesView: View {
             research.ticker(horizon: 6, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs,
                             view: FixtureView(model: .xfdr, lens: lens))
         }
-        if defence == nil || force { defence = Resource(endpoint(.cleanSheet)) }
-        if attack == nil || force { attack = Resource(endpoint(.attack)) }
+        func chosen() -> CachedEndpoint<ResearchTicker> {
+            research.ticker(horizon: 6, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs, view: view)
+        }
+        // By position needs both variants; any other view is one set of club runs.
+        if defence == nil || force { defence = Resource(byPosition ? endpoint(.cleanSheet) : chosen()) }
+        if attack == nil || force { attack = Resource(byPosition ? endpoint(.attack) : chosen()) }
         async let d: Void = defence?.load() ?? ()
         async let a: Void = attack?.load() ?? ()
         _ = await (d, a)
@@ -154,7 +68,8 @@ struct TeamFixturesView: View {
             guard let player = team.player(pick.playerId) else { return nil }
             let defensive = player.position == .gk || player.position == .def
             let ticker = defensive ? defence : attack
-            let variant = defensive ? "Defence" : "Attack"
+            let variant = byPosition ? (defensive ? "Defence" : "Attack")
+                : view.model == .fpl ? "Official FDR" : view.lens.label
             let club = appModel.club(player.clubId)
             let cells = ticker.rows.first { $0.clubId == player.clubId }?.cells ?? []
             let subject = player.webName
@@ -162,7 +77,8 @@ struct TeamFixturesView: View {
                 id: player.id,
                 title: player.webName,
                 subtitle: [club?.shortName, variant, pick.role == .bench ? "Bench" : nil].compactMap { $0 }.joined(separator: " · "),
-                cells: cells.map { FixtureCellModel(tickerCell: $0, club: appModel.club, model: "xFDR · \(variant)", subject: subject) })
+                cells: cells.map { FixtureCellModel(tickerCell: $0, club: appModel.club,
+                                                    model: view.model == .fpl ? "Official FDR" : "xFDR · \(variant)", subject: subject) })
         }
     }
 }
