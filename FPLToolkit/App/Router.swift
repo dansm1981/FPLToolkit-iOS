@@ -48,6 +48,8 @@ final class Router {
     var showingAlerts = false
     /// Matchday, over whichever tab is showing.
     var showingMatchday = false
+    /// A draft to open on the Planner tab (Today's "Continue your plan"); the Planner clears it.
+    var pendingDraftId: String?
 
     func open(_ link: DeepLink) {
         switch link {

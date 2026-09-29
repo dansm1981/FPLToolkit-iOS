@@ -1,64 +1,90 @@
-import Charts
 import SwiftUI
 
-/// Identifies which player sheet to open.
+/// Identifies which player to open.
 struct PlayerRef: Identifiable, Hashable {
     let id: Int
-    /// Opened from a notification: the sheet says the facts may have moved on since.
+    /// Opened from a notification: the page says the facts may have moved on since.
     var fromAlert = false
+    /// Why this player matters where it was opened, e.g. "In your GW5 squad".
+    var context: String?
 }
 
-/// S08 (availability), S09 (price) and S29 (research): the compact player sheet (§3.4).
+/// The player detail as a sheet, for places that aren't in a navigation stack (a notification or
+/// a deep link). Everywhere else pushes `PlayerDetailView`.
 struct PlayerSheetView: View {
-    @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
     let playerId: Int
-    /// The name we already know, shown while loading.
     var knownName: String?
     var fromAlert = false
-    @State private var resource: Resource<PlayerSheet>?
 
     var body: some View {
         NavigationStack {
-            Group {
-                switch resource?.phase {
-                case .loading?, nil:
-                    ScrollView {
-                        SkeletonCards(caption: "Loading player…")
-                            .padding(.horizontal, ToolkitSpace.page)
-                    }
-                case .failed(let copy)?:
-                    ErrorStateView(copy: copy) {
-                        Task { await resource?.retry() }
-                    }
-                case .loaded(let loaded)?:
-                    if let resource {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
-                                SavedDataBanner(resource: resource)
-                                if fromAlert {
-                                    Label("You opened an alert. This is the latest information, which may have changed since it was sent.", systemImage: "bell.badge")
-                                        .font(.footnote)
-                                        .foregroundStyle(ToolkitColor.information)
-                                        .padding(ToolkitSpace.md)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: ToolkitRadius.pill))
-                                }
-                                PlayerSheetContent(loaded: loaded)
-                            }
-                            .padding(.horizontal, ToolkitSpace.page)
-                            .padding(.bottom, ToolkitSpace.section)
-                        }
-                        .refreshable { await resource.load(bypassCache: true) }
+            PlayerDetailView(playerId: playerId, knownName: knownName, fromAlert: fromAlert)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
                     }
                 }
+        }
+    }
+}
+
+enum PlayerDetailTab: String, CaseIterable, Identifiable {
+    case overview = "Overview", stats = "Stats", fixtures = "Fixtures"
+    var id: String { rawValue }
+}
+
+/// S10–S18 (design pack pp.13–14): one shared player page. The overview answers the football
+/// question (identity, price, headline figures, next fixtures); depth lives one tap away.
+struct PlayerDetailView: View {
+    @Environment(AppModel.self) private var appModel
+    let playerId: Int
+    var knownName: String?
+    var fromAlert = false
+    /// Why this player matters here, e.g. "In your GW5 squad".
+    var context: String?
+    @State private var resource: Resource<PlayerSheet>?
+    @State private var workload: Resource<WorkloadPage>?
+    @State private var tab: PlayerDetailTab = .overview
+
+    var body: some View {
+        Group {
+            switch resource?.phase {
+            case .loading?, nil:
+                ScrollView {
+                    SkeletonCards(caption: "Loading player…")
+                        .padding(.horizontal, ToolkitSpace.page)
+                }
+            case .failed(let copy)?:
+                ErrorStateView(copy: copy) {
+                    Task { await resource?.retry() }
+                }
+            case .loaded(let loaded)?:
+                if let resource {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                            SavedDataBanner(resource: resource)
+                            if fromAlert {
+                                InlineNotice(text: "You opened an alert. This is the latest information, which may have changed since it was sent.",
+                                             systemImage: "bell.badge")
+                            }
+                            PlayerDetailContent(loaded: loaded, workload: workload?.loaded?.value.workload(playerId),
+                                                context: context, tab: $tab)
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, ToolkitSpace.section)
+                    }
+                    .refreshable { await resource.load(bypassCache: true) }
+                }
             }
-            .toolkitScreen()
-            .navigationTitle(resource?.loaded?.value.player.summary.webName ?? knownName ?? "Player")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+        }
+        .toolkitScreen()
+        .navigationTitle(resource?.loaded?.value.player.summary.webName ?? knownName ?? "Player")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let sheet = resource?.loaded?.value {
+                ToolbarItem(placement: .topBarTrailing) {
+                    PlayerMoreMenu(player: sheet.player.summary, web: URL(string: sheet.links.web))
                 }
             }
         }
@@ -66,631 +92,501 @@ struct PlayerSheetView: View {
             if resource == nil {
                 let resource = Resource(appModel.playerRepository.player(id: playerId))
                 self.resource = resource
+                if workload == nil {
+                    let workload = Resource(appModel.researchRepository.workload(playerIds: [playerId]))
+                    self.workload = workload
+                    Task { await workload.load() }
+                }
                 await resource.load()
             }
         }
     }
 }
 
-struct PlayerSheetContent: View {
+/// "⋯": follow and the website page.
+private struct PlayerMoreMenu: View {
+    @Environment(AppModel.self) private var appModel
+    let player: PlayerSummary
+    let web: URL?
+
+    var body: some View {
+        Menu {
+            if let store = appModel.watch {
+                let manual = store.watch?.isManual(player.id) ?? false
+                Button {
+                    Task { await store.setWatched(!manual, playerId: player.id) }
+                } label: {
+                    Label(manual ? "Stop watching" : "Watch \(player.webName)", systemImage: manual ? "bell.slash" : "bell")
+                }
+            }
+            if let web {
+                Link(destination: web) {
+                    Label("Open on fpltoolkit.co.uk", systemImage: "arrow.up.right.square")
+                }
+            }
+        } label: {
+            Label("More options", systemImage: "ellipsis")
+        }
+    }
+}
+
+struct PlayerDetailContent: View {
     @Environment(AppModel.self) private var appModel
     let loaded: Loaded<PlayerSheet>
+    let workload: Workload?
+    var context: String?
+    @Binding var tab: PlayerDetailTab
+    @State private var info: PlayerInfo?
 
     private var sheet: PlayerSheet { loaded.value }
     private var player: PlayerSummary { sheet.player.summary }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
-            header
-
-            if let store = appModel.watch {
-                WatchToggle(store: store, playerId: player.id, playerName: player.webName)
-            }
-
-            if showsAvailability {
-                AvailabilitySection(availability: player.availability,
-                                    newsAddedAt: sheet.player.newsAddedAt,
-                                    source: freshness(.availability))
-            }
-
-            WorkloadSection(playerId: player.id)
-
-            if !otherInsights.isEmpty {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    SectionLabel(text: "What's worth knowing")
-                    ForEach(otherInsights) { insight in
-                        InsightCard(insight: insight, player: nil)
-                    }
-                }
-            }
-
-            FixturesSection(fixtures: sheet.fixtures)
-
-            if let prediction = sheet.pricePrediction {
-                PriceSection(prediction: prediction, source: freshness(.pricePredictions))
-            }
-
-            MarketSection(market: sheet.market)
-
-            if let elite = sheet.elite {
-                EliteSection(elite: elite, source: freshness(.elite))
-            }
-
-            if let defcon = sheet.defcon {
-                DefconSection(defcon: defcon)
-            }
-
-            StatsSection(player: sheet.player)
-
-            PlayerMoreSection(playerId: player.id, name: player.webName)
-
-            if let url = URL(string: sheet.links.web) {
-                Link(destination: url) {
-                    Label("More on fpltoolkit.co.uk", systemImage: "arrow.up.right.square")
-                }
-                .buttonStyle(ToolkitSecondaryButtonStyle())
-            }
-
-            if let freshness = loaded.meta.freshness, !freshness.isEmpty {
-                WhatWeCheckedSection(sources: freshness, savedAt: loaded.savedAt)
-            }
-        }
+    enum PlayerInfo: String, Identifiable {
+        case price, fdr, elite, workload
+        var id: String { rawValue }
     }
-
-    private var header: some View {
-        HStack(spacing: ToolkitSpace.md) {
-            PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 56, scalesWithText: false)
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                let fullName = [sheet.player.firstName, sheet.player.secondName].compactMap { $0 }.joined(separator: " ")
-                if !fullName.isEmpty && fullName != player.webName {
-                    Text(fullName)
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                }
-                ClubLabel(
-                    clubId: player.clubId,
-                    text: [appModel.club(player.clubId)?.name, player.position.displayName, Format.price(player.price)]
-                        .compactMap { $0 }.joined(separator: " · "),
-                    logoSize: 16
-                )
-                .foregroundStyle(ToolkitColor.secondaryText)
-            }
-        }
-    }
-
-    private var showsAvailability: Bool {
-        player.availability.level != .ok || player.availability.news != nil
-    }
-
-    /// The availability note says the same as the availability card, so it isn't repeated.
-    private var otherInsights: [TeamInsight] {
-        showsAvailability ? sheet.insights.filter { $0.category != .availability } : sheet.insights
-    }
-
-    private func freshness(_ kind: FreshnessSource.Kind) -> FreshnessSource? {
-        loaded.meta.freshness?.first { $0.source == kind }
-    }
-}
-
-// MARK: - Sections
-
-/// Watch / stop watching this player (a manual watch, kept even if he leaves your squad).
-private struct WatchToggle: View {
-    let store: WatchStore
-    let playerId: Int
-    let playerName: String
-
-    var body: some View {
-        let watch = store.watch
-        let isManual = watch?.isManual(playerId) ?? false
-        let inSquad = watch.map { $0.autoTrackSquad && ($0.squad?.playerIds.contains(playerId) ?? false) } ?? false
-        Button {
-            Task { await store.setWatched(!isManual, playerId: playerId) }
-        } label: {
-            HStack(spacing: ToolkitSpace.md) {
-                Image(systemName: isManual ? "pin.fill" : (inSquad ? "bell.fill" : "bell"))
-                    .font(.title3)
-                    .foregroundStyle(isManual ? ToolkitColor.onAccent : ToolkitColor.link)
-                    .frame(width: 44, height: 44)
-                    .background(isManual ? ToolkitColor.accent : ToolkitColor.raised, in: Circle())
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title(isManual: isManual, inSquad: inSquad))
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Text(caption(isManual: isManual, inSquad: inSquad))
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-                if store.isUpdating { ProgressView() }
-            }
-            .padding(ToolkitSpace.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
-            .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
-        }
-        .buttonStyle(.plain)
-        .disabled(watch == nil || store.isUpdating)
-        .accessibilityLabel(title(isManual: isManual, inSquad: inSquad))
-        .accessibilityHint(caption(isManual: isManual, inSquad: inSquad))
-        .task { await store.loadIfNeeded() }
-        if let error = store.updateError {
-            Text("Couldn't change this: \(error.title.prefix(1).lowercased() + error.title.dropFirst()).")
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.error)
-        }
-    }
-
-    private func title(isManual: Bool, inSquad: Bool) -> String {
-        switch (isManual, inSquad) {
-        case (true, true): "Kept if you sell him"
-        case (true, false): "Watching"
-        case (false, true): "Watching: in your squad"
-        case (false, false): "Watch \(playerName)"
-        }
-    }
-
-    private func caption(isManual: Bool, inSquad: Bool) -> String {
-        switch (isManual, inSquad) {
-        case (true, true): "Stays on your watch list after he leaves your squad. Tap to unpin."
-        case (true, false): "On your watch list. Tap to stop watching."
-        case (false, true): "Tap to keep watching him even after you sell him."
-        case (false, false): "Add him to your watch list."
-        }
-    }
-}
-
-private struct AvailabilitySection: View {
-    let availability: PlayerSummary.Availability
-    let newsAddedAt: Date?
-    let source: FreshnessSource?
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            ToolkitCard {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    HStack {
-                        Text("Availability")
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        Spacer()
-                        levelPill
-                    }
-                    if let chance = availability.chanceNext {
-                        HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.md) {
-                            Text("\(chance)%")
-                                .font(.system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit())
-                                .foregroundStyle(levelColor)
-                            Text("chance of playing")
-                                .font(.headline)
-                                .foregroundStyle(ToolkitColor.primaryText)
-                        }
-                    }
-                    if let news = availability.news {
-                        Text(news)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Text(sourceLine)
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+            header
+            if player.availability.level == .doubt || player.availability.level == .out {
+                availabilityCard
+            }
+            Picker("Section", selection: $tab) {
+                ForEach(PlayerDetailTab.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            switch tab {
+            case .overview: overview
+            case .stats: stats
+            case .fixtures: fixtures
+            }
+        }
+        .sheet(item: $info) { which in
+            infoSheet(which)
+        }
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: ToolkitSpace.md) {
+            PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 64, scalesWithText: false)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(fullName)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                ClubLabel(clubId: player.clubId,
+                          text: [appModel.club(player.clubId)?.name, player.position.displayName].compactMap { $0 }.joined(separator: " · "),
+                          logoSize: 15)
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                HStack(spacing: ToolkitSpace.sm) {
+                    Text(Format.price(player.price))
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    if let context { Tag(text: context) }
                 }
             }
-            if availability.chanceNext != nil {
-                Text("This is FPL's published chance of playing, not a probability of starting.")
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var fullName: String {
+        let name = [sheet.player.firstName, sheet.player.secondName].compactMap { $0 }.joined(separator: " ")
+        return name.isEmpty ? player.webName : name
+    }
+
+    private var availabilityCard: some View {
+        AttentionCard {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: ToolkitSpace.md) {
+                    Image(systemName: player.availability.level == .out ? "xmark.octagon" : "exclamationmark.triangle")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.warning)
+                        .frame(width: 35, height: 35)
+                        .background(ToolkitColor.raised, in: RoundedRectangle(cornerRadius: 10))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(player.availability.level == .out ? "\(player.webName) is out" : "\(player.webName) is a doubt")
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        Text(availabilityLine)
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                }
+                if let news = player.availability.news {
+                    Text(news)
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var availabilityLine: String {
+        var parts: [String] = []
+        if let chance = player.availability.chanceNext { parts.append("\(chance)% chance of playing") }
+        parts.append("FPL flag")
+        if let added = sheet.player.newsAddedAt { parts.append("added \(Format.ago(added))") }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: Overview
+
+    @ViewBuilder private var overview: some View {
+        StatStrip(items: [
+            .init(value: String(sheet.player.totalPoints), label: "Season points"),
+            .init(value: sheet.player.pointsPerGame.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–", label: "Pts / game"),
+            .init(value: sheet.player.minutes.formatted(), label: "FPL minutes"),
+        ])
+        .padding(.vertical, 6)
+
+        SectionHeader(title: "Next fixtures", actionTitle: "Full run") { tab = .fixtures }
+        if let label = variantLabel {
+            Button { info = .fdr } label: {
+                HStack(spacing: 4) {
+                    Text(label)
+                    Image(systemName: "info.circle").imageScale(.small)
+                }
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("What fixture difficulty means")
+        }
+        FixtureRunStrip(cells: Array(fixtureCells.prefix(5)))
+
+        if let prediction = sheet.pricePrediction {
+            priceWatch(prediction)
+        }
+
+        let links = overviewLinks
+        if !links.isEmpty {
+            CardGroup {
+                ForEach(Array(links.enumerated()), id: \.element.id) { index, link in
+                    if index > 0 { RowDivider() }
+                    LinkRow(title: link.title, detail: link.detail, systemImage: link.systemImage, action: link.action)
+                }
+            }
+        }
+
+        let worth = sheet.insights.filter { [.market, .setpiece, .other].contains($0.category) }
+        if !worth.isEmpty {
+            SectionHeader(title: "Worth knowing")
+            ForEach(worth) { insight in
+                InsightCard(insight: insight, player: nil)
+            }
+        }
+
+        if appModel.watch != nil {
+            WatchButton(player: player)
+                .padding(.top, 4)
+        }
+    }
+
+    private var variantLabel: String? {
+        sheet.fixtures.lazy.compactMap(\.xfdr).first?.modelLabel
+    }
+
+    private var fixtureCells: [FixtureCellModel] {
+        let byGw = Dictionary(grouping: sheet.fixtures, by: \.gw)
+        let model = variantLabel ?? "xFDR"
+        return byGw.keys.sorted().map { gw in
+            FixtureCellModel(gw: gw, fixtures: byGw[gw] ?? [], club: appModel.club, model: model, subject: player.webName)
+        }
+    }
+
+    private func priceWatch(_ prediction: PlayerSheet.PricePrediction) -> some View {
+        let value = prediction.tonightPct ?? prediction.progressPct
+        let rising = value >= 0
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Price watch")
+                    .font(.headline)
+                    .foregroundStyle(ToolkitColor.primaryText)
+                Spacer()
+                Button { info = .price } label: {
+                    Image(systemName: "info.circle")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(ToolkitColor.link)
+                .accessibilityLabel("What price threshold progress means")
+            }
+            HStack {
+                Text(rising ? "Rise threshold progress" : "Fall threshold progress")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                Spacer()
+                Text(abs(value).formatted(.number.precision(.fractionLength(0))) + "%")
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(ToolkitColor.accent)
+            }
+            .accessibilityElement(children: .combine)
+            ProgressLine(fraction: abs(value) / 100, tint: rising ? ToolkitColor.accent : ToolkitColor.error)
+            Text(prediction.calibrating ? "Model estimate, not a probability. Still calibrating for this player." : "Model estimate, not a probability")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+            if let locked = prediction.lockedUntil {
+                Label("Price locked until \(Format.deadline(locked)).", systemImage: "lock")
                     .font(.footnote)
                     .foregroundStyle(ToolkitColor.secondaryText)
             }
         }
+        .padding(.horizontal, 17)
+        .padding(.bottom, 15)
+        .padding(.top, 6)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
     }
 
-    private var sourceLine: String {
-        var parts = ["Source: FPL"]
-        if let newsAddedAt { parts.append("news added \(Format.ago(newsAddedAt))") }
-        if let asOf = source?.asOf { parts.append("checked \(Format.ago(asOf))") }
-        return parts.joined(separator: " · ")
+    private struct OverviewLink: Identifiable {
+        let title: String
+        let detail: String?
+        let systemImage: String
+        let action: () -> Void
+        var id: String { title }
     }
 
-    private var levelColor: Color {
-        availability.level == .out ? ToolkitColor.error : ToolkitColor.warning
+    private var overviewLinks: [OverviewLink] {
+        var links: [OverviewLink] = []
+        if let workload, workload.lastMatch != nil {
+            links.append(OverviewLink(title: "\(workload.last14) minutes in 14 days", detail: "All competitions",
+                                      systemImage: "clock") { info = .workload })
+        }
+        if let elite = sheet.elite {
+            let title = elite.boughtPct >= 1
+                ? "\(Self.percent(elite.boughtPct)) of the top \(elite.cohortSize) bought him"
+                : "Owned by \(Self.percent(elite.ownedPct)) of the top \(elite.cohortSize)"
+            links.append(OverviewLink(title: title, detail: "GW\(elite.gw) · top \(elite.cohortSize) managers",
+                                      systemImage: "trophy") { info = .elite })
+        }
+        return links
     }
 
-    @ViewBuilder private var levelPill: some View {
-        switch availability.level {
-        case .out: Pill(text: "Out", foreground: ToolkitColor.error, fill: ToolkitColor.errorFill)
-        case .doubt: Pill(text: "Flagged", foreground: ToolkitColor.warning, fill: ToolkitColor.warningFill)
-        case .ok, .unknown: EmptyView()
+    static func percent(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1))) + "%"
+    }
+
+    // MARK: Stats
+
+    @ViewBuilder private var stats: some View {
+        StatStrip(items: [
+            .init(value: String(sheet.player.totalPoints), label: "Points"),
+            .init(value: sheet.player.form.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–", label: "Form"),
+            .init(value: sheet.player.minutes.formatted(), label: "Minutes"),
+        ])
+        .padding(.vertical, 6)
+        SectionHeader(title: "In depth")
+        CardGroup {
+            ForEach(Array(PlayerTab.allCases.enumerated()), id: \.element) { index, page in
+                if index > 0 { RowDivider() }
+                NavigationLink {
+                    PlayerTabDestination(playerId: player.id, name: player.webName, tab: page)
+                } label: {
+                    LinkRowLabel(title: page.title, detail: statsDetail(page), systemImage: page.systemImage)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
-}
 
-private struct FixturesSection: View {
-    @Environment(AppModel.self) private var appModel
-    @Environment(\.dynamicTypeSize) private var typeSize
-    let fixtures: [FixtureDifficulty]
+    private func statsDetail(_ page: PlayerTab) -> String {
+        switch page {
+        case .history: return "Points and match-by-match stats"
+        case .form: return "Rolling windows of form"
+        case .underlying: return "Totals and per 90"
+        case .fixtures: return "Returns by fixture difficulty"
+        case .price:
+            let owned = sheet.market.selectedByPct.map { "\(Self.percent($0)) owned · " } ?? ""
+            return owned + Format.price(player.price)
+        case .defensive:
+            if let d = sheet.defcon { return "\(d.hits) / \(d.starts) starts hit the threshold" }
+            return "Defensive contributions match by match"
+        case .compare: return "Percentile ranks and alternatives"
+        }
+    }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            SectionLabel(text: title)
-            if typeSize.isAccessibilitySize || fixtures.count > 5 {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: ToolkitSpace.sm) {
-                        ForEach(Array(fixtures.enumerated()), id: \.offset) { _, fixture in
-                            chip(fixture).frame(minWidth: 72)
-                        }
-                    }
-                }
-            } else {
-                HStack(spacing: 6) {
-                    ForEach(Array(fixtures.enumerated()), id: \.offset) { _, fixture in
-                        chip(fixture).frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            Text("Lower is easier. From 1 to 5, Market FDR model\(fixtures.contains { $0.xfdr?.source == .fpl } ? "; \u{201C}FPL\u{201D} marks FPL's own rating where the model has none" : "").")
+    // MARK: Fixtures
+
+    @ViewBuilder private var fixtures: some View {
+        HStack {
+            Text("Next \(min(fixtureCells.count, 5)) fixtures")
                 .font(.footnote)
                 .foregroundStyle(ToolkitColor.secondaryText)
-        }
-    }
-
-    private var title: String {
-        switch fixtures.lazy.compactMap(\.xfdr).first?.lens {
-        case .attack: "Next fixtures · attack xFDR"
-        case .cleanSheet: "Next fixtures · clean-sheet xFDR"
-        default: "Next fixtures · xFDR"
-        }
-    }
-
-    private func chip(_ fixture: FixtureDifficulty) -> some View {
-        VStack(spacing: 4) {
-            Text("GW\(fixture.gw)")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(ToolkitColor.secondaryText)
-            ClubLabel(clubId: fixture.opponentClubId, text: opponent(fixture))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.primaryText)
-            if let xfdr = fixture.xfdr {
-                Text(xfdr.value.formatted(.number.precision(.fractionLength(1))))
-                    .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(ToolkitColor.primaryText)
-                if xfdr.source == .fpl {
-                    Text("FPL")
-                        .font(.caption2)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+            Spacer()
+            if let label = variantLabel {
+                Button { info = .fdr } label: {
+                    HStack(spacing: 4) {
+                        Text(label)
+                        Image(systemName: "info.circle").imageScale(.small)
+                    }
+                    .frame(minHeight: 44)
                 }
-            } else {
-                Text("–")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(ToolkitColor.secondaryText)
+                .buttonStyle(.plain)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
             }
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        .padding(.vertical, ToolkitSpace.md)
-        .padding(.horizontal, 4)
-        .frame(maxWidth: .infinity)
-        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(ToolkitColor.border))
+        FixtureRunStrip(cells: Array(fixtureCells.prefix(5)))
+        VStack(spacing: 0) {
+            ForEach(Array(sheet.fixtures.enumerated()), id: \.offset) { index, fixture in
+                if index > 0 { Divider().overlay(ToolkitColor.border) }
+                fixtureRow(fixture)
+            }
+        }
+        .padding(.horizontal, 15)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+        CardGroup {
+            NavigationLink {
+                PlayerTabDestination(playerId: player.id, name: player.webName, tab: .fixtures)
+            } label: {
+                LinkRowLabel(title: "Returns by difficulty", detail: "Past FPL points against easier and harder fixtures",
+                             systemImage: "chart.bar")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func fixtureRow(_ fixture: FixtureDifficulty) -> some View {
+        let opponent = appModel.club(fixture.opponentClubId)
+        return HStack(spacing: ToolkitSpace.md) {
+            Text("GW\(fixture.gw)")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .frame(width: 44, alignment: .leading)
+            if fixture.blank {
+                Text("No fixture")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                Spacer()
+            } else {
+                ClubLogo(clubId: fixture.opponentClubId, size: 18)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(opponent?.name ?? "To be confirmed")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Text([fixture.home.map { $0 ? "Home" : "Away" }, fixture.kickoff.map { Format.deadline($0) }]
+                        .compactMap { $0 }.joined(separator: " · "))
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+                Spacer()
+                if let xfdr = fixture.xfdr {
+                    let tone = DifficultyTone(band: xfdr.band)
+                    Text(xfdr.display)
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(tone.text)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(tone.fill, in: RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Text("–").foregroundStyle(ToolkitColor.secondaryText)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .frame(minHeight: 56)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText(fixture))
+        .accessibilityLabel(fixtureSpoken(fixture))
     }
 
-    private func opponent(_ fixture: FixtureDifficulty) -> String {
-        if fixture.blank { return "No game" }
-        let name = appModel.club(fixture.opponentClubId)?.shortName ?? "TBC"
-        guard let home = fixture.home else { return name }
-        return "\(name) \(home ? "H" : "A")"
-    }
-
-    private func accessibilityText(_ fixture: FixtureDifficulty) -> String {
+    private func fixtureSpoken(_ fixture: FixtureDifficulty) -> String {
         if fixture.blank { return "Gameweek \(fixture.gw): no fixture" }
         let name = appModel.club(fixture.opponentClubId)?.name ?? "opponent to be confirmed"
         let venue = fixture.home.map { $0 ? "at home" : "away" } ?? ""
-        let difficulty = fixture.xfdr.map { ", difficulty \($0.value.formatted(.number.precision(.fractionLength(1)))) out of 5" } ?? ""
+        let difficulty = fixture.xfdr.map { ", \($0.modelLabel) \($0.display)" } ?? ", difficulty unavailable"
         return "Gameweek \(fixture.gw): \(name) \(venue)\(difficulty)"
     }
+
+    // MARK: Explanations
+
+    @ViewBuilder private func infoSheet(_ which: PlayerInfo) -> some View {
+        switch which {
+        case .price:
+            InfoSheet(title: "Price threshold progress", message: priceMessage)
+        case .fdr:
+            InfoSheet(title: "Fixture difficulty", message: TeamText.fdrMessage)
+        case .elite:
+            InfoSheet(title: "Top \(sheet.elite?.cohortSize ?? 100) managers", message: eliteMessage)
+        case .workload:
+            NavigationStack {
+                ScrollView {
+                    WorkloadSection(playerId: player.id)
+                        .padding(.horizontal, ToolkitSpace.page)
+                }
+                .toolkitScreen()
+                .navigationTitle("Minutes and rest")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { info = nil } }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
+    }
+
+    private var priceMessage: String {
+        guard let p = sheet.pricePrediction else { return "" }
+        let value = p.tonightPct ?? p.progressPct
+        var text = "\(abs(value).formatted(.number.precision(.fractionLength(0...1))))% is progress towards the model's estimated \(value >= 0 ? "rise" : "fall") threshold. It isn't the probability of a price change, and the model can be wrong, including after the threshold is crossed."
+        var lines: [String] = []
+        if p.tonightPct != nil { lines.append("Now: \(Format.signedPercent(p.progressPct))") }
+        for projection in p.projections where projection.offset > 0 {
+            lines.append("\(projection.offset == 1 ? "Tomorrow night" : "In \(projection.offset) nights"): \(Format.signedPercent(projection.projectedPct))")
+        }
+        if let rate = p.hourlyRate {
+            lines.append("Net transfers per hour: \(rate.formatted(.number.precision(.fractionLength(0)).sign(strategy: .always())))")
+        }
+        if !lines.isEmpty { text += "\n\n" + lines.joined(separator: "\n") }
+        return text
+    }
+
+    private var eliteMessage: String {
+        guard let e = sheet.elite else { return "" }
+        return """
+        Owned by \(Self.percent(e.ownedPct)), captained by \(Self.percent(e.captainPct)), bought by \(Self.percent(e.boughtPct)) and sold by \(Self.percent(e.soldPct)) of the top \(e.cohortSize) managers in GW\(e.gw).
+
+        These are the moves they made for GW\(e.gw). Nobody can see their choices for the next deadline until it passes.
+        """
+    }
 }
 
-private struct PriceSection: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
-    let prediction: PlayerSheet.PricePrediction
-    let source: FreshnessSource?
-
-    private var headline: Double { prediction.tonightPct ?? prediction.progressPct }
+/// Watch / stop watching this player (a manual watch, kept even if he leaves your squad).
+private struct WatchButton: View {
+    @Environment(AppModel.self) private var appModel
+    let player: PlayerSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            ToolkitCard {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    Text(prediction.tonightPct != nil ? "Tonight's price projection" : "Price-change progress")
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(Self.signed(headline))
-                            .font(.system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit())
-                            .foregroundStyle(ToolkitColor.link)
-                        Text("of the \(headline < 0 ? "fall" : "rise") threshold")
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(Self.spoken(headline)) of the \(headline < 0 ? "fall" : "rise") threshold")
-                    ThresholdBar(value: headline)
-                    VStack(alignment: .leading, spacing: 4) {
-                        if prediction.tonightPct != nil {
-                            detail("Now", Self.signed(prediction.progressPct))
-                        }
-                        ForEach(prediction.projections.filter { $0.offset > 0 }, id: \.offset) { projection in
-                            detail(projection.offset == 1 ? "Tomorrow night" : "In \(projection.offset) nights",
-                                   Self.signed(projection.projectedPct))
-                        }
-                        if let rate = prediction.hourlyRate {
-                            detail("Net transfers per hour", rate.formatted(.number.precision(.fractionLength(0)).sign(strategy: .always())))
-                        }
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(projectionSummary)
-                    if prediction.calibrating {
-                        Label("The model is still calibrating for this player.", systemImage: "info.circle")
-                            .font(.footnote)
-                            .foregroundStyle(ToolkitColor.warning)
-                    }
-                    if let locked = prediction.lockedUntil {
-                        Label("Price locked until \(Format.deadline(locked)).", systemImage: "lock")
-                            .font(.footnote)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                    Text(sourceLine)
+        if let store = appModel.watch {
+            let manual = store.watch?.isManual(player.id) ?? false
+            let inSquad = store.watch.map { $0.autoTrackSquad && ($0.squad?.playerIds.contains(player.id) ?? false) } ?? false
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    Task { await store.setWatched(!manual, playerId: player.id) }
+                } label: {
+                    Label(manual ? "Watching" : inSquad ? "Keep watching after a sale" : "Watch",
+                          systemImage: manual ? "checkmark" : "bell")
+                }
+                .buttonStyle(ToolkitSecondaryButtonStyle())
+                .disabled(store.watch == nil || store.isUpdating)
+                .accessibilityHint(manual ? "Stops watching this player"
+                                   : inSquad ? "You're already watching him as part of your squad; this keeps him if you sell him"
+                                   : "Adds him to your watch list")
+                if let error = store.updateError {
+                    Text("Couldn't change this: \(error.title.prefix(1).lowercased() + error.title.dropFirst()).")
                         .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .foregroundStyle(ToolkitColor.error)
                 }
             }
-            Text("A projection, not a guarantee. It shows how far the player is towards a price change, not the probability of one.")
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.secondaryText)
+            .task { await store.loadIfNeeded() }
         }
-    }
-
-    private var sourceLine: String {
-        guard let source else { return "Projection" }
-        if let asOf = source.asOf { return "Projection refreshed \(Format.ago(asOf))" }
-        return "Projection · refresh time unknown"
-    }
-
-    private func detail(_ label: String, _ value: String) -> some View {
-        let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
-            : AnyLayout(HStackLayout())
-        return layout {
-            Text(label).foregroundStyle(ToolkitColor.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            if !typeSize.isAccessibilitySize { Spacer() }
-            Text(value).monospacedDigit().foregroundStyle(ToolkitColor.primaryText)
-        }
-        .font(.subheadline)
-    }
-
-    /// The projection rows read as one item: "Now: up 1 percent. Tomorrow night: up 1.3 percent. …"
-    private var projectionSummary: String {
-        var parts: [String] = []
-        if prediction.tonightPct != nil { parts.append("Now: \(Self.spoken(prediction.progressPct))") }
-        for p in prediction.projections where p.offset > 0 {
-            parts.append("\(p.offset == 1 ? "Tomorrow night" : "In \(p.offset) nights"): \(Self.spoken(p.projectedPct))")
-        }
-        if let rate = prediction.hourlyRate {
-            parts.append("Net transfers per hour: \(rate.formatted(.number.precision(.fractionLength(0))))")
-        }
-        return parts.joined(separator: ". ")
-    }
-
-    static func spoken(_ value: Double) -> String { Format.spokenPercent(value) }
-    static func signed(_ value: Double) -> String { Format.signedPercent(value) }
-}
-
-/// Progress towards ±100 with a marker at the threshold. Presentation only: no rule is applied.
-private struct ThresholdBar: View {
-    let value: Double
-
-    var body: some View {
-        GeometryReader { proxy in
-            let scale: Double = 120
-            let fraction = min(abs(value), scale) / scale
-            let thresholdX = proxy.size.width * (100 / scale)
-            ZStack(alignment: .leading) {
-                Capsule().fill(ToolkitColor.raised)
-                Capsule().fill(ToolkitColor.accent)
-                    .frame(width: max(proxy.size.width * fraction, 8))
-                Rectangle()
-                    .fill(ToolkitColor.primaryText)
-                    .frame(width: 2, height: 22)
-                    .offset(x: thresholdX - 1)
-            }
-        }
-        .frame(height: 12)
-        .padding(.vertical, 6)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct MarketSection: View {
-    let market: PlayerSheet.Market
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            SectionLabel(text: "Market")
-            ToolkitCard {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    HStack(alignment: .firstTextBaseline) {
-                        if let selected = market.selectedByPct {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("\(selected.formatted(.number.precision(.fractionLength(1))))%")
-                                    .font(.title2.weight(.bold).monospacedDigit())
-                                    .foregroundStyle(ToolkitColor.primaryText)
-                                Text("selected by")
-                                    .font(.footnote)
-                                    .foregroundStyle(ToolkitColor.secondaryText)
-                            }
-                        }
-                        Spacer()
-                        if let change = market.ownershipChange7d {
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("\(change.formatted(.number.precision(.fractionLength(1)).sign(strategy: .always()))) pts")
-                                    .font(.headline.monospacedDigit())
-                                    .foregroundStyle(ToolkitColor.primaryText)
-                                Text("last 7 days")
-                                    .font(.footnote)
-                                    .foregroundStyle(ToolkitColor.secondaryText)
-                            }
-                        }
-                    }
-                    let points = market.ownershipTrend7d.compactMap { point in
-                        point.selectedByPct.map { (date: point.date, pct: $0) }
-                    }
-                    if points.count >= 2 {
-                        Chart(points, id: \.date) { point in
-                            LineMark(x: .value("Day", point.date), y: .value("Selected by %", point.pct))
-                                .foregroundStyle(ToolkitColor.accent)
-                                .interpolationMethod(.monotone)
-                        }
-                        .chartXAxis(.hidden)
-                        .chartYScale(domain: .automatic(includesZero: false))
-                        .chartYAxis {
-                            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { _ in
-                                AxisGridLine().foregroundStyle(ToolkitColor.border)
-                                AxisValueLabel().foregroundStyle(ToolkitColor.secondaryText)
-                            }
-                        }
-                        .frame(height: 90)
-                        .accessibilityLabel("Ownership over the last \(points.count) days")
-                    }
-                    Divider().overlay(ToolkitColor.border)
-                    HStack {
-                        Label("\(market.transfersInEvent.formatted()) in", systemImage: "arrow.down.left")
-                        Spacer()
-                        Label("\(market.transfersOutEvent.formatted()) out", systemImage: "arrow.up.right")
-                    }
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                    Text("Transfers this gameweek, across all managers.")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                }
-            }
-        }
-    }
-}
-
-private struct EliteSection: View {
-    let elite: PlayerSheet.Elite
-    let source: FreshnessSource?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            SectionLabel(text: "Top \(elite.cohortSize) managers")
-            ToolkitCard {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    Grid(alignment: .leading, horizontalSpacing: ToolkitSpace.lg, verticalSpacing: ToolkitSpace.md) {
-                        GridRow {
-                            stat(elite.ownedPct, "own him")
-                            stat(elite.captainPct, "captained him")
-                        }
-                        GridRow {
-                            stat(elite.boughtPct, "bought him")
-                            stat(elite.soldPct, "sold him")
-                        }
-                    }
-                    Text(source?.label ?? "Top \(elite.cohortSize) cohort, published GW\(elite.gw)")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                    Text("Moves made for GW\(elite.gw). Nobody can see their private choices for the next deadline.")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                }
-            }
-        }
-    }
-
-    private func stat(_ value: Double, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("\(value.formatted(.number.precision(.fractionLength(0...1))))%")
-                .font(.title3.weight(.bold).monospacedDigit())
-                .foregroundStyle(ToolkitColor.primaryText)
-            Text(label)
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.secondaryText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct DefconSection: View {
-    let defcon: PlayerSheet.Defcon
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            SectionLabel(text: "Defensive contributions")
-            ToolkitCard {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.md) {
-                        Text((defcon.hitRateStarts * 100).formatted(.number.precision(.fractionLength(0))) + "%")
-                            .font(.system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit())
-                            .foregroundStyle(ToolkitColor.link)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("hit rate in starts")
-                                .font(.headline)
-                                .foregroundStyle(ToolkitColor.primaryText)
-                            Text("\(defcon.hits) \(defcon.hits == 1 ? "hit" : "hits") in \(defcon.starts) \(defcon.starts == 1 ? "start" : "starts")")
-                                .font(.subheadline)
-                                .foregroundStyle(ToolkitColor.secondaryText)
-                        }
-                    }
-                    Divider().overlay(ToolkitColor.border)
-                    HStack {
-                        Text("Per 90: \(defcon.dcPer90.formatted(.number.precision(.fractionLength(1))))")
-                        Spacer()
-                        Text("Threshold: \(defcon.threshold) a match")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                }
-            }
-        }
-    }
-}
-
-private struct StatsSection: View {
-    let player: PlayerSheet.Player
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-            SectionLabel(text: "Season so far")
-            ToolkitCard {
-                Grid(alignment: .leading, horizontalSpacing: ToolkitSpace.lg, verticalSpacing: ToolkitSpace.md) {
-                    GridRow {
-                        stat(String(player.totalPoints), "points")
-                        stat(player.minutes.formatted(), "minutes")
-                    }
-                    GridRow {
-                        stat(player.form.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–", "form")
-                        stat(player.pointsPerGame.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–", "points per game")
-                    }
-                }
-            }
-        }
-    }
-
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.title3.weight(.bold).monospacedDigit())
-                .foregroundStyle(ToolkitColor.primaryText)
-            Text(label)
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.secondaryText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -710,23 +606,12 @@ extension Position {
 #Preview("Palmer") {
     NavigationStack {
         ScrollView {
-            PlayerSheetContent(loaded: PreviewFixtures.load("player-palmer", as: PlayerSheet.self))
+            PlayerDetailContent(loaded: PreviewFixtures.load("player-palmer", as: PlayerSheet.self), workload: nil,
+                                tab: .constant(.overview))
                 .padding(.horizontal, ToolkitSpace.page)
         }
         .toolkitScreen()
         .navigationTitle("Palmer")
-    }
-    .environment(AppModel())
-}
-
-#Preview("Haaland") {
-    NavigationStack {
-        ScrollView {
-            PlayerSheetContent(loaded: PreviewFixtures.load("player-haaland", as: PlayerSheet.self))
-                .padding(.horizontal, ToolkitSpace.page)
-        }
-        .toolkitScreen()
-        .navigationTitle("Haaland")
     }
     .environment(AppModel())
 }

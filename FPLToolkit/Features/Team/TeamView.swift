@@ -1,14 +1,36 @@
 import SwiftUI
 
-/// S07. The published squad, read-only: starters by line, then the bench.
+/// How the Team tab shows the squad; the choice is remembered.
+enum TeamLayout: String, CaseIterable, Identifiable {
+    case pitch = "Pitch", list = "List", fixtures = "Fixtures"
+    var id: String { rawValue }
+}
+
+/// The one metric each tile or row shows; one layer at a time (design pack p.11), remembered.
+enum SquadMetric: String, CaseIterable, Identifiable {
+    case fixtures = "Fixtures", price = "Price", odds = "Odds"
+    var id: String { rawValue }
+}
+
+/// S07–S09, S19 (design pack pp.9–12): the published squad, read-only. The team itself is the
+/// screen; its source context is one line, and the exact times open on tap.
 struct TeamView: View {
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var resource: Resource<Team>?
-    /// Chances from bookmaker odds (P3-5), shown on the rows when switched on.
+    /// Chances from bookmaker odds (P3-5), for the Odds layer.
     @State private var odds: Resource<Odds>?
-    @AppStorage("odds.overlay") private var showOdds = false
-    @State private var checkingOdds = false
+    @AppStorage("team.layout") private var layout: TeamLayout = .pitch
+    @AppStorage("team.metric") private var metric: SquadMetric = .fixtures
+    @State private var sheet: TeamSheet?
+    @State private var pushedPlayer: PlayerRef?
+    @State private var showingLeagues = false
+    @State private var showingSources = false
+
+    enum TeamSheet: String, Identifiable {
+        case source, metric, fdr, odds, oddsCheck
+        var id: String { rawValue }
+    }
 
     var body: some View {
         Group {
@@ -25,18 +47,20 @@ struct TeamView: View {
             case .loaded(let loaded)?:
                 if let resource {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
+                        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
                             SavedDataBanner(resource: resource)
-                            TeamContent(
-                                loaded: loaded,
-                                onSelectPlayer: { appModel.router.openPlayer($0) },
+                            TeamOverview(
+                                team: loaded.value,
                                 odds: odds?.loaded?.value,
-                                showOdds: $showOdds,
-                                onOddsCheck: { checkingOdds = true })
-                            LeaguesCard()
-                                .padding(.top, ToolkitSpace.sm)
+                                layout: $layout,
+                                metric: $metric,
+                                onPlayer: { id in
+                                    pushedPlayer = PlayerRef(id: id, context: loaded.value.snapshot.map { "In your GW\($0.gw) squad" })
+                                },
+                                onSheet: { sheet = $0 },
+                                onPlan: { appModel.router.selectedTab = .planner })
                         }
-                        .padding(.horizontal, ToolkitSpace.page)
+                        .padding(.horizontal, 18)
                         .padding(.bottom, ToolkitSpace.section)
                     }
                     .refreshable { await resource.load(bypassCache: true) }
@@ -45,20 +69,19 @@ struct TeamView: View {
         }
         .toolkitScreen()
         .navigationTitle("My team")
-        .settingsButton(entryId: entryId)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    appModel.router.showingMatchday = true
-                } label: {
-                    Label("Matchday", systemImage: "sportscourt")
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showingLeagues = true } label: {
+                    Label("Your leagues", systemImage: "trophy")
                 }
+                .tint(ToolkitColor.accent)
             }
         }
-        .sheet(isPresented: $checkingOdds) {
-            if let team = resource?.loaded?.value, let odds = odds?.loaded?.value {
-                NavigationStack { OddsCheckView(team: team, odds: odds) }
-            }
+        .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
+        .navigationDestination(isPresented: $showingSources) { DataSourcesView(entryId: entryId) }
+        .navigationDestination(item: $pushedPlayer) { ref in PlayerDetailView(playerId: ref.id, context: ref.context) }
+        .sheet(item: $sheet) { which in
+            sheetView(which)
         }
         .task {
             if odds == nil {
@@ -73,40 +96,155 @@ struct TeamView: View {
             }
         }
     }
+
+    @ViewBuilder private func sheetView(_ which: TeamSheet) -> some View {
+        switch which {
+        case .source:
+            if let team = resource?.loaded?.value, let snapshot = team.snapshot {
+                InfoSheet(
+                    title: "Your published squad",
+                    message: TeamText.sourceMessage(snapshot, nextGw: appModel.bootstrap?.value.gameweek.next?.id),
+                    links: [
+                        InfoSheetLink(title: "Data & sources", detail: "Published and fetched times", systemImage: "icloud") { showingSources = true },
+                        InfoSheetLink(title: "Plan changes", detail: "Keep a separate draft", systemImage: "calendar") { appModel.router.selectedTab = .planner },
+                    ])
+            }
+        case .metric:
+            MetricLayerSheet(metric: $metric, oddsAvailable: odds?.loaded?.value.available == true,
+                             onOddsCheck: { sheet = .oddsCheck })
+        case .fdr:
+            InfoSheet(title: "Fixture difficulty", message: TeamText.fdrMessage)
+        case .odds:
+            InfoSheet(title: "Betting-market estimate", message: TeamText.oddsMessage(odds?.loaded?.value))
+        case .oddsCheck:
+            if let team = resource?.loaded?.value, let odds = odds?.loaded?.value {
+                NavigationStack { OddsCheckView(team: team, odds: odds) }
+            }
+        }
+    }
 }
 
-struct TeamContent: View {
+// MARK: - Content
+
+struct TeamOverview: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dynamicTypeSize) private var typeSize
-    let loaded: Loaded<Team>
-    var onSelectPlayer: ((Int) -> Void)?
-    var odds: Odds?
-    var showOdds: Binding<Bool>?
-    var onOddsCheck: (() -> Void)?
+    let team: Team
+    let odds: Odds?
+    @Binding var layout: TeamLayout
+    @Binding var metric: SquadMetric
+    let onPlayer: (Int) -> Void
+    let onSheet: (TeamView.TeamSheet) -> Void
+    let onPlan: () -> Void
 
-    private var team: Team { loaded.value }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let snapshot = team.snapshot {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(team.entry.name)
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    ContextLine(lead: "GW\(snapshot.gw) squad", parts: contextParts(snapshot)) {
+                        onSheet(.source)
+                    }
+                }
+                if let freeHit = snapshot.freeHitGw {
+                    InlineNotice(text: "You played your Free Hit in GW\(freeHit), so this is the GW\(snapshot.gw) squad it reverts to.",
+                                 systemImage: "arrow.uturn.backward")
+                }
+                if let chip = snapshot.activeChip {
+                    Tag(text: "GW\(snapshot.gw) chip: \(TeamText.chipName(chip))", foreground: ToolkitColor.accent, fill: ToolkitColor.goldTag)
+                }
+                Picker("View", selection: $layout) {
+                    ForEach(TeamLayout.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.vertical, 4)
 
-    private func chance(for player: PlayerSummary) -> OddsChance? {
-        guard showOdds?.wrappedValue == true, let odds, odds.available else { return nil }
-        return OddsChance.of(player, in: odds)
+                switch layout {
+                case .pitch:
+                    if typeSize.isAccessibilitySize {
+                        // Large text: readable rows instead of tiny five-across tiles (design pack p.29).
+                        Text("Showing the list at this text size.")
+                            .font(.footnote)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                        listView(snapshot)
+                    } else {
+                        pitchView(snapshot)
+                    }
+                case .list:
+                    listView(snapshot)
+                case .fixtures:
+                    TeamFixturesView(team: team, snapshot: snapshot, onPlayer: onPlayer, onInfo: { onSheet(.fdr) })
+                }
+            } else {
+                noSnapshot
+            }
+        }
     }
 
-    private func oddsControls(_ odds: Odds, isOn: Binding<Bool>) -> some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            Toggle(isOn: isOn) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Show odds")
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Text("Betting-market estimate for GW\(odds.gameweek)")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+    private func contextParts(_ snapshot: Team.Snapshot) -> [String] {
+        var parts: [String] = []
+        if let next = nextGw { parts.append("GW\(next) fixtures") }
+        if let bank = snapshot.bank { parts.append("\(Format.price(bank)) ITB") }
+        return parts
+    }
+
+    private var nextGw: Int? {
+        appModel.bootstrap?.value.gameweek.next?.id ?? team.players.values.compactMap(\.nextFixture?.gw).min()
+    }
+
+    // MARK: Pitch
+
+    private func metricBar() -> some View {
+        HStack {
+            Button { onSheet(.metric) } label: {
+                HStack(spacing: 4) {
+                    Text(metric.rawValue)
+                    Image(systemName: "chevron.down").font(.caption.weight(.semibold))
                 }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .tint(ToolkitColor.accent)
+            .buttonStyle(.plain)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(ToolkitColor.secondaryText)
+            .accessibilityLabel("Show on squad: \(metric.rawValue)")
+            .accessibilityHint("Choose fixtures, price or odds")
+            Spacer()
+            switch metric {
+            case .fixtures:
+                infoButton("xFDR", hint: "What fixture difficulty means") { onSheet(.fdr) }
+            case .odds:
+                infoButton("Betting-market estimate", hint: "What these chances mean") { onSheet(.odds) }
+            case .price:
+                EmptyView()
+            }
+        }
+    }
+
+    private func infoButton(_ title: String, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Text(title)
+                Image(systemName: "info.circle").imageScale(.small)
+            }
             .frame(minHeight: 44)
-            if let onOddsCheck {
-                Button(action: onOddsCheck) {
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(ToolkitColor.link)
+        .accessibilityHint(hint)
+    }
+
+    private func pitchView(_ snapshot: Team.Snapshot) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metricBar()
+            SquadPitch(rows: TeamSquad.rows(snapshot, team: team).map { $0.map(tile) }) { onPlayer($0.playerId) }
+            BenchStrip(tiles: TeamSquad.bench(snapshot).map(tile)) { onPlayer($0.playerId) }
+            if metric == .odds, odds?.available == true {
+                Button { onSheet(.oddsCheck) } label: {
                     Label("Odds check: captain, defence, bench", systemImage: "chart.bar.xaxis")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(ToolkitColor.link)
@@ -115,112 +253,120 @@ struct TeamContent: View {
                 }
                 .buttonStyle(.plain)
             }
+            Button(action: onPlan) {
+                Label("Plan changes", systemImage: "arrow.right")
+                    .labelStyle(TrailingIconLabelStyle())
+            }
+            .buttonStyle(ToolkitSecondaryButtonStyle())
+            .padding(.top, 4)
         }
-        .padding(.horizontal, ToolkitSpace.lg)
-        .padding(.vertical, ToolkitSpace.sm)
-        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
-        .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
-            if let snapshot = team.snapshot {
-                header(snapshot)
-                if let freeHit = snapshot.freeHitGw {
-                    freeHitBanner(freeHit: freeHit, gw: snapshot.gw)
+    private func tile(_ pick: Team.Pick) -> PitchTileModel {
+        let player = team.player(pick.playerId)
+        let club = appModel.club(player?.clubId)
+        let role: String? = pick.isCaptain ? "C" : pick.isViceCaptain ? "V" : nil
+        let flagged = player.map { $0.availability.level == .doubt || $0.availability.level == .out } ?? false
+        var spoken = [player?.webName ?? "Player", player?.position.displayName ?? ""]
+        if role == "C" { spoken.append("captain") }
+        if role == "V" { spoken.append("vice-captain") }
+        if pick.role == .bench { spoken.append("bench") }
+        if flagged, let availability = player?.availability {
+            spoken.append(availability.chanceNext.map { "\($0)% chance of playing" } ?? "availability concern")
+        }
+        let metricModel: PitchTileModel.Metric
+        switch metric {
+        case .fixtures:
+            if let fixture = player?.nextFixture {
+                if fixture.blank {
+                    metricModel = .text("No fixture")
+                    spoken.append("no fixture")
+                } else {
+                    let opponent = appModel.club(fixture.opponentClubId)
+                    let venue = fixture.home.map { $0 ? "H" : "A" }
+                    metricModel = .fixture(label: [opponent?.shortName ?? "TBC", venue].compactMap { $0 }.joined(separator: " "),
+                                           value: fixture.xfdr?.display,
+                                           tone: DifficultyTone(band: fixture.xfdr?.band))
+                    spoken.append("next \(opponent?.name ?? "opponent to be confirmed") \(fixture.home.map { $0 ? "at home" : "away" } ?? "")")
+                    if let xfdr = fixture.xfdr { spoken.append("\(xfdr.modelLabel) \(xfdr.display)") }
                 }
-                if let odds, odds.available, let showOdds {
-                    oddsControls(odds, isOn: showOdds)
-                }
-                ForEach(lines(snapshot)) { line in
-                    VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                        SectionLabel(text: line.title)
-                        VStack(spacing: 0) {
-                            ForEach(Array(line.picks.enumerated()), id: \.element.playerId) { index, pick in
-                                if let player = team.player(pick.playerId) {
-                                    Button {
-                                        onSelectPlayer?(pick.playerId)
-                                    } label: {
-                                        PlayerRow(pick: pick, player: player, chance: chance(for: player))
-                                            .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .accessibilityHint("Opens the player")
-                                    if index < line.picks.count - 1 {
-                                        Divider().overlay(ToolkitColor.border)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, ToolkitSpace.lg)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
-                        .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
-                    }
-                }
-                Text("xFDR is fixture difficulty for the next gameweek, from 1 (easiest) to 5 (hardest): attack for midfielders and forwards, clean sheet for goalkeepers and defenders.")
+            } else {
+                metricModel = .text("–")
+            }
+        case .price:
+            let price = player.map { Format.price($0.price) } ?? "–"
+            metricModel = .text(price)
+            spoken.append(price)
+        case .odds:
+            let text = player.map { TeamText.oddsTile($0, odds: odds) } ?? "–"
+            metricModel = .text(text)
+            spoken.append(player.map { TeamText.oddsSpoken($0, odds: odds) } ?? "")
+        }
+        return PitchTileModel(playerId: pick.playerId, name: player?.webName ?? "Player", colors: club?.colors,
+                              isGoalkeeper: player?.position == .gk, role: role, flagged: flagged,
+                              metric: metricModel,
+                              accessibilityLabel: spoken.filter { !$0.isEmpty }.joined(separator: ", "))
+    }
+
+    // MARK: List
+
+    private func listView(_ snapshot: Team.Snapshot) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Starting XI · \(TeamSquad.formation(snapshot, team: team))")
                     .font(.footnote)
                     .foregroundStyle(ToolkitColor.secondaryText)
-            } else {
-                noSnapshot
+                Spacer()
+                metricBar()
             }
-
-            let sources = (loaded.meta.freshness ?? []).filter { team.snapshot != nil || $0.source != .picks }
-            if !sources.isEmpty {
-                WhatWeCheckedSection(sources: sources, savedAt: loaded.savedAt)
-                    .padding(.top, ToolkitSpace.sm)
-            }
+            rows(TeamSquad.rows(snapshot, team: team).flatMap { $0 })
+            SectionHeader(title: "Bench")
+            rows(TeamSquad.bench(snapshot))
         }
     }
 
-    private func header(_ snapshot: Team.Snapshot) -> some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            Text(team.entry.name)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(ToolkitColor.primaryText)
-            let layout = typeSize >= .xxxLarge
-                ? AnyLayout(VStackLayout(alignment: .leading, spacing: ToolkitSpace.sm))
-                : AnyLayout(HStackLayout(spacing: ToolkitSpace.sm))
-            layout {
-                Pill(text: "Published snapshot")
-                if typeSize < .xxxLarge { Spacer() }
-                readOnly
-            }
-            Text("Squad as of the GW\(snapshot.gw) deadline, \(Format.deadline(snapshot.deadline)). Changes you've made since then won't show until the next deadline passes.")
-                .font(.subheadline)
-                .foregroundStyle(ToolkitColor.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            let facts = [
-                snapshot.activeChip.map { "GW\(snapshot.gw) chip: \(Self.chipName($0))" },
-                snapshot.bank.map { "Bank \(Format.price($0))" },
-                snapshot.value.map { "Squad value \(Format.price($0))" },
-            ].compactMap { $0 }
-            if !facts.isEmpty {
-                Text(facts.joined(separator: " · "))
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
+    private func rows(_ picks: [Team.Pick]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(picks.enumerated()), id: \.element.playerId) { index, pick in
+                if let player = team.player(pick.playerId) {
+                    if index > 0 { Divider().overlay(ToolkitColor.border) }
+                    Button { onPlayer(pick.playerId) } label: {
+                        row(pick, player)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the player")
+                }
             }
         }
+        .padding(.horizontal, 14)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
     }
 
-    private var readOnly: some View {
-        Text("Read-only")
-            .font(.subheadline)
-            .foregroundStyle(ToolkitColor.secondaryText)
-    }
-
-    private func freeHitBanner(freeHit: Int, gw: Int) -> some View {
-        Label {
-            Text("You played your Free Hit in GW\(freeHit), so this is the GW\(gw) squad it reverts to.")
-                .fixedSize(horizontal: false, vertical: true)
-        } icon: {
-            Image(systemName: "arrow.uturn.backward")
+    private func row(_ pick: Team.Pick, _ player: PlayerSummary) -> PlayerListRow {
+        let role: String? = pick.isCaptain ? "C" : pick.isViceCaptain ? "V" : nil
+        let price = Format.price(player.price)
+        switch metric {
+        case .fixtures:
+            let fixture = player.nextFixture
+            let opponent = fixture.flatMap { $0.blank ? nil : appModel.club($0.opponentClubId) }
+            let value: String? = fixture.map { f in
+                if f.blank { return "No fixture" }
+                return [opponent?.shortName ?? "TBC", f.home.map { $0 ? "H" : "A" }].compactMap { $0 }.joined(separator: " ")
+            }
+            let variant = fixture?.xfdr.map { $0.modelLabel.replacingOccurrences(of: " · ", with: " ") }
+            let chip = fixture?.xfdr.map { (text: $0.display, tone: DifficultyTone(band: $0.band)) }
+            let spoken = [price, value.map { "next \($0)" }, fixture?.xfdr.map { "\($0.modelLabel) \($0.display)" }]
+            return PlayerListRow(player: player, role: role,
+                                 detail: [price, variant].compactMap { $0 }.joined(separator: " · "),
+                                 value: value, valueChip: chip,
+                                 spokenDetail: spoken.compactMap { $0 }.joined(separator: ", "))
+        case .price:
+            return PlayerListRow(player: player, role: role, detail: player.position.displayName, value: price)
+        case .odds:
+            return PlayerListRow(player: player, role: role, detail: price,
+                                 value: TeamText.oddsTile(player, odds: odds),
+                                 spokenDetail: "\(price), \(TeamText.oddsSpoken(player, odds: odds))")
         }
-        .font(.subheadline)
-        .foregroundStyle(ToolkitColor.information)
-        .padding(ToolkitSpace.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
     }
 
     private var noSnapshot: some View {
@@ -242,30 +388,49 @@ struct TeamContent: View {
         }
         return "\(team.entry.name) hasn't been through a deadline yet. Your squad will appear here once the next deadline passes."
     }
+}
 
-    private struct Line: Identifiable {
-        let title: String
-        let picks: [Team.Pick]
-        var id: String { title }
-    }
-
-    private func lines(_ snapshot: Team.Snapshot) -> [Line] {
-        let starters = snapshot.picks.filter { $0.role != .bench }.sorted { $0.slot < $1.slot }
-        let bench = snapshot.picks.filter { $0.role == .bench }.sorted { $0.slot < $1.slot }
-        func line(_ position: Position) -> [Team.Pick] {
-            starters.filter { team.player($0.playerId)?.position == position }
+/// A label with its icon after the text ("Plan changes →").
+struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 8) {
+            configuration.title
+            configuration.icon
         }
-        let known: Set<Position> = [.gk, .def, .mid, .fwd]
-        return [
-            Line(title: "Goalkeeper", picks: line(.gk)),
-            Line(title: "Defenders", picks: line(.def)),
-            Line(title: "Midfielders", picks: line(.mid)),
-            Line(title: "Forwards", picks: line(.fwd)),
-            Line(title: "Starting", picks: starters.filter { !known.contains(team.player($0.playerId)?.position ?? .unknown) }),
-            Line(title: "Bench", picks: bench),
-        ].filter { !$0.picks.isEmpty }
+    }
+}
+
+// MARK: - Squad order (presentation only: slots and positions come from the API)
+
+enum TeamSquad {
+    /// Starters in lines: goalkeeper, defenders, midfielders, forwards (any unknown position last).
+    static func rows(_ snapshot: Team.Snapshot, team: Team) -> [[Team.Pick]] {
+        let starters = snapshot.picks.filter { $0.role != .bench }.sorted { $0.slot < $1.slot }
+        let order: [Position] = [.gk, .def, .mid, .fwd]
+        var lines = order.map { position in starters.filter { team.player($0.playerId)?.position == position } }
+        let rest = starters.filter { !order.contains(team.player($0.playerId)?.position ?? .unknown) }
+        if !rest.isEmpty { lines.append(rest) }
+        return lines.filter { !$0.isEmpty }
     }
 
+    /// The bench in its order: goalkeeper, then substitutes 1–3.
+    static func bench(_ snapshot: Team.Snapshot) -> [Team.Pick] {
+        snapshot.picks.filter { $0.role == .bench }.sorted { $0.slot < $1.slot }
+    }
+
+    /// "4–4–2" from the starters' positions.
+    static func formation(_ snapshot: Team.Snapshot, team: Team) -> String {
+        let starters = snapshot.picks.filter { $0.role != .bench }
+        let counts = [Position.def, .mid, .fwd].map { position in
+            starters.filter { team.player($0.playerId)?.position == position }.count
+        }
+        return counts.map(String.init).joined(separator: "–")
+    }
+}
+
+// MARK: - Words
+
+enum TeamText {
     static func chipName(_ code: String) -> String {
         switch code {
         case "wildcard": "Wildcard"
@@ -275,170 +440,35 @@ struct TeamContent: View {
         default: code
         }
     }
-}
 
-/// One squad member: name, captaincy, availability, club and price, and the next fixture with xFDR.
-struct PlayerRow: View {
-    @Environment(AppModel.self) private var appModel
-    @Environment(\.dynamicTypeSize) private var typeSize
-    let pick: Team.Pick
-    let player: PlayerSummary
-    /// The betting-market chance for this player's position, when odds are switched on.
-    var chance: OddsChance?
+    static func sourceMessage(_ snapshot: Team.Snapshot, nextGw: Int?) -> String {
+        var text = "This is your GW\(snapshot.gw) deadline squad, as published at the deadline on \(Format.deadline(snapshot.deadline))."
+        if let nextGw { text += " The fixtures shown are for GW\(nextGw)." }
+        text += " Transfers or captain changes made since that deadline aren't visible here yet, and refreshing doesn't make this your current, unpublished team."
+        if let value = snapshot.value { text += "\n\nSquad value \(Format.price(value))" + (snapshot.bank.map { ", \(Format.price($0)) in the bank." } ?? ".") }
+        return text
+    }
 
-    var body: some View {
-        let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: ToolkitSpace.sm))
-            : AnyLayout(HStackLayout(alignment: .center, spacing: ToolkitSpace.md))
-        layout {
-            HStack(spacing: ToolkitSpace.md) {
-                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 36)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: ToolkitSpace.sm) {
-                        Text(player.webName)
-                            .font(.headline)
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        if pick.isCaptain { RoleBadge(letter: "C") }
-                        if pick.isViceCaptain { RoleBadge(letter: "V") }
-                        AvailabilityBadge(availability: player.availability)
-                    }
-                    ClubLabel(clubId: player.clubId, text: details)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                    if let chance {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chart.bar.xaxis")
-                                .accessibilityHidden(true)
-                            Text(chance.text)
-                            if let move = chance.movement {
-                                Text(move)
-                                    .foregroundStyle(move.hasPrefix("↑") ? ToolkitColor.positive : ToolkitColor.error)
-                            }
-                        }
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.link)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(chance.spoken)
-                    }
-                }
-            }
-            if !typeSize.isAccessibilitySize { Spacer(minLength: ToolkitSpace.sm) }
-            if let fixture = player.nextFixture {
-                FixtureSummary(fixture: fixture)
-            }
+    static let fdrMessage = "xFDR is FPLToolkit's fixture difficulty: lower is easier, from 1 to 5. Each player gets the variant for their position: xFDR · Defence (clean-sheet difficulty) for goalkeepers and defenders, and xFDR · Attack for midfielders and forwards. FPL's official FDR is a separate rating; it's never made by rounding xFDR."
+
+    static func oddsMessage(_ odds: Odds?) -> String {
+        var text = "Chances from bookmakers' odds, with their margin removed: a clean sheet for goalkeepers and defenders, and scoring for midfielders and forwards. A dash means there's no market for that player, not a 0% chance."
+        if let odds, let fetched = odds.fetchedAt { text += " GW\(odds.gameweek) odds, checked \(Format.ago(fetched))." }
+        if odds?.available != true { text += " Odds for the next gameweek arrive 48 hours before its deadline." }
+        return text
+    }
+
+    /// "CS 29%" or "Goal 52%"; "CS —" when there's no market.
+    static func oddsTile(_ player: PlayerSummary, odds: Odds?) -> String {
+        let prefix = player.position == .gk || player.position == .def ? "CS" : "Goal"
+        guard let odds, odds.available, let chance = OddsChance.of(player, in: odds) else { return "\(prefix) —" }
+        return "\(prefix) \(OddsChance.percent(chance.value))"
+    }
+
+    static func oddsSpoken(_ player: PlayerSummary, odds: Odds?) -> String {
+        guard let odds, odds.available, let chance = OddsChance.of(player, in: odds) else {
+            return "no betting-market estimate"
         }
-        .padding(.vertical, ToolkitSpace.md)
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var details: String {
-        var parts: [String] = []
-        if let club = appModel.club(player.clubId) { parts.append(club.shortName) }
-        parts.append(player.position.rawValue)
-        parts.append(Format.price(player.price))
-        return parts.joined(separator: " · ")
+        return chance.spoken
     }
 }
-
-struct RoleBadge: View {
-    let letter: String
-    var body: some View {
-        Text(letter)
-            .font(.caption.weight(.heavy))
-            .foregroundStyle(ToolkitColor.onAccent)
-            .frame(width: 22, height: 22)
-            .background(ToolkitColor.accent, in: Circle())
-            .accessibilityLabel(letter == "C" ? "Captain" : "Vice-captain")
-    }
-}
-
-/// Nothing for available players; an icon plus the published chance (never colour alone) otherwise.
-struct AvailabilityBadge: View {
-    let availability: PlayerSummary.Availability
-
-    var body: some View {
-        switch availability.level {
-        case .ok, .unknown:
-            EmptyView()
-        case .doubt, .out:
-            let isOut = availability.level == .out
-            Label(chanceText, systemImage: isOut ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
-                .labelStyle(.titleAndIcon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(isOut ? ToolkitColor.error : ToolkitColor.warning)
-                .accessibilityLabel(availability.news ?? (isOut ? "Out" : "Doubtful"))
-        }
-    }
-
-    private var chanceText: String {
-        if let chance = availability.chanceNext { return "\(chance)%" }
-        return availability.level == .out ? "Out" : "Doubt"
-    }
-}
-
-/// "CHE (H)" with the xFDR value, or "No fixture" in a blank gameweek.
-struct FixtureSummary: View {
-    @Environment(AppModel.self) private var appModel
-    @Environment(\.dynamicTypeSize) private var typeSize
-    let fixture: FixtureDifficulty
-
-    var body: some View {
-        VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 4) {
-            Text(opponent)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.primaryText)
-            if let xfdr = fixture.xfdr {
-                Text("xFDR \(xfdr.value.formatted(.number.precision(.fractionLength(1))))\(xfdr.source == .fpl ? " (FPL)" : "")")
-                    .font(.caption.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(ToolkitColor.raised, in: RoundedRectangle(cornerRadius: 6))
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
-    }
-
-    private var opponent: String {
-        if fixture.blank { return "No fixture" }
-        let name = appModel.club(fixture.opponentClubId)?.shortName ?? "TBC"
-        guard let home = fixture.home else { return name }
-        return "\(name) (\(home ? "H" : "A"))"
-    }
-
-    private var accessibilityText: String {
-        if fixture.blank { return "No fixture in gameweek \(fixture.gw)" }
-        let name = appModel.club(fixture.opponentClubId)?.name ?? "opponent to be confirmed"
-        let venue = fixture.home.map { $0 ? "at home" : "away" } ?? ""
-        let difficulty = fixture.xfdr.map { ", difficulty \($0.value.formatted(.number.precision(.fractionLength(1)))) out of 5" } ?? ""
-        return "Next: \(name) \(venue)\(difficulty)"
-    }
-}
-
-#if DEBUG
-#Preview("Published") {
-    NavigationStack {
-        ScrollView {
-            TeamContent(loaded: PreviewFixtures.load("team-71191", as: Team.self))
-                .padding(.horizontal, ToolkitSpace.page)
-        }
-        .toolkitScreen()
-        .navigationTitle("My team")
-    }
-    .environment(AppModel())
-}
-
-#Preview("Free Hit") {
-    NavigationStack {
-        ScrollView {
-            TeamContent(loaded: PreviewFixtures.load("team-895045-freehit", as: Team.self))
-                .padding(.horizontal, ToolkitSpace.page)
-        }
-        .toolkitScreen()
-        .navigationTitle("My team")
-    }
-    .environment(AppModel())
-}
-#endif

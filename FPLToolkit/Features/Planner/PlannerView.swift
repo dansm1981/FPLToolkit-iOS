@@ -40,7 +40,9 @@ struct PlannerView: View {
         // Back from a draft: names, planned weeks, copies and deletions may have changed.
         .onAppear {
             if !list.isInitial { Task { await list.load(bypassCache: true) } }
+            openPendingDraft()
         }
+        .onChange(of: appModel.router.pendingDraftId) { openPendingDraft() }
         .navigationDestination(for: PlannerDraftRoute.self) { route in
             DraftView(id: route.id, repository: appModel.plannerRepository)
         }
@@ -73,6 +75,13 @@ struct PlannerView: View {
         .toolkitScreen()
         .navigationTitle("Planner")
         .settingsButton(entryId: entryId)
+    }
+
+    /// Today's "Continue your plan" asks for a draft by setting the router's pending ID.
+    private func openPendingDraft() {
+        guard let id = appModel.router.pendingDraftId else { return }
+        appModel.router.pendingDraftId = nil
+        opened = PlannerDraftRoute(id: id)
     }
 
     private func content(_ loaded: Loaded<PlannerDraftList>, list: Resource<PlannerDraftList>) -> some View {

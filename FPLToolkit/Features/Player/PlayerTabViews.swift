@@ -13,7 +13,7 @@ struct PlayerMoreSection: View {
                 ForEach(Array(PlayerTab.allCases.enumerated()), id: \.element) { index, tab in
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
                     NavigationLink {
-                        destination(tab)
+                        PlayerTabDestination(playerId: playerId, name: name, tab: tab)
                     } label: {
                         HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.md) {
                             Image(systemName: tab.systemImage)
@@ -50,8 +50,16 @@ struct PlayerMoreSection: View {
         }
     }
 
-    @ViewBuilder
-    private func destination(_ tab: PlayerTab) -> some View {
+}
+
+/// One of the player's focused pages (history, form, underlying, fixtures, price, DEFCON,
+/// similar players), for pushing from anywhere.
+struct PlayerTabDestination: View {
+    let playerId: Int
+    let name: String
+    let tab: PlayerTab
+
+    var body: some View {
         switch tab {
         case .history: PlayerTabScreen(playerId: playerId, name: name, tab: tab, as: PlayerHistoryTab.self) { HistoryTabView(tab: $0) }
         case .form: PlayerTabScreen(playerId: playerId, name: name, tab: tab, as: PlayerFormTab.self) { FormTabView(tab: $0) }
