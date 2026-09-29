@@ -343,7 +343,7 @@ private struct NextPointsRow: View {
                 .font(.headline)
                 .foregroundStyle(ToolkitColor.primaryText)
             if let d = player.next.defcon {
-                ProgressLine(label: d.reached ? "DEFCON reached" : "DEFCON \(d.count)/\(d.threshold)",
+                MatchdayProgressLine(label: d.reached ? "DEFCON reached" : "DEFCON \(d.count)/\(d.threshold)",
                              value: Double(min(d.count, d.threshold)), total: Double(d.threshold),
                              done: d.reached)
             }
@@ -373,7 +373,7 @@ private struct NextPointsRow: View {
     }
 }
 
-private struct ProgressLine: View {
+private struct MatchdayProgressLine: View {
     let label: String
     let value: Double
     let total: Double

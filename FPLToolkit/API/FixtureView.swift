@@ -1,8 +1,10 @@
 import Foundation
 
-/// The website's fixture switches: FPL FDR or xFDR, and the lens. The device keeps the choice (the
-/// website keeps it in the browser) and sends it with every planner request; the server rates the
-/// fixtures, so the numbers always match the website's.
+/// The fixture switches: Toolkit's xFDR or FPL's official FDR, and xFDR's variant. The device keeps
+/// the choice and sends it with every planner request; the server rates the fixtures, so the numbers
+/// always match the website's. Names follow Dan's note of 29 Sep: xFDR has Overall, Attack and
+/// Defence variants (the server's match, attack and clean_sheet lenses), the active one is always
+/// labelled, and official FDR stays a separate, clearly named option.
 struct FixtureView: Hashable, Sendable {
     enum Model: String, CaseIterable, Identifiable, Sendable {
         case xfdr, fpl
@@ -10,7 +12,7 @@ struct FixtureView: Hashable, Sendable {
         var label: String {
             switch self {
             case .xfdr: "xFDR"
-            case .fpl: "FPL FDR"
+            case .fpl: "Official FDR"
             }
         }
     }
@@ -22,9 +24,9 @@ struct FixtureView: Hashable, Sendable {
         var label: String {
             switch self {
             case .position: "By position"
-            case .match: "Match"
+            case .match: "Overall"
             case .attack: "Attack"
-            case .cleanSheet: "Clean sheet"
+            case .cleanSheet: "Defence"
             }
         }
     }
@@ -48,8 +50,36 @@ struct FixtureView: Hashable, Sendable {
         [URLQueryItem(name: "model", value: model.rawValue), URLQueryItem(name: "lens", value: lens.rawValue)]
     }
 
-    /// "xFDR · By position", or "FPL FDR" (the lens only changes xFDR).
+    /// "xFDR · By position", or "Official FDR" (the variant only changes xFDR).
     var summary: String { model == .fpl ? model.label : "\(model.label) · \(lens.label)" }
+
+    /// The variant a player sees under this choice: "By position" means Defence for goalkeepers
+    /// and defenders and Attack for midfielders and forwards.
+    func label(for position: Position) -> String {
+        guard model == .xfdr else { return model.label }
+        guard lens == .position else { return summary }
+        return "xFDR · " + (position == .gk || position == .def ? "Defence" : "Attack")
+    }
+}
+
+extension FixtureDifficulty.XFDR.Lens {
+    /// The variant's name, as the fixture itself reports it.
+    var variant: String? {
+        switch self {
+        case .match: "Overall"
+        case .attack: "Attack"
+        case .cleanSheet: "Defence"
+        case .unknown: nil
+        }
+    }
+}
+
+extension FixtureDifficulty.XFDR {
+    /// "xFDR · Defence", or "Official FDR" where FPL's own rating stands in.
+    var modelLabel: String {
+        if source == .fpl { return "Official FDR" }
+        return lens.variant.map { "xFDR · \($0)" } ?? "xFDR"
+    }
 }
 
 extension FixtureDifficulty.XFDR {

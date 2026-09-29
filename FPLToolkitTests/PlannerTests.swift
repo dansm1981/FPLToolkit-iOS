@@ -95,7 +95,7 @@ struct PlannerTests {
         #expect(fresh.summary == "xFDR · By position")
         #expect(fresh.queryItems.map(\.description) == ["model=xfdr", "lens=position"])
         let fpl = FixtureView(model: .fpl, lens: .cleanSheet)
-        #expect(fpl.summary == "FPL FDR")
+        #expect(fpl.summary == "Official FDR")
         #expect(fpl.queryItems.map(\.description) == ["model=fpl", "lens=clean_sheet"])
         let json = #"[{"value":2.14,"lens":"match","source":"market","band":2},{"value":4,"lens":"attack","source":"fpl","band":4}]"#
         let values = try? JSONDecoder().decode([FixtureDifficulty.XFDR].self, from: Data(json.utf8))

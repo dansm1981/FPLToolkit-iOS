@@ -88,6 +88,14 @@ struct Bootstrap: Decodable, Sendable {
         let shortName: String
         /// API-Football logo, relative to the API base (`images/clubs/{id}?v=…`); nil without one.
         let logo: String?
+        /// Club colours as "#RRGGBB" (happy-backend-pal#42); nil for older servers or a club
+        /// without an entry.
+        let colors: Colors?
+
+        struct Colors: Decodable, Sendable, Hashable {
+            let primary: String
+            let secondary: String
+        }
     }
     struct Config: Decodable, Sendable {
         struct Features: Decodable, Sendable {

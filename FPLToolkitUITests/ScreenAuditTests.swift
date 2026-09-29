@@ -277,8 +277,8 @@ final class ScreenAuditTests: XCTestCase {
         let fixtures = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Fixture difficulty'")).firstMatch
         waitFor(fixtures, "Fixture switch")
         fixtures.tap()
-        app.buttons["FPL FDR"].firstMatch.tap()
-        waitFor(app.buttons["Fixture difficulty: FPL FDR"].firstMatch, "FPL model chosen")
+        app.buttons["Official FDR"].firstMatch.tap()
+        waitFor(app.buttons["Fixture difficulty: Official FDR"].firstMatch, "Official FDR chosen")
         fixtures.tap()
         app.buttons["xFDR"].firstMatch.tap()
         waitFor(app.buttons["Fixture difficulty: xFDR · By position"].firstMatch, "Back to xFDR")
