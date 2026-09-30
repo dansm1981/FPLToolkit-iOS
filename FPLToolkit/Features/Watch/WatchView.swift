@@ -4,6 +4,7 @@ import SwiftUI
 /// each with why it's watched. Alerts for them arrive once pushes are switched on (Step 4).
 struct WatchView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.scenePhase) private var scenePhase
     /// nil while exploring without a team.
     let entryId: Int?
     @State private var searchAvailable = false
@@ -23,7 +24,10 @@ struct WatchView: View {
         // The search field is added once search is known to be live, which swaps the view inside
         // this modifier; tasks attached after it keep running through that swap.
         .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
-        .task { await appModel.watch?.loadIfNeeded() }
+        .task { await appModel.watch?.refreshIfStale() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await appModel.watch?.refreshIfStale() } }
+        }
         .task {
             if search == nil {
                 search = PlayerSearchModel(repository: appModel.playerRepository)
@@ -151,7 +155,7 @@ private struct SearchResultRow: View {
 
     var body: some View {
         let watch = store.watch
-        let isManual = watch?.isManual(player.id) ?? false
+        let isManual = store.isManual(player.id)
         let inSquad = watch?.reasons(for: player.id).contains(.squad) ?? false
         HStack(spacing: ToolkitSpace.md) {
             Button {
@@ -186,7 +190,6 @@ private struct SearchResultRow: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.borderless)
-            .disabled(watch == nil || store.isUpdating)
             .accessibilityLabel(isManual ? "Stop watching \(player.webName)" : "Watch \(player.webName)")
         }
     }
@@ -279,7 +282,7 @@ private struct WatchContent: View {
                     ForEach(squadItems) { item in
                         row(item, watch: watch)
                             .swipeActions(edge: .trailing) {
-                                if watch.isManual(item.playerId) {
+                                if store.isManual(item.playerId) {
                                     Button("Unpin") { Task { await store.setWatched(false, playerId: item.playerId) } }
                                         .tint(ToolkitColor.raised)
                                 } else {
@@ -375,7 +378,7 @@ private struct WatchContent: View {
         Button {
             appModel.router.openPlayer(item.playerId)
         } label: {
-            WatchRow(item: item, player: watch.player(item.playerId), isManual: watch.isManual(item.playerId))
+            WatchRow(item: item, player: watch.player(item.playerId), isManual: store.isManual(item.playerId))
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens the player")

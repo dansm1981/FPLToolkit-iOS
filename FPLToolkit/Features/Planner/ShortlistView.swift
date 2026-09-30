@@ -148,7 +148,7 @@ struct ShortlistView: View {
     private func row(_ item: PlannerShortlist.Item, list: PlannerShortlist) -> some View {
         let player = list.player(item.playerId)
         let name = player?.webName ?? "Player \(item.playerId)"
-        let watched = appModel.watch?.watch?.isManual(item.playerId) ?? false
+        let watched = appModel.watch?.isManual(item.playerId) ?? false
         return HStack(alignment: .center, spacing: ToolkitSpace.md) {
             Button {
                 appModel.router.openPlayer(item.playerId)

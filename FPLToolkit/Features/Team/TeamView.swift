@@ -16,6 +16,7 @@ enum SquadMetric: String, CaseIterable, Identifiable {
 /// screen; its source context is one line, and the exact times open on tap.
 struct TeamView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.scenePhase) private var scenePhase
     let entryId: Int
     @State private var resource: Resource<Team>?
     /// Chances from bookmaker odds (P3-5), for the Odds layer.
@@ -98,7 +99,23 @@ struct TeamView: View {
                 if let picks = resource.loaded?.value.snapshot?.picks {
                     appModel.squadIds = Set(picks.map(\.playerId))
                 }
+            } else {
+                await refreshIfStale()
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await refreshIfStale() } }
+        }
+    }
+
+    /// Back on My Team from another tab or the app: reload the squad after a minute (odds after
+    /// 5), keeping the current copy on screen meanwhile.
+    private func refreshIfStale() async {
+        async let oddsLoad: Void = odds?.refreshIfStale(maxAge: 300) ?? ()
+        await resource?.refreshIfStale()
+        await oddsLoad
+        if let picks = resource?.loaded?.value.snapshot?.picks {
+            appModel.squadIds = Set(picks.map(\.playerId))
         }
     }
 

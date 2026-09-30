@@ -2,14 +2,14 @@ import Foundation
 
 /// The only thing in the app that talks to the network. Everything goes to /api/mobile/v1/*.
 struct APIClient: Sendable {
-    static let production = APIClient(baseURL: URL(string: "https://www.fpltoolkit.co.uk/api/mobile/v1/")!)
+    static let production = APIClient(baseURL: URL(string: "https://www.fpltoolkit.co.uk/api/mobile/v1/")!, recent: .shared)
 
     /// Production, except in debug builds launched with `-apiBaseURL <url>` (e.g. an unreachable
     /// host to check the offline states).
     static var configured: APIClient {
         #if DEBUG
         if let override = UserDefaults.standard.string(forKey: "apiBaseURL"), let url = URL(string: override) {
-            return APIClient(baseURL: url)
+            return APIClient(baseURL: url, recent: .shared)
         }
         #endif
         return .production
@@ -17,6 +17,8 @@ struct APIClient: Sendable {
 
     let baseURL: URL
     var session: URLSession = .shared
+    /// Recent GET answers in memory (the app's clients; tests leave it out).
+    var recent: RecentResponses?
 
     /// Fetches `path` and decodes the v1 envelope. Returns the raw bytes too, for the offline cache.
     func get<T: Decodable & Sendable>(
@@ -41,6 +43,11 @@ struct APIClient: Sendable {
     ) async throws -> Fetched<T> {
         var url = baseURL.appending(path: path)
         if !query.isEmpty { url.append(queryItems: query) }
+        let recentKey = url.absoluteString
+        if method == "GET", !bypassCache, let data = recent?.fresh(recentKey),
+           let envelope = try? Self.decode(Envelope<T>.self, from: data) {
+            return Fetched(envelope: envelope, raw: data)
+        }
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -74,12 +81,19 @@ struct APIClient: Sendable {
             throw APIError.unexpected(status: status)
         }
 
+        let envelope: Envelope<T>
         do {
-            let envelope = try Self.decode(Envelope<T>.self, from: data)
-            return Fetched(envelope: envelope, raw: data)
+            envelope = try Self.decode(Envelope<T>.self, from: data)
         } catch {
             throw APIError.decoding(String(describing: error))
         }
+        if method == "GET" {
+            let cacheControl = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Cache-Control")
+            recent?.keep(data, for: recentKey, cacheControl: authorization == nil ? cacheControl : nil)
+        } else {
+            recent?.removeAll()
+        }
+        return Fetched(envelope: envelope, raw: data)
     }
 
     static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {

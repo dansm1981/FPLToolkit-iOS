@@ -115,6 +115,7 @@ final class AppModel {
         defaults.removeObject(forKey: Keys.entryId)
         defaults.removeObject(forKey: Keys.exploring)
         cache.removeAll()
+        RecentResponses.shared.removeAll()
         entryId = nil
         exploring = false
         squadIds = []

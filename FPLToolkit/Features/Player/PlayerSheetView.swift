@@ -112,7 +112,7 @@ private struct PlayerMoreMenu: View {
     var body: some View {
         Menu {
             if let store = appModel.watch {
-                let manual = store.watch?.isManual(player.id) ?? false
+                let manual = store.isManual(player.id)
                 Button {
                     Task { await store.setWatched(!manual, playerId: player.id) }
                 } label: {
@@ -570,7 +570,7 @@ private struct WatchButton: View {
 
     var body: some View {
         if let store = appModel.watch {
-            let manual = store.watch?.isManual(player.id) ?? false
+            let manual = store.isManual(player.id)
             let inSquad = store.watch.map { $0.autoTrackSquad && ($0.squad?.playerIds.contains(player.id) ?? false) } ?? false
             VStack(alignment: .leading, spacing: 6) {
                 Button {
@@ -580,7 +580,6 @@ private struct WatchButton: View {
                           systemImage: manual ? "checkmark" : "bell")
                 }
                 .buttonStyle(ToolkitSecondaryButtonStyle())
-                .disabled(store.watch == nil || store.isUpdating)
                 .accessibilityHint(manual ? "Stops watching this player"
                                    : inSquad ? "You're already watching him as part of your squad; this keeps him if you sell him"
                                    : "Adds him to your watch list")

@@ -5,6 +5,7 @@ import SwiftUI
 /// repeated here; their detail lives in Settings › Data & sources.
 struct TodayView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.scenePhase) private var scenePhase
     let entryId: Int
     @State private var resource: Resource<Today>?
     /// The gameweek score for the card.
@@ -101,7 +102,25 @@ struct TodayView: View {
                 if let picks = team.loaded?.value.snapshot?.picks {
                     appModel.squadIds = Set(picks.map(\.playerId))
                 }
+            } else {
+                await refreshIfStale()
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await refreshIfStale() } }
+        }
+    }
+
+    /// Back on Today from another tab or the app: reload whatever is out of date (the score after
+    /// 15 seconds, the rest after a minute), keeping the current copy on screen meanwhile.
+    private func refreshIfStale() async {
+        async let liveLoad: Void = live?.refreshIfStale(maxAge: 15) ?? ()
+        async let teamLoad: Void = team?.refreshIfStale() ?? ()
+        async let draftsLoad: Void = drafts?.refreshIfStale() ?? ()
+        await resource?.refreshIfStale()
+        _ = await (liveLoad, teamLoad, draftsLoad)
+        if let picks = team?.loaded?.value.snapshot?.picks {
+            appModel.squadIds = Set(picks.map(\.playerId))
         }
     }
 }

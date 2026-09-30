@@ -1,7 +1,12 @@
 import Foundation
 
+/// What WatchStore needs from the server: WatchRepository, or a stand-in in tests.
+protocol WatchService: LoadableEndpoint where Value == Watch {
+    func update(manual: [Int], autoTrackSquad: Bool?) async throws -> Loaded<Watch>
+}
+
 /// The device's watch list (§6.1). Private to this device; saved offline like everything else.
-struct WatchRepository: LoadableEndpoint {
+struct WatchRepository: WatchService {
     let session: DeviceSession
     let cache: ResponseCache
     private let path = "devices/me/watch"

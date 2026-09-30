@@ -79,6 +79,10 @@ private struct DraftContent: View {
                 if let error = model.actionError {
                     ErrorBanner(copy: error)
                 }
+                if let error = appModel.watch?.updateError {
+                    ErrorBanner(copy: ErrorCopy(title: "Couldn't change your watch list",
+                                                message: error.title, canRetry: error.canRetry))
+                }
                 if let notice {
                     Label(notice, systemImage: "checkmark.circle")
                         .font(.subheadline)
@@ -256,8 +260,8 @@ private struct DraftContent: View {
             pickerSlot = PickerSlot(position: position, replacing: pick, onBench: onBench)
         }
         Button("Swap with…") { model.swapFrom = pick.playerId }
-        if let store = appModel.watch, let watch = store.watch {
-            let watched = watch.isManual(pick.playerId)
+        if let store = appModel.watch, store.watch != nil {
+            let watched = store.isManual(pick.playerId)
             Button(watched ? "Stop watching" : "Watch for alerts") {
                 Task { await store.setWatched(!watched, playerId: pick.playerId) }
             }

@@ -16,6 +16,8 @@ final class Resource<T: Decodable & Sendable> {
     private(set) var isRefreshing = false
     /// Why the latest refresh failed while older data stays on screen.
     private(set) var refreshError: ErrorCopy?
+    /// When the network last answered (not the saved copy).
+    private(set) var fetchedAt: Date?
 
     private let endpoint: any LoadableEndpoint<T>
 
@@ -49,6 +51,7 @@ final class Resource<T: Decodable & Sendable> {
         do {
             phase = .loaded(try await endpoint.fetch(bypassCache: bypassCache))
             refreshError = nil
+            fetchedAt = .now
         } catch let error as APIError {
             let copy = ErrorCopy(error)
             if loaded != nil && copy.canRetry {
@@ -61,10 +64,19 @@ final class Resource<T: Decodable & Sendable> {
         }
     }
 
+    /// Loads again when what's on screen is older than `maxAge` or came from the saved copy, e.g.
+    /// on coming back to a tab or the app (batch 3). Screens loaded once and then never refreshed.
+    func refreshIfStale(maxAge: TimeInterval = 60) async {
+        guard !isRefreshing else { return }
+        if let fetchedAt, refreshError == nil, Date.now.timeIntervalSince(fetchedAt) < maxAge { return }
+        await load()
+    }
+
     /// Shows a response obtained another way (e.g. the result of a PUT).
     func replace(with loaded: Loaded<T>) {
         phase = .loaded(loaded)
         refreshError = nil
+        fetchedAt = .now
     }
 
     func retry() async {
