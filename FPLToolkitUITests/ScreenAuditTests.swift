@@ -792,7 +792,15 @@ final class ScreenAuditTests: XCTestCase {
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
         openResearch(app)
+        // One Elite home since batch 3, with a card for every Elite page.
+        openHubRow(app, "Elite 100")
+        waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Elite overview, Median GW points'")).firstMatch,
+                "Elite home", timeout: 60)
+        settle()
+        check(app, "52-elite-home", clippingCheckedLarge: true)
         let screens: [(String, NSPredicate, String)] = [
+            ("You vs Elite", NSPredicate(format: "label BEGINSWITH[c] 'Template overlap'"), "52b-you-vs-elite"),
+            ("Elite vs overall", NSPredicate(format: "label BEGINSWITH[c] 'The Elite back more'"), "52c-elite-gaps"),
             ("Elite overview", NSPredicate(format: "label BEGINSWITH[c] 'Elite snapshot'"), "53-elite-overview"),
             ("Elite ownership", NSPredicate(format: "label ENDSWITH[c] ' players'"), "55-elite-ownership"),
             ("Elite transfers", NSPredicate(format: "label BEGINSWITH[c] 'Transfer activity'"), "57-elite-transfers"),
@@ -824,6 +832,7 @@ final class ScreenAuditTests: XCTestCase {
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
         openResearch(app)
+        openHubRow(app, "Elite 100")
         let screens: [(String, NSPredicate, String)] = [
             ("Elite template race", NSPredicate(format: "label BEGINSWITH[c] 'Elite ownership race'"), "60-elite-race"),
             ("Elite movers", NSPredicate(format: "label BEGINSWITH[c] 'Biggest 1 GW risers'"), "62-elite-movers"),

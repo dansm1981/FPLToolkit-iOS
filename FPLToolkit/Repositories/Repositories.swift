@@ -257,6 +257,10 @@ struct EliteRepository: Sendable {
     }
 
     func overview(gw: Int?) -> CachedEndpoint<ElitePage<EliteOverview>> { page("overview", gw: gw) }
+    /// You vs Elite: a team's squad against the Elite 100 (batch 3).
+    func you(entryId: Int) -> CachedEndpoint<ElitePage<TeamElite>> {
+        .init(client: client, cache: cache, path: "team/\(entryId)/elite")
+    }
     func transfers(gw: Int?) -> CachedEndpoint<ElitePage<EliteTransfers>> { page("transfers", gw: gw) }
     func captaincy(gw: Int?) -> CachedEndpoint<ElitePage<EliteCaptaincy>> { page("captaincy", gw: gw) }
     func template(gw: Int?) -> CachedEndpoint<ElitePage<EliteTemplate>> { page("template", gw: gw) }

@@ -139,6 +139,44 @@ struct EliteOverview: Decodable, Sendable {
     let cooling: [EliteChangeRow]
 }
 
+/// `GET /team/{entryId}/elite`: You vs Elite (batch 3, happy-backend-pal#55).
+struct TeamElite: Decodable, Sendable {
+    struct Row: Decodable, Sendable, Hashable, Identifiable {
+        let playerId: Int
+        /// Share of the Elite 100 owning him.
+        let elite: ShownValue
+        let overall: String
+        /// Elite minus overall, "+24.1pp".
+        let edge: String
+        let inTemplate: Bool
+        var id: Int { playerId }
+    }
+
+    struct Template: Decodable, Sendable, Hashable {
+        let owned: Int
+        let total: Int
+        let startingOwned: Int
+        let startingTotal: Int
+    }
+
+    /// Average Elite ownership of a squad's players.
+    struct Likeness: Decodable, Sendable, Hashable {
+        let you: ShownValue
+        /// An average Elite 100 squad's: the team baseline.
+        let eliteAverage: ShownValue
+        let template: ShownValue
+    }
+
+    let entryId: Int
+    let squadGw: Int?
+    let cohortSize: Int?
+    let template: Template
+    let likeness: Likeness
+    let squad: [Row]
+    let missing: [Row]
+    let differentials: [Row]
+}
+
 struct EliteOwnership: Decodable, Sendable {
     struct Filter: Decodable, Sendable, Hashable {
         let position: Position?

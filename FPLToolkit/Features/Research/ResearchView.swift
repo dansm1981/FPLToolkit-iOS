@@ -92,49 +92,10 @@ struct ResearchView: View {
             .listRowBackground(ToolkitColor.surface)
 
             Section {
-                row("Elite overview", systemImage: "crown",
-                    detail: "What the top 100 managers own, buy, sell and captain, week by week.") {
-                    EliteOverviewView()
-                }
-                row("Elite ownership", systemImage: "chart.bar.xaxis",
-                    detail: "Every player the cohort owns, starts and captains, against the wider game.") {
-                    EliteOwnershipView()
-                }
-                row("Elite transfers", systemImage: "arrow.left.arrow.right.circle",
-                    detail: "Their buys and sells, net flow, and the swaps they made most.") {
-                    EliteTransfersView()
-                }
-                row("Elite captaincy", systemImage: "c.circle",
-                    detail: "How concentrated the armband is, conviction, and the vice-captains.") {
-                    EliteCaptaincyView()
-                }
-                row("Elite template race", systemImage: "flag.checkered",
-                    detail: "The template players and the challengers closing in, over the season.") {
-                    EliteRaceView()
-                }
-                row("Elite movers", systemImage: "arrow.up.arrow.down",
-                    detail: "The sharpest ownership swings, first-time picks, and template entries and exits.") {
-                    EliteMoversView()
-                }
-                row("Elite comparison", systemImage: "chart.xyaxis.line",
-                    detail: "Up to eight players' elite ownership, side by side across the season.") {
-                    EliteCompareView(entryId: entryId)
-                }
-                row("Elite template", systemImage: "person.3.sequence",
-                    detail: "The fifteen they converge on, the XI they start, and who came and went.") {
-                    EliteTemplateView()
-                }
-                row("Elite chips", systemImage: "square.stack.3d.up",
-                    detail: "When the cohort plays each chip, and how many they have left.") {
-                    EliteChipsView()
-                }
-                row("Elite squad structure", systemImage: "square.grid.3x3",
-                    detail: "Formations, spend by position, and team value over the season.") {
-                    EliteStructureView()
-                }
-                row("Elite trends", systemImage: "chart.line.uptrend.xyaxis",
-                    detail: "The cohort's season week by week, and who they're piling into or dropping.") {
-                    EliteTrendsView()
+                // One home for the Elite pages (batch 3): summary cards into each, You vs Elite first.
+                row("Elite 100", systemImage: "crown",
+                    detail: "What the top 100 managers do: You vs Elite, Elite vs overall, and every Elite page with this week's key figure.") {
+                    EliteHomeView(entryId: entryId)
                 }
             } header: {
                 Text("Elite")
