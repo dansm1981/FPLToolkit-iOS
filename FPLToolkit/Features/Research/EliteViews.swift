@@ -10,7 +10,7 @@ struct EliteOverviewView: View {
     static let explainer = "Elite Managers tracks a fixed anonymous cohort of 100 historically high-performing FPL managers. Their individual teams and identities are never displayed. Instead their collective decisions are aggregated to reveal ownership, transfers, captaincy, chip usage, squad structure and trends."
 
     var body: some View {
-        EliteScreen(title: "Elite managers", caption: "Loading the elite cohort…", table: table, gw: $gw,
+        EliteScreen(title: "Elite overview", caption: "Loading the elite cohort…", table: table, gw: $gw,
                     retry: reload) {
             EliteNote(text: Self.explainer)
         } content: { page, o in

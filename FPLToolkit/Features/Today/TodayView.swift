@@ -20,6 +20,7 @@ struct TodayView: View {
     @State private var showingSource = false
     @State private var showingSources = false
     @State private var showingHistory = false
+    @State private var showingAlertsPrimer = false
 
     var body: some View {
         Group {
@@ -49,7 +50,8 @@ struct TodayView: View {
                                 onLeagues: { showingLeagues = true },
                                 onSource: { showingSource = true },
                                 onSources: { showingSources = true },
-                                onHistory: { showingHistory = true })
+                                onHistory: { showingHistory = true },
+                                onOfferAlerts: { showingAlertsPrimer = true })
                         }
                         .padding(.horizontal, 18)
                         .padding(.bottom, ToolkitSpace.section)
@@ -74,6 +76,8 @@ struct TodayView: View {
         .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
         .navigationDestination(isPresented: $showingSources) { DataSourcesView(entryId: entryId) }
         .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
+        // Presented by the screen, so it survives the card going once the user answers.
+        .sheet(isPresented: $showingAlertsPrimer) { NotificationPrimerView() }
         .sheet(isPresented: $showingSource) {
             if let snapshot = resource?.loaded?.value.snapshot {
                 InfoSheet(title: "Your published squad", message: TodayText.sourceMessage(snapshot), links: [
@@ -140,6 +144,8 @@ struct TodayContent: View {
     let onSource: () -> Void
     let onSources: () -> Void
     let onHistory: () -> Void
+    /// "Get alerts for your players": shown once alerts are live and until the user answers.
+    var onOfferAlerts: () -> Void = {}
 
     private var today: Today { loaded.value }
 
@@ -157,6 +163,8 @@ struct TodayContent: View {
                          onOpen: { appModel.router.showingMatchday = true }, onHistory: onHistory)
 
             status
+
+            AlertsOfferCard(open: onOfferAlerts)
 
             if isLive, let liveTeam = live?.loaded?.value, !latestMoments(liveTeam).isEmpty {
                 SectionHeader(title: "Latest for your team")

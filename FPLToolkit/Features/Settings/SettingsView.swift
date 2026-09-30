@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Settings: the connected team, "Change team", and the unofficial disclosure.
+/// Settings: the connected team, Data & sources, "Change team", and About (the unofficial
+/// disclosure and who makes the app).
 struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
@@ -18,6 +19,11 @@ struct SettingsView: View {
                 Section("Your team") {
                     if let entryId {
                         LabeledContent("Team ID", value: String(entryId))
+                        NavigationLink {
+                            DataSourcesView(entryId: entryId)
+                        } label: {
+                            Label("Data & sources", systemImage: "icloud")
+                        }
                         Button("Change team", role: .destructive) {
                             confirmingChange = true
                         }
@@ -44,6 +50,9 @@ struct SettingsView: View {
                     Text(appModel.disclosure)
                         .font(.callout)
                         .foregroundStyle(ToolkitColor.secondaryText)
+                    Text(Self.company)
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
                     Link("Help & support", destination: webURL("app/support"))
                     Link("Privacy policy", destination: webURL("app/privacy"))
                     Link("Open fpltoolkit.co.uk", destination: webURL(""))
@@ -64,7 +73,7 @@ struct SettingsView: View {
                     .disabled(resetting)
                 } footer: {
                     Text(resetError.map { "Couldn't reset: \($0.message)" }
-                         ?? "Deletes this device's watch list and settings from our server, and everything saved on this phone.")
+                         ?? "Deletes this device's shortlist, drafts, leagues and settings from our server, and everything saved on this phone.")
                 }
                 .listRowBackground(ToolkitColor.surface)
 
@@ -105,7 +114,7 @@ struct SettingsView: View {
                     }
                 }
             } message: {
-                Text("This removes your team, your watch list and your settings. It can't be undone.")
+                Text("This removes your team, your shortlist, your drafts, your leagues and your settings. It can't be undone.")
             }
         }
     }
@@ -115,6 +124,9 @@ struct SettingsView: View {
             ?? URL(string: "https://www.fpltoolkit.co.uk")!
         return path.isEmpty ? base : base.appending(path: path)
     }
+
+    /// Who makes the app (Companies House: Plainfield Works Limited, 17490511).
+    static let company = "FPLToolkit is made by Plainfield Works Ltd, registered in England and Wales, company number 17490511."
 
     private static var version: String {
         let info = Bundle.main.infoDictionary

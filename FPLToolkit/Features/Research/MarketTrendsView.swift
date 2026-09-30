@@ -55,7 +55,7 @@ struct MarketTrendsView: View {
         }
         .refreshable { await table.refresh() }
         .toolkitScreen()
-        .navigationTitle("Price trends")
+        .navigationTitle("Price and transfer trends")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             squadIds = loadSquadIds()

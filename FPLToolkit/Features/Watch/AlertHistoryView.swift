@@ -33,7 +33,7 @@ struct AlertHistoryView: View {
         }
         .scrollContentBackground(.hidden)
         .background(ToolkitColor.canvas.ignoresSafeArea())
-        .navigationTitle("Alerts")
+        .navigationTitle("Alert history")
         .refreshable { await resource.load(bypassCache: true) }
         .task { if case .loading = resource.phase { await resource.load() } }
     }

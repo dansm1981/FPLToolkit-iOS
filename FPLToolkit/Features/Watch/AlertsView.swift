@@ -20,7 +20,7 @@ struct AlertChoices: Codable, Equatable {
     static let storageKey = "alerts.choices"
 }
 
-/// Watch → Alerts: every alert in one place, grouped by when it would come.
+/// Watch → Manage alerts: every alert in one place, grouped by when it would come.
 struct AlertsView: View {
     @Environment(AppModel.self) private var appModel
     @AppStorage(AlertChoices.storageKey) private var stored = Data()
@@ -90,7 +90,7 @@ struct AlertsView: View {
         }
         .listStyle(.insetGrouped)
         .toolkitScreen()
-        .navigationTitle("Alerts")
+        .navigationTitle("Manage alerts")
         .navigationBarTitleDisplayMode(.inline)
     }
 
