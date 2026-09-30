@@ -7,6 +7,8 @@ struct InsightCard: View {
     let player: PlayerSummary?
     /// Shows a chevron when the card opens the player sheet.
     var showsChevron = false
+    /// A last line in small print, e.g. Watch's price and ownership trend (batch 3).
+    var note: String?
 
     var body: some View {
         ToolkitCard {
@@ -72,6 +74,13 @@ struct InsightCard: View {
                 Text("Updated \(Format.ago(timestamp))")
                     .font(.footnote)
                     .foregroundStyle(ToolkitColor.secondaryText)
+            }
+
+            if let note {
+                Text(note)
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

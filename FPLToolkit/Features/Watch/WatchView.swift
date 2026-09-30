@@ -281,27 +281,38 @@ private struct WatchContent: View {
             }
 
             if !squadItems.isEmpty {
-                Section {
-                    ForEach(squadItems) { item in
-                        row(item, watch: watch)
-                            .swipeActions(edge: .trailing) {
-                                if appModel.isStarred(item.playerId) {
-                                    Button("Remove from shortlist") { Task { await appModel.setStarred(false, playerId: item.playerId) } }
-                                        .tint(ToolkitColor.raised)
-                                } else {
-                                    Button("Add to shortlist") { Task { await appModel.setStarred(true, playerId: item.playerId) } }
-                                        .tint(ToolkitColor.information)
-                                }
-                            }
+                // Players with news as the team news cards (batch 3), most urgent first.
+                let withNews = squadItems.filter { $0.topInsight != nil }
+                    .sorted { ($0.topInsight?.needsAttention == true ? 0 : 1) < ($1.topInsight?.needsAttention == true ? 0 : 1) }
+                let quiet = squadItems.filter { $0.topInsight == nil }
+                if !withNews.isEmpty {
+                    Section {
+                        ForEach(withNews) { item in
+                            newsCard(item, watch: watch)
+                                .swipeActions(edge: .trailing) { squadSwipe(item) }
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: ToolkitSpace.xs, leading: 0, bottom: ToolkitSpace.xs, trailing: 0))
+                        }
+                    } header: {
+                        SectionLabel(text: "In your squad")
                     }
-                } header: {
-                    SectionLabel(text: "In your squad")
-                } footer: {
-                    Text("Swipe left on a player to add him to your shortlist: he's still watched after you sell him.")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
                 }
-                .listRowBackground(ToolkitColor.surface)
+                if !quiet.isEmpty {
+                    Section {
+                        ForEach(quiet) { item in
+                            row(item, watch: watch)
+                                .swipeActions(edge: .trailing) { squadSwipe(item) }
+                        }
+                    } header: {
+                        SectionLabel(text: withNews.isEmpty ? "In your squad" : "In your squad: no news")
+                    } footer: {
+                        Text("Swipe left on a player to add him to your shortlist: he's still watched after you sell him.")
+                            .font(.footnote)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    .listRowBackground(ToolkitColor.surface)
+                }
             }
 
             Section {
@@ -370,6 +381,35 @@ private struct WatchContent: View {
             return "\(squad.playerIds.count) players · the GW\(squad.gw) squad your GW\(freeHit) Free Hit reverted to"
         }
         return "\(squad.playerIds.count) players · your GW\(squad.gw) squad, updated after each deadline"
+    }
+
+    @ViewBuilder private func squadSwipe(_ item: Watch.Item) -> some View {
+        if appModel.isStarred(item.playerId) {
+            Button("Remove from shortlist") { Task { await appModel.setStarred(false, playerId: item.playerId) } }
+                .tint(ToolkitColor.raised)
+        } else {
+            Button("Add to shortlist") { Task { await appModel.setStarred(true, playerId: item.playerId) } }
+                .tint(ToolkitColor.information)
+        }
+    }
+
+    /// A squad player's latest news as the team news card, with his price and ownership trend.
+    @ViewBuilder private func newsCard(_ item: Watch.Item, watch: Watch) -> some View {
+        if let insight = item.topInsight {
+            let trends = WatchRow.trends(item)
+            Button {
+                appModel.router.openPlayer(item.playerId)
+            } label: {
+                InsightCard(insight: insight, player: watch.player(item.playerId), showsChevron: true,
+                            note: trends.isEmpty ? nil : trends.map(\.text).joined(separator: " · "))
+                    .accessibilityLabel([watch.player(item.playerId)?.webName ?? "Player", insight.title, insight.summary,
+                                         appModel.isStarred(item.playerId) ? "on your shortlist" : nil,
+                                         trends.isEmpty ? nil : trends.map(\.spoken).joined(separator: ". ")]
+                        .compactMap { $0 }.joined(separator: ", "))
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the player")
+        }
     }
 
     private func row(_ item: Watch.Item, watch: Watch) -> some View {
@@ -447,8 +487,10 @@ private struct WatchRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    private var trends: [(text: String, spoken: String)] { Self.trends(item) }
+
     /// Price progress (tonight's projection when there is one, as on the player page) and ownership trend.
-    private var trends: [(text: String, spoken: String)] {
+    static func trends(_ item: Watch.Item) -> [(text: String, spoken: String)] {
         var parts: [(String, String)] = []
         // A price note already says this, in words.
         if item.topInsight?.category != .price, let price = item.price, let value = price.tonightPct ?? price.progressPct {

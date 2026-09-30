@@ -331,6 +331,13 @@ final class ScreenAuditTests: XCTestCase {
         waitForExpectations(timeout: 20)
         check(app, "06-watch", sizesAndLists: false)
 
+        // In your squad (batch 3): news as the team news cards.
+        let squad = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH[c] 'In your squad'")).firstMatch
+        for _ in 0..<3 where !(squad.exists && squad.isHittable) { app.swipeUp() }
+        settle()
+        check(app, "06c-watch-squad", sizesAndLists: false)
+        for _ in 0..<3 { app.swipeDown() }
+
         // Alerts (Dan, 29 Sep): every alert with its default.
         let manage = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Manage alerts'")).firstMatch
         waitFor(manage, "Manage alerts")
