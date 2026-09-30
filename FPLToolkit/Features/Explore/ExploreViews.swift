@@ -26,6 +26,8 @@ struct ExploreTodayView: View {
         }
         .toolkitScreen()
         .navigationTitle("Today")
+        // In the top bar, as on Today (Dan, 30 Sep).
+        .navigationBarTitleDisplayMode(.inline)
         .settingsButton(entryId: nil)
         .sheet(isPresented: $addingTeam) { AddTeamSheet() }
     }
@@ -44,6 +46,8 @@ struct NoTeamView: View {
         }
         .toolkitScreen()
         .navigationTitle(title)
+        // In the top bar, as on Today (Dan, 30 Sep).
+        .navigationBarTitleDisplayMode(.inline)
         .settingsButton(entryId: nil)
         .sheet(isPresented: $addingTeam) { AddTeamSheet() }
     }

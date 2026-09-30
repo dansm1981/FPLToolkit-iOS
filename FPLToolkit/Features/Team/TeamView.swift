@@ -69,6 +69,8 @@ struct TeamView: View {
         }
         .toolkitScreen()
         .navigationTitle("My Team")
+        // In the top bar, as on Today (Dan, 30 Sep).
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showingLeagues = true } label: {
@@ -156,7 +158,7 @@ struct TeamOverview: View {
         VStack(alignment: .leading, spacing: 10) {
             if let snapshot = team.snapshot {
                 VStack(alignment: .leading, spacing: 4) {
-                    TeamIdentity(name: team.entry.name, manager: team.entry.manager)
+                    TeamIdentity(name: team.entry.name, manager: team.entry.manager, prominent: true)
                     ContextLine(lead: "GW\(snapshot.gw) squad", parts: contextParts(snapshot)) {
                         onSheet(.source)
                     }

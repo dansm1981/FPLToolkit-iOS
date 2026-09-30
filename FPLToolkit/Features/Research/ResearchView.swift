@@ -170,6 +170,8 @@ struct ResearchView: View {
         .listStyle(.insetGrouped)
         .toolkitScreen()
         .navigationTitle("Research")
+        // In the top bar, as on Today (Dan, 30 Sep).
+        .navigationBarTitleDisplayMode(.inline)
         .settingsButton(entryId: entryId)
     }
 

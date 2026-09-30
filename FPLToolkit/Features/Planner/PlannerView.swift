@@ -74,6 +74,8 @@ struct PlannerView: View {
         }
         .toolkitScreen()
         .navigationTitle("Planner")
+        // In the top bar, as on Today (Dan, 30 Sep).
+        .navigationBarTitleDisplayMode(.inline)
         .settingsButton(entryId: entryId)
     }
 
