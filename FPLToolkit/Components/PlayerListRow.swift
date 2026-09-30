@@ -36,11 +36,14 @@ struct PlayerListRow: View {
                             .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                         if let role {
                             Text(role)
-                                .font(.caption2.weight(.heavy))
+                                .font(.caption.weight(.heavy))
                                 .foregroundStyle(ToolkitColor.accent)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
                                 .background(ToolkitColor.goldTag, in: RoundedRectangle(cornerRadius: 5))
+                                // Caption, not caption2, and never squeezed by a long name: the
+                                // accessibility audit flagged the badge at larger text sizes.
+                                .fixedSize()
                         }
                         AvailabilityBadge(availability: player.availability)
                     }
