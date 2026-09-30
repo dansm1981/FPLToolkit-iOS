@@ -1,17 +1,23 @@
 import SwiftUI
 
-/// The website's Shortlist: players you're keeping an eye on, with position, club and price
-/// filters, the "vibe" favourites flag, "Watch all" for price alerts, and "+" to add one to the
-/// draft. The list lives on the server, per device.
+/// The website's Shortlist, and since batch 3 simple player discovery: "My shortlist" (with
+/// position, club and price filters and "+" to add one to the draft) and "All players" (the
+/// shared finder: filters, sorts and a star on every player). The shortlist is also the watch
+/// list, so shortlisted players are watched for alerts. The list lives on the server, per device.
 struct ShortlistView: View {
     @Environment(AppModel.self) private var appModel
     /// The draft "+" adds to (its gameweek on screen); nil opens without one.
     let draftModel: DraftModel?
 
+    enum Mode: String, CaseIterable, Identifiable {
+        case shortlist = "My shortlist", all = "All players"
+        var id: String { rawValue }
+    }
+
+    @State private var mode: Mode = .shortlist
     @State private var position: Position?
     @State private var club: Int?
     @State private var maxPrice: Double?
-    @State private var vibeOnly = false
     @State private var notice: String?
 
     private var store: ShortlistStore { appModel.shortlist }
@@ -23,12 +29,39 @@ struct ShortlistView: View {
             if let position, player.position != position { return false }
             if let club, player.clubId != club { return false }
             if let maxPrice, player.price > maxPrice + 0.001 { return false }
-            if vibeOnly && !item.vibe { return false }
             return true
         }
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            Picker("Show", selection: $mode) {
+                ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, ToolkitSpace.page)
+            .padding(.vertical, ToolkitSpace.sm)
+            switch mode {
+            case .shortlist: shortlist
+            case .all: PlayerFinder(advanced: false)
+            }
+        }
+        .background(ToolkitColor.canvas.ignoresSafeArea())
+        .navigationTitle("Shortlist")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if mode == .shortlist {
+                ToolbarItem(placement: .topBarTrailing) { filterMenu }
+            }
+        }
+        .task {
+            store.clearError()
+            await store.load()
+            await appModel.mergeStarLists()
+        }
+    }
+
+    private var shortlist: some View {
         List {
             Section {
                 Picker("Position", selection: $position) {
@@ -36,12 +69,7 @@ struct ShortlistView: View {
                     ForEach([Position.gk, .def, .mid, .fwd], id: \.self) { Text($0.rawValue).tag(Position?.some($0)) }
                 }
                 .pickerStyle(.segmented)
-                Toggle("Vibe only", isOn: $vibeOnly)
-                    .tint(ToolkitColor.accent)
-                if let error = store.updateError ?? store.loadError {
-                    ErrorBanner(copy: error)
-                }
-                if let error = appModel.watch?.updateError {
+                if let error = appModel.starError ?? store.loadError {
                     ErrorBanner(copy: error)
                 }
                 if let error = draftModel?.actionError {
@@ -58,7 +86,7 @@ struct ShortlistView: View {
             if let list = store.list {
                 Section {
                     if list.items.isEmpty {
-                        Text("Nothing shortlisted yet. Tap the star next to a player in the picker to keep him here.")
+                        Text("Nothing shortlisted yet. Tap the star on any player, or find one in All players.")
                             .foregroundStyle(ToolkitColor.secondaryText)
                     } else if shown.isEmpty {
                         Text("No shortlisted players match these filters.")
@@ -69,7 +97,7 @@ struct ShortlistView: View {
                     }
                     .onDelete { offsets in
                         let ids = offsets.map { shown[$0].playerId }
-                        Task { for id in ids { await store.remove(id) } }
+                        Task { for id in ids { await appModel.setStarred(false, playerId: id) } }
                     }
                 } header: {
                     SectionLabel(text: shown.count == list.items.count
@@ -79,7 +107,7 @@ struct ShortlistView: View {
                 .listRowBackground(ToolkitColor.surface)
                 if !list.items.isEmpty {
                     // A plain row, not a section footer: footers don't scale fully with text size.
-                    Text("Vibe marks your favourites. Swipe left to take a player off.")
+                    Text("Shortlisted players are watched for alerts. Swipe left to take a player off.")
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                         .listRowBackground(Color.clear)
@@ -96,17 +124,6 @@ struct ShortlistView: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(ToolkitColor.canvas.ignoresSafeArea())
-        .navigationTitle("Shortlist")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { filterMenu }
-        }
-        .task {
-            store.clearError()
-            await store.load()
-            await appModel.watch?.loadIfNeeded()
-        }
         .refreshable { await store.load() }
     }
 
@@ -122,20 +139,6 @@ struct ShortlistView: View {
                     Text("Up to \(Format.price(price))").tag(Double?.some(price))
                 }
             }
-            if appModel.watch != nil {
-                Divider()
-                Button {
-                    Task {
-                        await appModel.watch?.watchAll(shown.map(\.playerId))
-                        if appModel.watch?.updateError == nil {
-                            notice = "Watching \(shown.count) shortlisted player\(shown.count == 1 ? "" : "s") for alerts."
-                        }
-                    }
-                } label: {
-                    Label("Watch all shown for alerts", systemImage: "bell.badge")
-                }
-                .disabled(shown.isEmpty)
-            }
         } label: {
             Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
         }
@@ -148,7 +151,6 @@ struct ShortlistView: View {
     private func row(_ item: PlannerShortlist.Item, list: PlannerShortlist) -> some View {
         let player = list.player(item.playerId)
         let name = player?.webName ?? "Player \(item.playerId)"
-        let watched = appModel.watch?.isManual(item.playerId) ?? false
         return HStack(alignment: .center, spacing: ToolkitSpace.md) {
             Button {
                 appModel.router.openPlayer(item.playerId)
@@ -176,27 +178,14 @@ struct ShortlistView: View {
             .accessibilityHint("Opens the player")
 
             Button {
-                Task { await store.setVibe(!item.vibe, for: item.playerId) }
+                Task { await appModel.setStarred(false, playerId: item.playerId) }
             } label: {
-                Image(systemName: item.vibe ? "flame.fill" : "flame")
-                    .foregroundStyle(item.vibe ? ToolkitColor.accent : ToolkitColor.secondaryText)
+                Image(systemName: "star.fill")
+                    .foregroundStyle(ToolkitColor.accent)
                     .frame(minWidth: 44, minHeight: 44)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(item.vibe ? "Vibe: on for \(name)" : "Vibe: off for \(name)")
-            .accessibilityHint("Marks him as a favourite")
-
-            if let watch = appModel.watch {
-                Button {
-                    Task { await watch.setWatched(!watched, playerId: item.playerId) }
-                } label: {
-                    Image(systemName: watched ? "bell.fill" : "bell")
-                        .foregroundStyle(watched ? ToolkitColor.accent : ToolkitColor.secondaryText)
-                        .frame(minWidth: 44, minHeight: 44)
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(watched ? "Stop watching \(name)" : "Watch \(name) for alerts")
-            }
+            .accessibilityLabel("Remove \(name) from your shortlist")
 
             if let draftModel, draftModel.draft?.isEditable == true {
                 Button {

@@ -24,7 +24,10 @@ struct WatchView: View {
         // The search field is added once search is known to be live, which swaps the view inside
         // this modifier; tasks attached after it keep running through that swap.
         .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
-        .task { await appModel.watch?.refreshIfStale() }
+        .task {
+            await appModel.watch?.refreshIfStale()
+            await appModel.mergeStarLists()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await appModel.watch?.refreshIfStale() } }
         }
@@ -126,8 +129,8 @@ private struct SearchResults: View {
                             SearchResultRow(player: player, store: store)
                         }
                     } footer: {
-                        if let error = store.updateError {
-                            Text("Your watch list wasn't changed: \(error.message)")
+                        if let error = appModel.starError {
+                            Text("Your shortlist wasn't changed: \(error.message)")
                                 .foregroundStyle(ToolkitColor.error)
                         }
                     }
@@ -155,7 +158,7 @@ private struct SearchResultRow: View {
 
     var body: some View {
         let watch = store.watch
-        let isManual = store.isManual(player.id)
+        let starred = appModel.isStarred(player.id)
         let inSquad = watch?.reasons(for: player.id).contains(.squad) ?? false
         HStack(spacing: ToolkitSpace.md) {
             Button {
@@ -182,15 +185,15 @@ private struct SearchResultRow: View {
             .accessibilityHint("Opens the player")
 
             Button {
-                Task { await store.setWatched(!isManual, playerId: player.id) }
+                Task { await appModel.toggleStar(player.id) }
             } label: {
-                Image(systemName: isManual ? "checkmark.circle.fill" : "plus.circle")
-                    .font(.title2)
-                    .foregroundStyle(ToolkitColor.link)
+                Image(systemName: starred ? "star.fill" : "star")
+                    .font(.title3)
+                    .foregroundStyle(starred ? ToolkitColor.accent : ToolkitColor.secondaryText)
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(isManual ? "Stop watching \(player.webName)" : "Watch \(player.webName)")
+            .accessibilityLabel(starred ? "Remove \(player.webName) from your shortlist" : "Add \(player.webName) to your shortlist")
         }
     }
 
@@ -232,11 +235,11 @@ private struct WatchContent: View {
         return List {
             Section {
                 VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    Text(appModel.entryId == nil ? "The players you follow." : "Your squad and the players you follow.")
+                    Text(appModel.entryId == nil ? "Your shortlist." : "Your squad and your shortlist.")
                         .foregroundStyle(ToolkitColor.secondaryText)
                     SavedDataBanner(resource: store.resource)
-                    if let error = store.updateError {
-                        ErrorBanner(copy: ErrorCopy(title: "Your watch list wasn't changed", message: error.message, canRetry: error.canRetry))
+                    if let error = appModel.starError {
+                        ErrorBanner(copy: ErrorCopy(title: "Your shortlist wasn't changed", message: error.message, canRetry: error.canRetry))
                     }
                 }
                 .listRowBackground(Color.clear)
@@ -282,11 +285,11 @@ private struct WatchContent: View {
                     ForEach(squadItems) { item in
                         row(item, watch: watch)
                             .swipeActions(edge: .trailing) {
-                                if store.isManual(item.playerId) {
-                                    Button("Unpin") { Task { await store.setWatched(false, playerId: item.playerId) } }
+                                if appModel.isStarred(item.playerId) {
+                                    Button("Remove from shortlist") { Task { await appModel.setStarred(false, playerId: item.playerId) } }
                                         .tint(ToolkitColor.raised)
                                 } else {
-                                    Button("Keep if sold") { Task { await store.setWatched(true, playerId: item.playerId) } }
+                                    Button("Add to shortlist") { Task { await appModel.setStarred(true, playerId: item.playerId) } }
                                         .tint(ToolkitColor.information)
                                 }
                             }
@@ -294,7 +297,7 @@ private struct WatchContent: View {
                 } header: {
                     SectionLabel(text: "In your squad")
                 } footer: {
-                    Text("Swipe left on a player to keep watching him even after you sell him.")
+                    Text("Swipe left on a player to add him to your shortlist: he's still watched after you sell him.")
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
@@ -310,15 +313,15 @@ private struct WatchContent: View {
                     ForEach(manualOnly) { item in
                         row(item, watch: watch)
                             .swipeActions(edge: .trailing) {
-                                Button("Stop watching", role: .destructive) {
-                                    Task { await store.setWatched(false, playerId: item.playerId) }
+                                Button("Remove", role: .destructive) {
+                                    Task { await appModel.setStarred(false, playerId: item.playerId) }
                                 }
                                 .tint(ToolkitColor.destructiveAction)
                             }
                     }
                 }
             } header: {
-                SectionLabel(text: appModel.entryId == nil ? "Watching" : "Also watching")
+                SectionLabel(text: "Your shortlist")
             }
             .listRowBackground(ToolkitColor.surface)
 
@@ -354,14 +357,9 @@ private struct WatchContent: View {
     }
 
     private var emptyManualText: String {
-        if appModel.entryId == nil {
-            return searchAvailable
-                ? "Search for any player above and tap + to watch him."
-                : "Add your team to follow your squad, or open a player and tap Watch."
-        }
-        return searchAvailable
-            ? "To watch a player who isn't in your squad, search for him above."
-            : "To watch a player who isn't in your squad, open him from Today or Team and tap Watch."
+        searchAvailable
+            ? "Tap the star on any player, or search for one above, to add him to your shortlist. Shortlisted players are watched for alerts."
+            : "Tap the star on any player to add him to your shortlist. Shortlisted players are watched for alerts."
     }
 
     private func squadCaption(_ watch: Watch) -> String {
@@ -378,7 +376,7 @@ private struct WatchContent: View {
         Button {
             appModel.router.openPlayer(item.playerId)
         } label: {
-            WatchRow(item: item, player: watch.player(item.playerId), isManual: store.isManual(item.playerId))
+            WatchRow(item: item, player: watch.player(item.playerId), isManual: appModel.isStarred(item.playerId))
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens the player")
@@ -435,9 +433,9 @@ private struct WatchRow: View {
             }
             Spacer(minLength: ToolkitSpace.sm)
             if isManual && item.reasons.contains(.squad) {
-                Image(systemName: "pin.fill")
-                    .foregroundStyle(ToolkitColor.link)
-                    .accessibilityLabel("Kept if sold")
+                Image(systemName: "star.fill")
+                    .foregroundStyle(ToolkitColor.accent)
+                    .accessibilityLabel("On your shortlist")
             }
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))

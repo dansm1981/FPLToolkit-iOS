@@ -15,6 +15,7 @@ struct FPLToolkitApp: App {
                     await appModel.refreshBootstrap()
                     await appModel.push.refresh()
                     await appModel.syncDevice()
+                    await appModel.mergeStarLists()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {

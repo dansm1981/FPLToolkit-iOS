@@ -255,7 +255,7 @@ final class ReviewCaptureTests: XCTestCase {
             ("Fixture ticker", NSPredicate(format: "label CONTAINS ', run total '")),
             ("Rotation planner", NSPredicate(format: "label ==[c] 'Add player'")),
             ("Congestion", NSPredicate(format: "label CONTAINS ' in the window'")),
-            ("Player insights", NSPredicate(format: "label BEGINSWITH[c] 'Top 12 by'")),
+            ("Player insights", NSPredicate(format: "label CONTAINS ', Pts '")),
             ("Template team", NSPredicate(format: "label ==[c] 'The template XI'")),
             ("Injuries", NSPredicate(format: "label BEGINSWITH[c] 'Injured ('")),
             ("Price changes", NSPredicate(format: "label BEGINSWITH[c] 'Price rises'")),

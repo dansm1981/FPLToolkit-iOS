@@ -1,8 +1,9 @@
 import Foundation
 import Observation
 
-/// The device's shortlist (the website's Shortlist), shared by the picker's star, the player menu
-/// and the Shortlist screen, so a change in one shows in the others. The server keeps it.
+/// The device's shortlist (the website's Shortlist), shared by every star, the player menu and the
+/// Shortlist screen, so a change in one shows in the others. The server keeps it. Since batch 3 it
+/// is also the watch list: stars go through `AppModel.setStarred`, which changes both.
 @MainActor
 @Observable
 final class ShortlistStore {
@@ -12,6 +13,9 @@ final class ShortlistStore {
     /// Why the last change didn't go through.
     private(set) var updateError: ErrorCopy?
     private(set) var isUpdating = false
+    /// Changes wait their turn, so the list on screen is always the server's latest answer.
+    private var queue: Task<Void, Never>?
+    private var queued = 0
 
     init(repository: PlannerRepository) {
         self.repository = repository
@@ -33,17 +37,18 @@ final class ShortlistStore {
         if list == nil { await load() }
     }
 
-    func toggle(_ playerId: Int) async {
-        let on = contains(playerId)
-        await change { on ? try await self.repository.removeShortlisted(playerId) : try await self.repository.saveShortlisted(playerId) }
-    }
-
-    func setVibe(_ vibe: Bool, for playerId: Int) async {
-        await change { try await self.repository.saveShortlisted(playerId, vibe: vibe) }
+    /// Adds or removes one player; nothing is sent when the list already says so.
+    func set(_ on: Bool, playerId: Int) async {
+        await enqueue {
+            if self.list == nil { await self.load() }
+            guard self.contains(playerId) != on else { return nil }
+            return on ? try await self.repository.saveShortlisted(playerId)
+                : try await self.repository.removeShortlisted(playerId)
+        }
     }
 
     func remove(_ playerId: Int) async {
-        await change { try await self.repository.removeShortlisted(playerId) }
+        await set(false, playerId: playerId)
     }
 
     func clearError() { updateError = nil }
@@ -55,14 +60,25 @@ final class ShortlistStore {
         updateError = nil
     }
 
-    private func change(_ work: @escaping () async throws -> PlannerShortlist) async {
+    private func enqueue(_ work: @escaping @MainActor () async throws -> PlannerShortlist?) async {
+        let earlier = queue
+        queued += 1
         isUpdating = true
-        updateError = nil
-        defer { isUpdating = false }
-        do {
-            list = try await work()
-        } catch let error as APIError {
-            updateError = ErrorCopy(error)
-        } catch {}
+        let task = Task { @MainActor in
+            await earlier?.value
+            self.updateError = nil
+            do {
+                if let updated = try await work() { self.list = updated }
+            } catch let error as APIError {
+                self.updateError = ErrorCopy(error)
+            } catch {}
+        }
+        queue = task
+        await task.value
+        queued -= 1
+        if queued == 0 {
+            isUpdating = false
+            queue = nil
+        }
     }
 }

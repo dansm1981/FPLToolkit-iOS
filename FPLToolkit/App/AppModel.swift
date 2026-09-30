@@ -143,8 +143,58 @@ final class AppModel {
         }
     }
 
+    // MARK: Stars (batch 3: the shortlist and the watch list are one list)
+
+    /// Stars not yet confirmed by the server, shown straight away: player → starred, with a
+    /// number so an older reply doesn't clear a newer tap.
+    private var pendingStars: [Int: (on: Bool, tap: Int)] = [:]
+    private var starTaps = 0
+    private var starListsMerged = false
+
+    /// On your shortlist, which is also your watch list.
+    func isStarred(_ playerId: Int) -> Bool {
+        if let pending = pendingStars[playerId] { return pending.on }
+        return shortlist.contains(playerId) || (watch?.isManual(playerId) ?? false)
+    }
+
+    /// A star anywhere: adds the player to (or takes him off) the shortlist and the watch list.
+    func setStarred(_ on: Bool, playerId: Int) async {
+        starTaps += 1
+        let tap = starTaps
+        pendingStars[playerId] = (on, tap)
+        async let listed: Void = shortlist.set(on, playerId: playerId)
+        async let watched: Void = watch?.setWatched(on, playerId: playerId) ?? ()
+        _ = await (listed, watched)
+        if pendingStars[playerId]?.tap == tap { pendingStars[playerId] = nil }
+    }
+
+    func toggleStar(_ playerId: Int) async {
+        await setStarred(!isStarred(playerId), playerId: playerId)
+    }
+
+    /// Why the last star didn't stick, from either list.
+    var starError: ErrorCopy? { shortlist.updateError ?? watch?.updateError }
+
+    /// Once per launch: makes the two lists one, keeping every player starred or watched before
+    /// they were merged (the shortlist has a cap; anything over it stays watched).
+    func mergeStarLists() async {
+        guard !starListsMerged, let watchStore = watch else { return }
+        await watchStore.loadIfNeeded()
+        await shortlist.loadIfNeeded()
+        guard !starListsMerged, let watched = watchStore.watch, let list = shortlist.list else { return }
+        starListsMerged = true
+        let listed = list.items.map(\.playerId)
+        let watchOnly = watched.manual.filter { !listed.contains($0) }
+        let listOnly = listed.filter { !watched.manual.contains($0) }
+        if !listOnly.isEmpty { await watchStore.watchAll(listOnly) }
+        for id in watchOnly.prefix(max(0, list.max - list.items.count)) {
+            await shortlist.set(true, playerId: id)
+        }
+    }
+
     private func makeWatchStore() {
         let key = entryId.map(String.init) ?? "explore"
+        starListsMerged = false
         watch = WatchStore(repository: WatchRepository(session: deviceSession, cache: cache, cacheKeySuffix: key)) { [weak self] in
             await self?.syncDevice()
         }

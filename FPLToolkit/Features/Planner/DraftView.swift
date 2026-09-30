@@ -79,8 +79,8 @@ private struct DraftContent: View {
                 if let error = model.actionError {
                     ErrorBanner(copy: error)
                 }
-                if let error = appModel.watch?.updateError {
-                    ErrorBanner(copy: ErrorCopy(title: "Couldn't change your watch list",
+                if let error = appModel.starError {
+                    ErrorBanner(copy: ErrorCopy(title: "Couldn't change your shortlist",
                                                 message: error.title, canRetry: error.canRetry))
                 }
                 if let notice {
@@ -260,15 +260,10 @@ private struct DraftContent: View {
             pickerSlot = PickerSlot(position: position, replacing: pick, onBench: onBench)
         }
         Button("Swap with…") { model.swapFrom = pick.playerId }
-        if let store = appModel.watch, store.watch != nil {
-            let watched = store.isManual(pick.playerId)
-            Button(watched ? "Stop watching" : "Watch for alerts") {
-                Task { await store.setWatched(!watched, playerId: pick.playerId) }
-            }
-        }
-        let shortlisted = appModel.shortlist.contains(pick.playerId)
-        Button(shortlisted ? "Remove from shortlist" : "Add to shortlist") {
-            Task { await appModel.shortlist.toggle(pick.playerId) }
+        // One list since batch 3: shortlisted players are watched for alerts.
+        let starred = appModel.isStarred(pick.playerId)
+        Button(starred ? "Remove from shortlist" : "Add to shortlist") {
+            Task { await appModel.toggleStar(pick.playerId) }
         }
         Button("View player") { appModel.router.openPlayer(pick.playerId) }
         Button("Remove from squad", role: .destructive) {

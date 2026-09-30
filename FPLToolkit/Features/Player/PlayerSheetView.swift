@@ -103,7 +103,7 @@ struct PlayerDetailView: View {
     }
 }
 
-/// "⋯": follow and the website page.
+/// "⋯": the shortlist star and the website page.
 private struct PlayerMoreMenu: View {
     @Environment(AppModel.self) private var appModel
     let player: PlayerSummary
@@ -111,13 +111,12 @@ private struct PlayerMoreMenu: View {
 
     var body: some View {
         Menu {
-            if let store = appModel.watch {
-                let manual = store.isManual(player.id)
-                Button {
-                    Task { await store.setWatched(!manual, playerId: player.id) }
-                } label: {
-                    Label(manual ? "Stop watching" : "Watch \(player.webName)", systemImage: manual ? "bell.slash" : "bell")
-                }
+            let starred = appModel.isStarred(player.id)
+            Button {
+                Task { await appModel.toggleStar(player.id) }
+            } label: {
+                Label(starred ? "Remove from shortlist" : "Add \(player.webName) to shortlist",
+                      systemImage: starred ? "star.slash" : "star")
             }
             if let web {
                 Link(destination: web) {
@@ -295,10 +294,8 @@ struct PlayerDetailContent: View {
             }
         }
 
-        if appModel.watch != nil {
-            WatchButton(player: player)
-                .padding(.top, 4)
-        }
+        ShortlistButton(player: player)
+            .padding(.top, 4)
     }
 
     private var variantLabel: String? {
@@ -563,34 +560,30 @@ struct PlayerDetailContent: View {
     }
 }
 
-/// Watch / stop watching this player (a manual watch, kept even if he leaves your squad).
-private struct WatchButton: View {
+/// The shortlist star for this player (batch 3: the shortlist is also the watch list, so he's
+/// watched for alerts too, even after leaving your squad).
+private struct ShortlistButton: View {
     @Environment(AppModel.self) private var appModel
     let player: PlayerSummary
 
     var body: some View {
-        if let store = appModel.watch {
-            let manual = store.isManual(player.id)
-            let inSquad = store.watch.map { $0.autoTrackSquad && ($0.squad?.playerIds.contains(player.id) ?? false) } ?? false
-            VStack(alignment: .leading, spacing: 6) {
-                Button {
-                    Task { await store.setWatched(!manual, playerId: player.id) }
-                } label: {
-                    Label(manual ? "Watching" : inSquad ? "Keep watching after a sale" : "Watch",
-                          systemImage: manual ? "checkmark" : "bell")
-                }
-                .buttonStyle(ToolkitSecondaryButtonStyle())
-                .accessibilityHint(manual ? "Stops watching this player"
-                                   : inSquad ? "You're already watching him as part of your squad; this keeps him if you sell him"
-                                   : "Adds him to your watch list")
-                if let error = store.updateError {
-                    Text("Couldn't change this: \(error.title.prefix(1).lowercased() + error.title.dropFirst()).")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.error)
-                }
+        let starred = appModel.isStarred(player.id)
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                Task { await appModel.toggleStar(player.id) }
+            } label: {
+                Label(starred ? "On your shortlist" : "Add to shortlist", systemImage: starred ? "star.fill" : "star")
             }
-            .task { await store.loadIfNeeded() }
+            .buttonStyle(ToolkitSecondaryButtonStyle())
+            .accessibilityHint(starred ? "Takes him off your shortlist and stops his alerts"
+                               : "Keeps him on your shortlist and watches him for alerts")
+            if let error = appModel.starError {
+                Text("Couldn't change this: \(error.title.prefix(1).lowercased() + error.title.dropFirst()).")
+                    .font(.footnote)
+                    .foregroundStyle(ToolkitColor.error)
+            }
         }
+        .task { await appModel.mergeStarLists() }
     }
 }
 

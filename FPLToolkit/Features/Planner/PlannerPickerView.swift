@@ -216,11 +216,11 @@ struct PlannerPickerView: View {
             replacing: slot.replacing != nil,
             busy: picking == candidate.id,
             pickable: candidate.reason == nil && picking == nil,
-            shortlisted: appModel.shortlist.list == nil ? (candidate.shortlisted ?? false) : appModel.shortlist.contains(candidate.id)
+            shortlisted: appModel.shortlist.list == nil ? (candidate.shortlisted ?? false) : appModel.isStarred(candidate.id)
         ) {
             Task { await pick(candidate) }
         } toggleShortlist: {
-            Task { await appModel.shortlist.toggle(candidate.id) }
+            Task { await appModel.toggleStar(candidate.id) }
         }
     }
 

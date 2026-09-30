@@ -500,6 +500,13 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Delete"].firstMatch.tap()
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
         waitForExpectations(timeout: 20)
+
+        // All players (batch 3): the shared finder, with a star on every player.
+        app.segmentedControls.buttons["All players"].firstMatch.tap()
+        waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS ', Pts '")).firstMatch,
+                "All players", timeout: 40)
+        settle()
+        check(app, "20b-shortlist-all", clippingCheckedLarge: true)
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
         // A chip plays, then cancels.
@@ -713,7 +720,8 @@ final class ScreenAuditTests: XCTestCase {
         let app = launch(arguments)
         openResearch(app)
         let screens: [(String, NSPredicate, String)] = [
-            ("Player insights", NSPredicate(format: "label BEGINSWITH[c] 'Top 12 by'"), "42-players-insights"),
+            // Opens on every player since batch 3: a row reads "Name, Pts 34, …".
+            ("Player insights", NSPredicate(format: "label CONTAINS ', Pts '"), "42-players-insights"),
             ("Template team", NSPredicate(format: "label ==[c] 'The template XI'"), "43-players-template"),
             ("Injuries", NSPredicate(format: "label BEGINSWITH[c] 'Injured ('"), "44-players-injuries"),
         ]
@@ -724,9 +732,8 @@ final class ScreenAuditTests: XCTestCase {
             settle()
             check(app, shot, clippingCheckedLarge: true)
             if title == "Player insights" {
-                // The list below the map.
-                let list = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH[c] ' players'")).firstMatch
-                for _ in 0..<4 where !(list.exists && list.isHittable) { app.swipeUp() }
+                // Further down the list.
+                app.swipeUp()
                 settle()
                 check(app, "45-players-insights-list", clippingCheckedLarge: true)
             }

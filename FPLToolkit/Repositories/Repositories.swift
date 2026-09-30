@@ -210,9 +210,14 @@ struct PlayersResearchRepository: Sendable {
     let client: APIClient
     let cache: ResponseCache
 
+    /// `maxPrice` and `availableOnly` are the player finder's filters (batch 3, happy-backend-pal#54;
+    /// an older server ignores them).
     func insights(position: Position?, club: Int?, search: String, sort: String, ascending: Bool?,
-                  per90: Bool, fdrHorizon: Int) -> CachedEndpoint<PlayerInsights> {
+                  per90: Bool, fdrHorizon: Int, maxPrice: Double? = nil,
+                  availableOnly: Bool = false) -> CachedEndpoint<PlayerInsights> {
         var query = [URLQueryItem(name: "sort", value: sort), URLQueryItem(name: "fdr", value: String(fdrHorizon))]
+        if let maxPrice { query.append(URLQueryItem(name: "maxPrice", value: String(format: "%.1f", maxPrice))) }
+        if availableOnly { query.append(URLQueryItem(name: "available", value: "1")) }
         if let ascending { query.append(URLQueryItem(name: "dir", value: ascending ? "asc" : "desc")) }
         if per90 { query.append(URLQueryItem(name: "per90", value: "1")) }
         if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
