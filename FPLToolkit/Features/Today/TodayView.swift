@@ -264,7 +264,7 @@ struct TodayContent: View {
                 if let draft = latestDraft { appModel.router.pendingDraftId = draft.id }
                 appModel.router.selectedTab = .planner
             }
-            NextMoveTile(systemImage: "tshirt", title: "View fixtures", detail: "Your squad, next 6 GWs", asRow: rows) {
+            NextMoveTile(systemImage: "tshirt", title: "View fixtures", detail: "Your squad, next 10 GWs", asRow: rows) {
                 UserDefaults.standard.set(TeamLayout.fixtures.rawValue, forKey: "team.layout")
                 appModel.router.selectedTab = .team
             }
@@ -383,6 +383,7 @@ struct GameweekCard: View {
                     Button(action: onHistory) { scoreRow(team) }
                         .buttonStyle(.plain)
                         .accessibilityHint("Opens your season history")
+                        .accessibilityIdentifier("season-history")
                     let week = weekStats(team)
                     if !week.isEmpty {
                         Divider().overlay(ToolkitColor.heroLine)

@@ -82,7 +82,9 @@ struct AlertsView: View {
             } header: {
                 Text("Leagues")
             } footer: {
-                Text("Quiet hours and your phone's permission are in Settings › Notifications.")
+                Text(appModel.anyPushFeature
+                     ? "Quiet hours and your phone's permission are in Settings › Notifications."
+                     : "Quiet hours and your phone's permission will be in Settings › Notifications once alerts go live.")
             }
             .listRowBackground(ToolkitColor.surface)
         }

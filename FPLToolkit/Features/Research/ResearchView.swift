@@ -30,7 +30,7 @@ struct ResearchView: View {
 
             Section {
                 row("Player insights", systemImage: "person.text.rectangle",
-                    detail: "Every player sorted by any stat, with the differential opportunity map.") {
+                    detail: "Every player, filtered by club, position, price and availability, sorted by any stat.") {
                     PlayerInsightsView()
                 }
                 row("Template team", systemImage: "person.3",

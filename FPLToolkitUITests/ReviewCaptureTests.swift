@@ -47,6 +47,15 @@ final class ReviewCaptureTests: XCTestCase {
         settle(3)
         capture(app, "r10-today")
 
+        // Season history, from the gameweek card's score (batch 2).
+        let history = app.buttons["season-history"].firstMatch
+        if history.waitForExistence(timeout: 10) {
+            history.tap()
+            waitFor(app.navigationBars["Season history"].firstMatch, "Season history", timeout: 40)
+            settle(3)
+            capture(app, "r12-season-history")
+        }
+
         app = launch(["-entryId", attentionTeam])
         waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'No new squad alerts' OR label CONTAINS 'In your GW'")).firstMatch, "Today")
         settle(3)

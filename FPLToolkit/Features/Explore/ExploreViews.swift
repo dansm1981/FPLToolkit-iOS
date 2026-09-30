@@ -137,7 +137,7 @@ private struct WatchedSummary: View {
                         .contentShape(Rectangle())
                 }
             } else {
-                Text("Search for any player on the Watch tab and tap + to watch them.")
+                Text("Search for any player on the Watch tab and tap the star to add him to your shortlist.")
                     .foregroundStyle(ToolkitColor.secondaryText)
                 Button("Go to Watch") { appModel.router.selectedTab = .watch }
                     .buttonStyle(ToolkitSecondaryButtonStyle())
