@@ -814,15 +814,21 @@ struct MatchdayFixtures: View {
                 let sorted = live.fixtures.sorted { ($0.kickoff ?? .distantFuture) < ($1.kickoff ?? .distantFuture) }
                 ForEach(Array(sorted.enumerated()), id: \.element.id) { index, f in
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
-                    Button {
-                        withAnimation(.snappy) { expanded = expanded == f.id ? nil : f.id }
-                    } label: {
+                    if f.state == .notStarted {
+                        // Nothing to open yet: a plain row, not a disabled (greyed-out) button,
+                        // so the kick-off time keeps its contrast (found by the replay audit).
                         row(f)
+                            .accessibilityElement(children: .combine)
+                    } else {
+                        Button {
+                            withAnimation(.snappy) { expanded = expanded == f.id ? nil : f.id }
+                        } label: {
+                            row(f)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint(expanded == f.id ? "Hides the match stats" : "Shows the match stats")
+                        .accessibilityAddTraits(expanded == f.id ? .isSelected : [])
                     }
-                    .buttonStyle(.plain)
-                    .disabled(f.state == .notStarted)
-                    .accessibilityHint(f.state == .notStarted ? "" : expanded == f.id ? "Hides the match stats" : "Shows the match stats")
-                    .accessibilityAddTraits(expanded == f.id ? .isSelected : [])
                     if expanded == f.id {
                         MatchStatsPanel(fixtureId: f.id, gameweek: live.gameweek, squad: Set(live.squad.map(\.playerId)))
                             .padding(.bottom, ToolkitSpace.md)
