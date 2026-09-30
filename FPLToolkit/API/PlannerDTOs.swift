@@ -246,7 +246,8 @@ struct PlannerNews: Decodable, Sendable {
     func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
 }
 
-/// `GET /planner/drafts/{id}/evolution`: the website's Squad Evolution grid.
+/// `GET /planner/drafts/{id}/evolution` and `GET /team/{id}/rotation`: Squad Rotation (the
+/// website's Squad Evolution grid).
 struct PlannerEvolution: Decodable, Sendable {
     struct Week: Decodable, Sendable, Hashable, Identifiable {
         let gw: Int

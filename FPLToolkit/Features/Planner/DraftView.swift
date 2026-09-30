@@ -961,7 +961,7 @@ extension Position {
     }
 }
 
-/// The website's fixture switches (model and lens), Team news, Squad evolution and the transfer
+/// The website's fixture switches (model and lens), Team news, Squad rotation and the transfer
 /// timeline, above the pitch.
 private struct DraftTools: View {
     @Binding var model: FixtureView.Model
@@ -985,12 +985,12 @@ private struct DraftTools: View {
             }
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: ToolkitSpace.md) {
-                    evolutionLink
+                    rotationLink
                     Spacer(minLength: 0)
                     timelineLink
                 }
                 VStack(alignment: .leading, spacing: 0) {
-                    evolutionLink
+                    rotationLink
                     timelineLink
                 }
             }
@@ -1009,11 +1009,11 @@ private struct DraftTools: View {
         }
     }
 
-    private var evolutionLink: some View {
+    private var rotationLink: some View {
         NavigationLink {
-            SquadEvolutionView(model: draftModel)
+            SquadRotationView { try await draftModel.evolution() }
         } label: {
-            Label("Squad evolution", systemImage: "square.grid.3x3")
+            Label("Squad rotation", systemImage: "square.grid.3x3")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(ToolkitColor.link)
                 .frame(minHeight: 44)

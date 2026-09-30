@@ -29,7 +29,7 @@ struct TeamView: View {
     @State private var showingSources = false
 
     enum TeamSheet: String, Identifiable {
-        case source, fdr, odds, oddsCheck
+        case source, fdr, odds, oddsCheck, news, rotation
         var id: String { rawValue }
     }
 
@@ -140,6 +140,19 @@ struct TeamView: View {
             if let team = resource?.loaded?.value, let odds = odds?.loaded?.value {
                 NavigationStack { OddsCheckView(team: team, odds: odds) }
             }
+        case .news:
+            TeamNewsSheet(entryId: entryId) { id in
+                pushedPlayer = PlayerRef(id: id, context: resource?.loaded?.value.snapshot.map { "In your GW\($0.gw) squad" })
+            }
+        case .rotation:
+            NavigationStack {
+                SquadRotationView { try await appModel.teamRepository.rotation(entryId: entryId).fetch(bypassCache: false).value }
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { sheet = nil }
+                        }
+                    }
+            }
         }
     }
 }
@@ -159,16 +172,19 @@ struct TeamOverview: View {
     /// The fixture choice is the app's one (shared with the Planner).
     @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr
     @AppStorage(FixtureView.lensKey) private var fixtureLens = FixtureView.Lens.position
-    /// Club runs for the tiles' six-week column: Defence and Attack for xFDR by position (goalkeepers
-    /// and defenders read Defence), otherwise the chosen view in both. Outside xFDR by position the
-    /// tiles' next fixture comes from them too (by position, it comes with the team).
+    /// Club runs for the tiles' fixture and six-week column: Defence and Attack for xFDR · Auto
+    /// (goalkeepers and defenders read Defence), otherwise the chosen view in both. With Auto the
+    /// next gameweek's fixture comes with the team; later ones (◀ ▶) come from these.
     @State private var defenceRun: Resource<ResearchTicker>?
     @State private var attackRun: Resource<ResearchTicker>?
     /// FPL's nearest price changes, for the List view's rise and fall chips (loaded when it's shown).
     @State private var predictions: Resource<MarketPredictions>?
+    /// The gameweek the tiles show, as weeks after the next one (◀ ▶ over the next 10; batch 3).
+    @State private var gwOffset = 0
+    private static let weeksAhead = 10
 
     private var fixtureView: FixtureView { FixtureView(model: fixtureModel, lens: fixtureLens) }
-    /// xFDR by position: the team's own next fixtures, rated for each player's position.
+    /// xFDR · Auto: the team's own next fixtures, rated for each player's position.
     private var usesTeamFixtures: Bool { fixtureModel == .xfdr && fixtureLens == .position }
 
     var body: some View {
@@ -189,6 +205,7 @@ struct TeamOverview: View {
                 if let chip = snapshot.activeChip {
                     Tag(text: "GW\(snapshot.gw) chip: \(TeamText.chipName(chip))", foreground: ToolkitColor.accent, fill: ToolkitColor.goldTag)
                 }
+                TeamShortcuts(onNews: { onSheet(.news) }, onRotation: { onSheet(.rotation) })
                 Picker("View", selection: $layout) {
                     ForEach(TeamLayout.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -221,7 +238,7 @@ struct TeamOverview: View {
             let clubs = Array(Set(team.players.values.map(\.clubId)))
             let research = appModel.researchRepository
             @MainActor func run(_ view: FixtureView) -> Resource<ResearchTicker> {
-                Resource(research.ticker(horizon: 6, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs, view: view))
+                Resource(research.ticker(horizon: Self.weeksAhead, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs, view: view))
             }
             if usesTeamFixtures {
                 let defence = run(FixtureView(model: .xfdr, lens: .cleanSheet))
@@ -262,13 +279,46 @@ struct TeamOverview: View {
 
     private func metricBar(_ snapshot: Team.Snapshot, tiles: Bool = true) -> some View {
         HStack {
-            Text([nextGw.map { "GW\($0)" }, TeamSquad.formation(snapshot, team: team)].compactMap { $0 }.joined(separator: " · "))
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.secondaryText)
-                .accessibilityLabel("Formation \(TeamSquad.formation(snapshot, team: team))")
+            if tiles && metric == .fixtures, let first = nextGw {
+                gwStepper(first: first)
+            } else {
+                Text([nextGw.map { "GW\($0)" }, TeamSquad.formation(snapshot, team: team)].compactMap { $0 }.joined(separator: " · "))
+                    .font(.footnote)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .accessibilityLabel("Formation \(TeamSquad.formation(snapshot, team: team))")
+            }
             Spacer()
             squadMenu(tiles: tiles)
         }
+    }
+
+    /// ◀ GW7 ▶: which of the next 10 gameweeks the tiles' fixture and six-week strip start from.
+    private func gwStepper(first: Int) -> some View {
+        let last = min(first + Self.weeksAhead - 1, 38)
+        let gw = min(first + gwOffset, last)
+        return HStack(spacing: 0) {
+            Button { gwOffset = max(0, gwOffset - 1) } label: {
+                Image(systemName: "chevron.left")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .disabled(gw <= first)
+            .accessibilityLabel("Previous gameweek")
+            Text("GW\(gw)")
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+                .accessibilityLabel("Tiles show gameweek \(gw)")
+            Button { gwOffset = min(last - first, gwOffset + 1) } label: {
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .disabled(gw >= last)
+            .accessibilityLabel("Next gameweek")
+        }
+        .foregroundStyle(ToolkitColor.link)
     }
 
     /// What the tiles show, and which fixture difficulty: one gold menu (design v2).
@@ -381,7 +431,7 @@ struct TeamOverview: View {
         }
         let metricModel: PitchTileModel.Metric
         switch metric {
-        case .fixtures where !usesTeamFixtures:
+        case .fixtures where !usesTeamFixtures || gwOffset > 0:
             if let player, let cell = tickerCell(for: player) {
                 if cell.games.isEmpty {
                     metricModel = .text("No fixture")
@@ -420,7 +470,7 @@ struct TeamOverview: View {
             metricModel = .text(text)
             spoken.append(player.map { TeamText.oddsSpoken($0, odds: odds) } ?? "")
         }
-        let cells = player.map(runCells) ?? []
+        let cells = Array((player.map(runCells) ?? []).dropFirst(gwOffset).prefix(6))
         if let run = FixtureRunColumn.spoken(cells) { spoken.append(run) }
         return PitchTileModel(playerId: pick.playerId, name: player?.webName ?? "Player", colors: club?.colors,
                               isGoalkeeper: player?.position == .gk, photo: player?.photo, role: role, status: status,
@@ -429,14 +479,15 @@ struct TeamOverview: View {
                               accessibilityLabel: spoken.filter { !$0.isEmpty }.joined(separator: ", "))
     }
 
-    /// This player's next gameweek in the chosen view's club runs.
+    /// This player's gameweek chosen with ◀ ▶ in the chosen view's club runs.
     private func tickerCell(for player: PlayerSummary) -> FixtureCellModel? {
-        guard !usesTeamFixtures, let cell = runCells(for: player).first else { return nil }
-        return FixtureCellModel(tickerCell: cell, club: appModel.club, model: fixtureView.summary, subject: player.webName)
+        guard let cell = runCells(for: player).dropFirst(gwOffset).first else { return nil }
+        let model = usesTeamFixtures ? fixtureView.label(for: player.position) : fixtureView.summary
+        return FixtureCellModel(tickerCell: cell, club: appModel.club, model: model, subject: player.webName)
     }
 
-    /// The player's club run for the next six gameweeks (Defence for goalkeepers and defenders,
-    /// Attack otherwise, when by position).
+    /// The player's club run for the next 10 gameweeks (Defence for goalkeepers and defenders,
+    /// Attack otherwise, when Auto).
     private func runCells(for player: PlayerSummary) -> [ResearchTicker.Cell] {
         let defensive = player.position == .gk || player.position == .def
         guard let ticker = (defensive ? defenceRun : attackRun)?.loaded?.value else { return [] }
@@ -477,7 +528,7 @@ struct TeamOverview: View {
                     Button { onPlayer(pick.playerId) } label: {
                         TeamListRow(player: player,
                                     role: pick.isCaptain ? "C" : pick.isViceCaptain ? "V" : nil,
-                                    odds: odds, price: priceRow(player.id), run: runCells(for: player))
+                                    odds: odds, price: priceRow(player.id), run: Array(runCells(for: player).prefix(6)))
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens the player")
@@ -580,7 +631,7 @@ enum TeamText {
 
     /// The fixture views the Team menu offers: xFDR's variants, then FPL's own rating.
     static let fixtureChoices: [(label: String, view: FixtureView)] = [
-        ("xFDR · By position", FixtureView(model: .xfdr, lens: .position)),
+        ("xFDR · Auto", FixtureView(model: .xfdr, lens: .position)),
         ("xFDR · Overall", FixtureView(model: .xfdr, lens: .match)),
         ("xFDR · Attack", FixtureView(model: .xfdr, lens: .attack)),
         ("xFDR · Defence", FixtureView(model: .xfdr, lens: .cleanSheet)),
@@ -608,5 +659,40 @@ enum TeamText {
             return "no betting-market estimate"
         }
         return chance.spoken
+    }
+}
+
+/// Team news and Squad rotation, one tap from the squad (batch 3). Side by side, stacked at the
+/// largest text sizes.
+private struct TeamShortcuts: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let onNews: () -> Void
+    let onRotation: () -> Void
+
+    var body: some View {
+        let layout = typeSize >= .xxLarge
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 10))
+        layout {
+            shortcut("Team news", systemImage: "newspaper",
+                     hint: "Your squad's injuries, doubts and price moves", action: onNews)
+            shortcut("Squad rotation", systemImage: "square.grid.3x3",
+                     hint: "The next six gameweeks, with a suggested eleven for each", action: onRotation)
+        }
+    }
+
+    private func shortcut(_ title: String, systemImage: String, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.primaryText)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(ToolkitColor.raised, in: RoundedRectangle(cornerRadius: ToolkitRadius.button))
+                .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.button).strokeBorder(ToolkitColor.border, lineWidth: 1))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(hint)
     }
 }

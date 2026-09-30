@@ -283,7 +283,7 @@ struct ResearchErrorView: View {
 }
 
 /// The website's fixture switches for research screens. A club ticker has no position, so there
-/// "By position" is left out and reads as Match, as the server does.
+/// Auto (by position) is left out and reads as Match, as the server does.
 struct ResearchFixtureMenu: View {
     @Binding var model: FixtureView.Model
     @Binding var lens: FixtureView.Lens

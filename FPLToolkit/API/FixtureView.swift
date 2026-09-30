@@ -23,7 +23,8 @@ struct FixtureView: Hashable, Sendable {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .position: "By position"
+            // "By position" until batch 3 (Dan's choice, 30 Sep); each row still says which it uses.
+            case .position: "Auto"
             case .match: "Overall"
             case .attack: "Attack"
             case .cleanSheet: "Defence"
@@ -37,7 +38,7 @@ struct FixtureView: Hashable, Sendable {
     var model: Model = .xfdr
     var lens: Lens = .position
 
-    /// The saved choice; xFDR by position (the website's default) until one is made.
+    /// The saved choice; xFDR · Auto (by position, the website's default) until one is made.
     nonisolated static var current: FixtureView {
         let defaults = UserDefaults.standard
         return FixtureView(
@@ -50,10 +51,10 @@ struct FixtureView: Hashable, Sendable {
         [URLQueryItem(name: "model", value: model.rawValue), URLQueryItem(name: "lens", value: lens.rawValue)]
     }
 
-    /// "xFDR · By position", or "Official FDR" (the variant only changes xFDR).
+    /// "xFDR · Auto", or "Official FDR" (the variant only changes xFDR).
     var summary: String { model == .fpl ? model.label : "\(model.label) · \(lens.label)" }
 
-    /// The variant a player sees under this choice: "By position" means Defence for goalkeepers
+    /// The variant a player sees under this choice: Auto means Defence for goalkeepers
     /// and defenders and Attack for midfielders and forwards.
     func label(for position: Position) -> String {
         guard model == .xfdr else { return model.label }

@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// The website's Squad Evolution: the draft's squad over the next six gameweeks, each player's
-/// FPL difficulty per week, and a suggested XI per week (the easiest legal XI), ringed. The server
-/// builds it with the website's code; this lays it out. At accessibility sizes it reads week by week.
-struct SquadEvolutionView: View {
+/// Squad Rotation (the website's Squad Evolution; renamed in batch 3): a squad over the next six
+/// gameweeks, each player's FPL difficulty per week, and a suggested XI per week (the easiest legal
+/// XI), ringed. The server builds it with the website's code; this lays it out. At accessibility
+/// sizes it reads week by week. A draft's squad in the Planner; the published squad on My Team.
+struct SquadRotationView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dynamicTypeSize) private var typeSize
-    let model: DraftModel
+    let load: @MainActor () async throws -> PlannerEvolution
 
     @State private var evolution: PlannerEvolution?
     @State private var loadError: ErrorCopy?
@@ -23,7 +24,11 @@ struct SquadEvolutionView: View {
                     .font(.subheadline)
                     .tint(ToolkitColor.accent)
                 if let loadError {
-                    ErrorStateView(copy: loadError) { Task { await load() } }
+                    ErrorStateView(copy: loadError) { Task { await reload() } }
+                } else if let evolution, evolution.groups.allSatisfy({ $0.playerIds.isEmpty }) {
+                    Text("No published squad yet. It appears after your first deadline.")
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else if let evolution {
                     if typeSize.isAccessibilitySize {
                         weekList(evolution)
@@ -42,9 +47,9 @@ struct SquadEvolutionView: View {
             .padding(.bottom, ToolkitSpace.section)
         }
         .toolkitScreen()
-        .navigationTitle("Squad evolution")
+        .navigationTitle("Squad rotation")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
+        .task { await reload() }
     }
 
     // MARK: Grid
@@ -190,10 +195,10 @@ struct SquadEvolutionView: View {
         formation == "—" ? "no legal XI" : formation
     }
 
-    private func load() async {
+    private func reload() async {
         loadError = nil
         do {
-            evolution = try await model.evolution()
+            evolution = try await load()
         } catch let error as APIError {
             loadError = ErrorCopy(error)
         } catch {}

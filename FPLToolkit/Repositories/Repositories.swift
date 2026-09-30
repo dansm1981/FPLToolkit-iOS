@@ -68,6 +68,11 @@ struct TeamRepository: Sendable {
     func history(entryId: Int) -> CachedEndpoint<SeasonHistory> {
         .init(client: client, cache: cache, path: "team/\(entryId)/history")
     }
+
+    /// Squad Rotation for the published squad (batch 3), in the app's fixture difficulty choice.
+    func rotation(entryId: Int) -> CachedEndpoint<PlannerEvolution> {
+        .init(client: client, cache: cache, path: "team/\(entryId)/rotation", query: FixtureView.current.queryItems)
+    }
 }
 
 struct PlayerRepository: Sendable {

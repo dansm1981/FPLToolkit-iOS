@@ -263,6 +263,34 @@ final class ScreenAuditTests: XCTestCase {
         // the largest standard size (names and chips wrap inside the tiles; 29 Sep 2026).
         check(app, "04-team", combinedTiles: true, clippingCheckedLarge: true)
 
+        // ◀ ▶ (batch 3): the tiles move on a gameweek and back. The arrows are for fixtures, and
+        // earlier tests may leave the tiles on Odds or Price (the choice is kept).
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on tiles:'")).firstMatch.tap()
+        let auto = app.buttons["xFDR · Auto"].firstMatch
+        waitFor(auto, "Fixture difficulty choices")
+        auto.tap()
+        let shown = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Tiles show gameweek'")).firstMatch
+        waitFor(shown, "Gameweek arrows")
+        let before = shown.label
+        app.buttons["Next gameweek"].firstMatch.tap()
+        XCTAssertNotEqual(shown.label, before, "The arrows move the tiles to the next gameweek")
+        app.buttons["Previous gameweek"].firstMatch.tap()
+        XCTAssertEqual(shown.label, before)
+
+        // Team news and Squad rotation (batch 3), one tap from the squad.
+        app.buttons["Team news"].firstMatch.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'squad' AND label CONTAINS 'attention'")).firstMatch,
+                "Team news", timeout: 30)
+        settle()
+        check(app, "04d-team-news")
+        app.buttons["Done"].firstMatch.tap()
+
+        app.buttons["Squad rotation"].firstMatch.tap()
+        waitFor(app.staticTexts["Goalkeepers"].firstMatch, "Squad rotation grid", timeout: 40)
+        settle()
+        check(app, "04e-team-rotation", combinedTiles: true)
+        app.buttons["Done"].firstMatch.tap()
+
         // List (Dan, 29 Sep): every figure for each player, no menu of layers.
         app.buttons["List"].firstMatch.tap()
         waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Odds are betting-market'")).firstMatch,
@@ -376,13 +404,13 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.buttons["Fixture difficulty: Official FDR"].firstMatch, "Official FDR chosen")
         fixtures.tap()
         app.buttons["xFDR"].firstMatch.tap()
-        waitFor(app.buttons["Fixture difficulty: xFDR · By position"].firstMatch, "Back to xFDR")
+        waitFor(app.buttons["Fixture difficulty: xFDR · Auto"].firstMatch, "Back to xFDR")
 
-        // Squad evolution and the transfer timeline (both audited).
-        app.buttons["Squad evolution"].firstMatch.tap()
-        waitFor(app.staticTexts["Goalkeepers"].firstMatch, "Squad evolution grid", timeout: 40)
+        // Squad rotation and the transfer timeline (both audited).
+        app.buttons["Squad rotation"].firstMatch.tap()
+        waitFor(app.staticTexts["Goalkeepers"].firstMatch, "Squad rotation grid", timeout: 40)
         settle()
-        check(app, "17-squad-evolution", combinedTiles: true)
+        check(app, "17-squad-rotation", combinedTiles: true)
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["Transfer timeline"].firstMatch.tap()
         let timeline = app.staticTexts.matching(NSPredicate(format: "label == 'Timeline' OR label BEGINSWITH 'No changes yet'")).firstMatch
@@ -443,7 +471,8 @@ final class ScreenAuditTests: XCTestCase {
         // Explore (replacing him): star another keeper for the shortlist.
         tile.tap()
         app.buttons["Replace…"].firstMatch.tap()
-        let exploreTab = app.buttons["Explore"].firstMatch
+        // The picker's own control: a bare "Explore" can match a button behind the sheet.
+        let exploreTab = app.segmentedControls.buttons["Explore"].firstMatch
         waitFor(exploreTab, "Explore tab")
         exploreTab.tap()
         waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Your shortlist'")).firstMatch, "Explore", timeout: 40)

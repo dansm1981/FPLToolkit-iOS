@@ -89,10 +89,10 @@ struct PlannerTests {
         #expect(lines.last == "Planned with FPLToolkit: \(draft.shareUrl)")
     }
 
-    /// The website's fixture switches: xFDR by position until chosen, sent as the contract says.
+    /// The website's fixture switches: xFDR · Auto (by position) until chosen, sent as the contract says.
     @Test func fixtureView() {
         let fresh = FixtureView()
-        #expect(fresh.summary == "xFDR · By position")
+        #expect(fresh.summary == "xFDR · Auto")
         #expect(fresh.queryItems.map(\.description) == ["model=xfdr", "lens=position"])
         let fpl = FixtureView(model: .fpl, lens: .cleanSheet)
         #expect(fpl.summary == "Official FDR")

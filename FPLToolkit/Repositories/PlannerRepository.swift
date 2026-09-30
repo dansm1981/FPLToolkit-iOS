@@ -52,7 +52,7 @@ struct PlannerRepository: Sendable {
         return try await session.send("GET", "\(Self.base)/\(id)/news", query: query, as: PlannerNews.self).envelope.data
     }
 
-    /// The website's Squad Evolution grid from a gameweek.
+    /// Squad Rotation (the website's Squad Evolution grid) from a gameweek.
     func evolution(_ id: String, gw: Int) async throws -> PlannerEvolution {
         let query = [URLQueryItem(name: "gw", value: String(gw))] + Self.view
         return try await session.send("GET", "\(Self.base)/\(id)/evolution", query: query, as: PlannerEvolution.self).envelope.data
@@ -286,7 +286,7 @@ final class DraftModel {
         await resource.load(bypassCache: true)
     }
 
-    /// Squad Evolution from the gameweek shown.
+    /// Squad Rotation from the gameweek shown.
     func evolution() async throws -> PlannerEvolution {
         try await repository.evolution(id, gw: draft?.gw ?? 1)
     }

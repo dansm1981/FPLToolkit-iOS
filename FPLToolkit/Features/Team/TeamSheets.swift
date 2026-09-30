@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Team → Fixtures (design pack p.10; compact, Dan 29 Sep): each squad member's next ten
 /// gameweeks, names pinned with photo and badge, and the difficulty model chosen in plain view:
-/// Official FDR or xFDR, and which xFDR (by position, Overall, Attack or Defence). Built from the
+/// Official FDR or xFDR, and which xFDR (Auto, Overall, Attack or Defence). Built from the
 /// fixture ticker's club runs.
 struct TeamFixturesView: View {
     @Environment(AppModel.self) private var appModel
@@ -88,7 +88,7 @@ struct TeamFixturesView: View {
         func chosen() -> CachedEndpoint<ResearchTicker> {
             research.ticker(horizon: Self.horizon, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs, view: view)
         }
-        // By position needs both variants; any other view is one set of club runs.
+        // Auto needs both variants; any other view is one set of club runs.
         if defence == nil || force { defence = Resource(byPosition ? endpoint(.cleanSheet) : chosen()) }
         if attack == nil || force { attack = Resource(byPosition ? endpoint(.attack) : chosen()) }
         async let d: Void = defence?.load() ?? ()
