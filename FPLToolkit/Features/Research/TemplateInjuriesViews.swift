@@ -46,15 +46,15 @@ struct TemplateTeamView: View {
 
     private func row(_ p: TemplateTeam.Player, _ team: TemplateTeam) -> some View {
         let player = team.player(p.playerId)
-        let details = [
-            "£\(p.price.formatted(.number.precision(.fractionLength(1))))m",
-            "\(p.points) pts",
-            "form \(p.form.formatted(.number.precision(.fractionLength(1))))",
-        ]
+        let price = "£\(p.price.formatted(.number.precision(.fractionLength(1))))m"
+        let form = p.form.formatted(.number.precision(.fractionLength(1)))
+        // Short facts as chips (Dan, 29 Sep: "too many words"): price stays with the club.
         return MarketPlayerRow(
-            playerId: p.playerId, player: player, details: details,
+            playerId: p.playerId, player: player, details: [price],
+            chips: [RowChip(text: "\(p.points) pts"), RowChip(text: "Form \(form)")],
             trailing: MarketFormat.percent(p.own),
-            spoken: ([player?.webName ?? "Player", "\(MarketFormat.percent(p.own)) owned"] + details).joined(separator: ", ")
+            spoken: [player?.webName ?? "Player", "\(MarketFormat.percent(p.own)) owned", price,
+                     "\(p.points) points", "form \(form)"].joined(separator: ", ")
         )
     }
 }
@@ -100,7 +100,8 @@ struct InjuriesView: View {
             }
             ForEach(list.groups) { group in
                 VStack(alignment: .leading, spacing: ToolkitSpace.xs) {
-                    MarketList(title: "\(group.label) (\(group.rows.count))", rows: group.rows, initial: 15) { row($0, group, list) }
+                    MarketList(title: "\(group.label) (\(group.rows.count))", rows: group.rows, initial: 15,
+                               playerOf: { list.player($0.playerId) }) { row($0, group, list) }
                     Text(group.blurb)
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
@@ -114,14 +115,16 @@ struct InjuriesView: View {
         let name: String = player?.webName ?? "Player"
         let chance: String = r.chance.map { "\($0)%" } ?? "—"
         let price: String = r.price.formatted(.number.precision(.fractionLength(1)))
-        let details: [String] = ["£\(price)m", "\(MarketFormat.percent(r.own)) owned"]
+        let details: [String] = ["£\(price)m"]
         let news: String = r.news ?? "No update"
         var spoken: [String] = [name, group.label]
         spoken.append(r.chance.map { "\($0)% chance of playing" } ?? "no chance given")
         spoken.append(contentsOf: details)
         spoken.append(news)
+        spoken.append("\(MarketFormat.percent(r.own)) owned")
         return MarketPlayerRow(
             playerId: r.playerId, player: player, details: details, extra: news,
+            chips: [RowChip(text: "\(MarketFormat.percent(r.own)) owned")],
             trailing: chance, trailingColor: chanceColor(r.chance, doubtful: group.key == "d"),
             spoken: spoken.joined(separator: ", ")
         )

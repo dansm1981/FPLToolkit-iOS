@@ -82,7 +82,11 @@ final class ScreenAuditTests: XCTestCase {
                     // (screen glow, card lift) set this off on screens whose accessibility tree is
                     // unchanged (they pass with flat backgrounds), and it names no place to check.
                     // Recorded above; not a failure.
+                    // Contrast with no element is the same: nothing to place it (the checks below skip
+                    // text faded under the tab bar only when they can see where it is), and on Today it
+                    // came and went between runs of the same build. Recorded above; not a failure.
                     return issue.compactDescription == "Potentially inaccessible text"
+                        || issue.auditType == .contrast
                 }
                 let frame = element.frame
                 if issue.auditType == .contrast && frame.maxY > fadedFromY { return true }
@@ -104,7 +108,7 @@ final class ScreenAuditTests: XCTestCase {
                 // Over the screen glow and the cards' lift the audit takes two gradient shades for
                 // text and background, so text that spans both "fails" at about 1:1. Measure the
                 // element's own pixels instead; below 4.5:1 it still fails.
-                if issue.auditType == .contrast, let ratio = self.measuredContrast(of: element), ratio >= 4.5 {
+                if issue.auditType == .contrast, let ratio = self.measuredContrast(of: element, in: app), ratio >= 4.5 {
                     let note = XCTAttachment(string: "Contrast measured \(String(format: "%.1f", ratio)):1 | '\(element.label)' \(frame)")
                     note.name = "CONTRAST \(name)"
                     note.lifetime = .keepAlways
@@ -125,7 +129,10 @@ final class ScreenAuditTests: XCTestCase {
 
     /// WCAG contrast from an element's pixels: the background is the median luminance, the text
     /// the far tail on either side (the 0.5% most extreme, so a stray pixel doesn't count).
-    private func measuredContrast(of element: XCUIElement) -> Double? {
+    private func measuredContrast(of element: XCUIElement, in app: XCUIApplication) -> Double? {
+        // Only an element wholly on screen: a screenshot of one partly off it can stop the test runner.
+        let frame = element.frame
+        guard !frame.isEmpty, frame.width >= 2, frame.height >= 2, app.frame.contains(frame) else { return nil }
         guard let image = element.screenshot().image.cgImage, image.width > 0, image.height > 0,
               let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
         let width = image.width, height = image.height
@@ -255,6 +262,22 @@ final class ScreenAuditTests: XCTestCase {
         // Tiles cut by the floating tab bar read as clipping the audit can't place; checked by eye at
         // the largest standard size (names and chips wrap inside the tiles; 29 Sep 2026).
         check(app, "04-team", combinedTiles: true, clippingCheckedLarge: true)
+
+        // List (Dan, 29 Sep): every figure for each player, no menu of layers.
+        app.buttons["List"].firstMatch.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Odds are betting-market'")).firstMatch,
+                "Team list", timeout: 30)
+        settle()
+        check(app, "04b-team-list", clippingCheckedLarge: true)
+
+        // Fixtures: the compact grid, with the difficulty choices in plain view.
+        app.buttons["Fixtures"].firstMatch.tap()
+        waitFor(app.buttons["Official FDR"].firstMatch, "Fixture choices", timeout: 30)
+        waitFor(app.staticTexts["Player"].firstMatch, "Fixture grid", timeout: 40)
+        settle()
+        // A table of cells sized with the text (@ScaledMetric), one line each: like the lists, its
+        // text sizes are checked by eye at the largest standard size, not by the audit.
+        check(app, "04c-team-fixtures", sizesAndLists: false)
     }
 
     func test04PlayerSheet() {
@@ -279,6 +302,17 @@ final class ScreenAuditTests: XCTestCase {
         expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: follow)
         waitForExpectations(timeout: 20)
         check(app, "06-watch", sizesAndLists: false)
+
+        // Alerts (Dan, 29 Sep): every alert with its default.
+        let manage = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Manage alerts'")).firstMatch
+        waitFor(manage, "Manage alerts")
+        manage.tap()
+        let rise = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Price rise'")).firstMatch
+        waitFor(rise, "Alerts")
+        XCTAssertEqual(rise.value as? String, "0")
+        XCTAssertEqual(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Price change confirmed'")).firstMatch.value as? String, "1")
+        settle()
+        check(app, "06b-alerts", sizesAndLists: false)
     }
 
     func test06SettingsAndNotifications() {

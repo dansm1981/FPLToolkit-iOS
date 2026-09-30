@@ -19,18 +19,47 @@ private struct LeagueCard<Content: View>: View {
     }
 }
 
-/// A two-line row: a name, then the details; the value on the right.
+/// A two-line row: a name, then the details; the value on the right. With a player it takes the
+/// app's standard look (Dan, 29 Sep): photo, club badge, the gold shirt when he's in your team,
+/// and short facts as chips.
 private struct LeagueRow: View {
+    @Environment(AppModel.self) private var appModel
     let title: String
+    var player: PlayerSummary?
     var detail: String?
+    var chips: [RowChip] = []
     var value: String?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
+        HStack(alignment: player == nil ? .firstTextBaseline : .center, spacing: ToolkitSpace.sm) {
+            if let player {
+                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 28)
+            }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(ToolkitColor.primaryText)
+                HStack(spacing: 4) {
+                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(ToolkitColor.primaryText)
+                    if let player, appModel.squadIds.contains(player.id) {
+                        Image(systemName: "tshirt.fill")
+                            .font(.caption2)
+                            .foregroundStyle(ToolkitColor.accent)
+                            .accessibilityLabel("in your team")
+                    }
+                }
+                if let player {
+                    ClubLabel(clubId: player.clubId,
+                              text: [appModel.club(player.clubId)?.shortName, player.position.rawValue, Format.price(player.price)]
+                                .compactMap { $0 }.joined(separator: " · "),
+                              logoSize: 11)
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
                 if let detail {
                     Text(detail).font(.footnote).foregroundStyle(ToolkitColor.secondaryText)
+                }
+                if !chips.isEmpty {
+                    FlowLayout(spacing: 4, lineSpacing: 4) {
+                        ForEach(chips, id: \.self) { RowChipView(chip: $0) }
+                    }
                 }
             }
             .multilineTextAlignment(.leading)
@@ -120,29 +149,28 @@ struct LeaguePlayersSection: View {
             LeagueCard(title: data.league.syncedGw.map { "Captaincy — GW\($0)" } ?? "Captaincy") {
                 if data.captaincy.isEmpty { Text("No captain data yet.").foregroundStyle(ToolkitColor.secondaryText) }
                 ForEach(data.captaincy) { c in
-                    LeagueRow(title: data.name(c.playerId), detail: meta(c.playerId), value: "\(pct(c.pct)) (\(c.count))")
+                    LeagueRow(title: data.name(c.playerId), player: data.player(c.playerId), value: "\(pct(c.pct)) (\(c.count))")
                 }
             }
             LeagueCard(title: data.league.syncedGw.map { "League ownership — GW\($0)" } ?? "League ownership") {
                 ForEach(data.ownership) { o in
-                    LeagueRow(title: data.name(o.playerId),
-                              detail: "Owned \(pct(o.ownedPct)) · started by \(o.started) · EO \(pct(o.eo)) · global \(pct(o.globalPct))")
+                    LeagueRow(title: data.name(o.playerId), player: data.player(o.playerId),
+                              chips: [RowChip(text: "Starts \(o.started)"), RowChip(text: "EO \(pct(o.eo))"),
+                                      .change("All \(pct(o.globalPct))", o.ownedPct - o.globalPct)],
+                              value: pct(o.ownedPct))
                 }
             }
         }
-    }
-
-    private func meta(_ id: Int) -> String {
-        guard let p = data.player(id) else { return "" }
-        return [appModel.club(p.clubId)?.shortName, p.position.rawValue].compactMap { $0 }.joined(separator: " ")
     }
 
     private func intel(_ title: String, _ rows: [LeagueIntel]) -> some View {
         LeagueCard(title: title) {
             if rows.isEmpty { Text("Nothing to show yet.").foregroundStyle(ToolkitColor.secondaryText) }
             ForEach(rows) { r in
-                LeagueRow(title: data.name(r.playerId),
-                          detail: "\(r.band) · league EO \(pct(r.eo)) · league \(pct(r.leagueOwnPct)) · global \(pct(r.globalPct)) · \(r.gapPp >= 0 ? "+" : "")\(Int(r.gapPp.rounded()))pp",
+                LeagueRow(title: data.name(r.playerId), player: data.player(r.playerId),
+                          chips: [RowChip(text: r.band), RowChip(text: "EO \(pct(r.eo))"),
+                                  RowChip(text: "League \(pct(r.leagueOwnPct))"), RowChip(text: "All \(pct(r.globalPct))"),
+                                  .change("\(r.gapPp >= 0 ? "+" : "")\(Int(r.gapPp.rounded()))pp", r.gapPp)],
                           value: "\(r.score)")
             }
         }
@@ -153,8 +181,8 @@ struct LeaguePlayersSection: View {
         if !rows.isEmpty {
             LeagueCard(title: title) {
                 ForEach(rows) { c in
-                    LeagueRow(title: data.name(c.playerId),
-                              detail: "League \(pct(c.leaguePct)) · Global \(pct(c.globalPct))",
+                    LeagueRow(title: data.name(c.playerId), player: data.player(c.playerId),
+                              chips: [RowChip(text: "League \(pct(c.leaguePct))"), RowChip(text: "All \(pct(c.globalPct))")],
                               value: "\(c.gapPp >= 0 ? "+" : "")\(Int(c.gapPp.rounded()))pp")
                 }
             }

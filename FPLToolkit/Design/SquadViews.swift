@@ -182,6 +182,10 @@ struct PitchTile: View {
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: 12))
+        // Five tiles share the pitch's width, so their text stops growing at the standard size:
+        // larger, names broke mid-word (Dan's phone, 29 Sep). The List view shows the squad at any
+        // size, and the Team tab switches to it at the accessibility sizes.
+        .dynamicTypeSize(...DynamicTypeSize.large)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(model.accessibilityLabel)
     }

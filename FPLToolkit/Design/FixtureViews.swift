@@ -49,11 +49,13 @@ extension FixtureCellModel {
 struct FixtureCell: View {
     let model: FixtureCellModel
     var minWidth: CGFloat = 62
+    /// Narrow cells: a blank shows "–" (its label still says "no fixture").
+    var compact = false
 
     var body: some View {
         VStack(spacing: 2) {
             if model.games.isEmpty {
-                Text("No fixture")
+                Text(compact ? "–" : "No fixture")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(ToolkitColor.secondaryText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -64,7 +66,8 @@ struct FixtureCell: View {
                         Text(game.label)
                             .font(.caption2.weight(.medium))
                         Text(game.value ?? "–")
-                            .font((model.games.count > 1 ? Font.caption2 : Font.footnote).weight(.bold).monospacedDigit())
+                            .font(compact ? Font.caption.weight(.bold)
+                                  : (model.games.count > 1 ? Font.caption2 : Font.footnote).weight(.bold).monospacedDigit())
                     }
                     .foregroundStyle(game.tone.text)
                     .lineLimit(1)
@@ -102,12 +105,17 @@ struct FixtureRunStrip: View {
 
 /// Rows of fixture runs: names pinned on the left, gameweeks scrolling sideways (Team → Fixtures,
 /// the fixture ticker). Each row is one player or club.
+/// Players (or clubs) down the side, gameweeks across (Team → Fixtures). Compact (Dan, 29 Sep:
+/// "more GW fixtures on the one screen"): narrow two-line cells, a small photo and club badge
+/// beside each name, the names pinned while the weeks scroll.
 struct FixtureRunGrid: View {
     struct Row: Identifiable, Hashable {
         let id: Int
         let title: String
-        /// e.g. "ARS · Defence" or "Run 10.2".
+        /// e.g. "ARS · Defence" (the club's badge goes before it).
         let subtitle: String?
+        var photo: String?
+        var clubId: Int?
         let cells: [FixtureCellModel]
     }
     let heading: String
@@ -115,13 +123,13 @@ struct FixtureRunGrid: View {
     let rows: [Row]
     var onSelectRow: ((Row) -> Void)?
 
-    @ScaledMetric(relativeTo: .caption2) private var cellWidth: CGFloat = 62
-    @ScaledMetric(relativeTo: .caption2) private var rowHeight: CGFloat = 48
-    @ScaledMetric(relativeTo: .caption) private var nameWidth: CGFloat = 96
-    private let spacing: CGFloat = 5
+    @ScaledMetric(relativeTo: .caption2) private var cellWidth: CGFloat = 44
+    @ScaledMetric(relativeTo: .caption2) private var rowHeight: CGFloat = 40
+    @ScaledMetric(relativeTo: .caption) private var nameWidth: CGFloat = 112
+    private let spacing: CGFloat = 4
 
     private func height(_ row: Row) -> CGFloat {
-        (row.cells.map(\.games.count).max() ?? 1) > 1 ? rowHeight * 1.5 : rowHeight
+        (row.cells.map(\.games.count).max() ?? 1) > 1 ? rowHeight * 1.6 : rowHeight
     }
 
     var body: some View {
@@ -131,19 +139,24 @@ struct FixtureRunGrid: View {
                 Text(heading)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(ToolkitColor.secondaryText)
-                    .frame(height: 30, alignment: .leading)
+                    .frame(height: 24, alignment: .leading)
                 ForEach(rows) { row in
                     Button { onSelectRow?(row) } label: {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(row.title)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(ToolkitColor.primaryText)
-                                .lineLimit(1)
-                            if let subtitle = row.subtitle {
-                                Text(subtitle)
-                                    .font(.caption2)
-                                    .foregroundStyle(ToolkitColor.secondaryText)
+                        HStack(spacing: 6) {
+                            if row.photo != nil || row.clubId != nil {
+                                PlayerPhoto(path: row.photo, size: 24, scalesWithText: false)
+                            }
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(row.title)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(ToolkitColor.primaryText)
                                     .lineLimit(1)
+                                if let subtitle = row.subtitle {
+                                    ClubLabel(clubId: row.clubId, text: subtitle, logoSize: 10)
+                                        .font(.caption2)
+                                        .foregroundStyle(ToolkitColor.secondaryText)
+                                        .lineLimit(1)
+                                }
                             }
                         }
                         .frame(width: nameWidth, height: height(row), alignment: .leading)
@@ -153,7 +166,7 @@ struct FixtureRunGrid: View {
                     .disabled(onSelectRow == nil)
                 }
             }
-            .padding(.leading, 9)
+            .padding(.leading, 8)
             .padding(.trailing, 4)
             .background(ToolkitColor.surface)
             .zIndex(1)
@@ -163,22 +176,22 @@ struct FixtureRunGrid: View {
                     HStack(spacing: spacing) {
                         ForEach(gameweeks, id: \.self) { gw in
                             Text("GW\(gw)")
-                                .font(.caption.weight(.semibold))
+                                .font(.caption2.weight(.semibold))
                                 .foregroundStyle(ToolkitColor.secondaryText)
-                                .frame(width: cellWidth, height: 30)
+                                .frame(width: cellWidth, height: 24)
                         }
                     }
                     .accessibilityHidden(true)
                     ForEach(rows) { row in
                         HStack(spacing: spacing) {
                             ForEach(row.cells) { cell in
-                                FixtureCell(model: cell, minWidth: cellWidth)
+                                FixtureCell(model: cell, minWidth: cellWidth, compact: true)
                                     .frame(width: cellWidth, height: height(row))
                             }
                         }
                     }
                 }
-                .padding(.trailing, 9)
+                .padding(.trailing, 8)
             }
         }
         .padding(.vertical, 6)

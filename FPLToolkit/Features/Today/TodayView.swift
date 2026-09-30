@@ -96,6 +96,9 @@ struct TodayView: View {
                 async let leaguesLoad: Void = appModel.leagues.loadIfNeeded()
                 await resource.load()
                 _ = await (liveLoad, teamLoad, draftsLoad, leaguesLoad)
+                if let picks = team.loaded?.value.snapshot?.picks {
+                    appModel.squadIds = Set(picks.map(\.playerId))
+                }
             }
         }
     }
@@ -128,6 +131,7 @@ struct TodayContent: View {
             }
 
             GameweekCard(live: live, entry: today.entry, snapshot: team?.snapshot,
+                         squadValue: team.flatMap(TeamText.squadValue),
                          onOpen: { appModel.router.showingMatchday = true }, onHistory: onHistory)
 
             status
@@ -223,24 +227,26 @@ struct TodayContent: View {
 
     // MARK: Next move
 
-    /// Three tiles of one size (v2 mock): side by side, stacked at the accessibility text sizes.
+    /// Three tiles of one size (v2 mock) side by side; from the larger text sizes, three rows of one
+    /// size instead, so no word is broken (Dan's Pro Max, 29 Sep).
     @ViewBuilder private var nextMoveTiles: some View {
         let next = today.gameweek.next?.id
-        let layout = typeSize.isAccessibilitySize
+        let rows = typeSize >= .xxLarge
+        let layout = rows
             ? AnyLayout(VStackLayout(spacing: 10))
             : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
         layout {
             NextMoveTile(systemImage: "arrow.left.arrow.right",
                          title: latestDraft == nil ? "Start a plan" : "Plan transfers",
-                         detail: planDetail(next)) {
+                         detail: planDetail(next), asRow: rows) {
                 if let draft = latestDraft { appModel.router.pendingDraftId = draft.id }
                 appModel.router.selectedTab = .planner
             }
-            NextMoveTile(systemImage: "tshirt", title: "View fixtures", detail: "Your squad, next 6 GWs") {
+            NextMoveTile(systemImage: "tshirt", title: "View fixtures", detail: "Your squad, next 6 GWs", asRow: rows) {
                 UserDefaults.standard.set(TeamLayout.fixtures.rawValue, forKey: "team.layout")
                 appModel.router.selectedTab = .team
             }
-            NextMoveTile(systemImage: "chart.bar.fill", title: "Check research", detail: "Form, stats & more") {
+            NextMoveTile(systemImage: "chart.bar.fill", title: "Check research", detail: "Form, stats & more", asRow: rows) {
                 appModel.router.selectedTab = .research
             }
         }
@@ -283,26 +289,34 @@ struct TodayContent: View {
 /// The deadline in a small card with a compact countdown ("10d 8h"), ticking every minute.
 private struct DeadlineCard: View {
     let next: NextDeadline
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         TimelineView(.everyMinute) { context in
-            HStack(spacing: ToolkitSpace.md) {
+            // Larger text: the countdown under the date, so neither line breaks. One layout that
+            // changes shape keeps the same views (a view moved elsewhere confuses the audit).
+            let stacked = typeSize >= .xxLarge
+            let layout = stacked
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                : AnyLayout(HStackLayout(spacing: ToolkitSpace.md))
+            HStack(alignment: stacked ? .top : .center, spacing: ToolkitSpace.md) {
                 Image(systemName: "clock")
                     .font(.body.weight(.medium))
                     .foregroundStyle(ToolkitColor.secondaryText)
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("GW\(next.id) deadline")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    Text(Format.deadline(next.deadline))
-                        .font(.caption)
-                        .foregroundStyle(ToolkitColor.secondaryText)
+                layout {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("GW\(next.id) deadline")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        Text(Format.deadline(next.deadline))
+                            .font(.caption)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    .frame(maxWidth: stacked ? nil : .infinity, alignment: .leading)
+                    countdown(context.date)
                 }
-                Spacer()
-                Text(Format.compactCountdown(to: next.deadline, now: context.date))
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(ToolkitColor.primaryText)
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)
@@ -310,6 +324,12 @@ private struct DeadlineCard: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("GW\(next.id) deadline, \(Format.deadline(next.deadline)), \(Format.spokenCountdown(to: next.deadline, now: context.date))")
         }
+    }
+
+    private func countdown(_ now: Date) -> some View {
+        Text(Format.compactCountdown(to: next.deadline, now: now))
+            .font(.headline.monospacedDigit())
+            .foregroundStyle(ToolkitColor.primaryText)
     }
 }
 
@@ -323,6 +343,8 @@ struct GameweekCard: View {
     let entry: Entry
     /// The published squad, for team value and bank.
     let snapshot: Team.Snapshot?
+    /// The squad at today's prices (not FPL's deadline figure, which includes the bank).
+    let squadValue: Double?
     let onOpen: () -> Void
     /// The season history page (tapping the score, rank or points).
     let onHistory: () -> Void
@@ -341,17 +363,33 @@ struct GameweekCard: View {
                     let week = weekStats(team)
                     if !week.isEmpty {
                         Divider().overlay(ToolkitColor.heroLine)
-                        // Side by side; stacked at the accessibility text sizes.
-                        let layout = typeSize.isAccessibilitySize
-                            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
-                            : AnyLayout(HStackLayout(alignment: .top, spacing: ToolkitSpace.md))
-                        layout {
-                            ForEach(week, id: \.label) { stat in
-                                miniStat(stat.label, stat.value, spoken: stat.spoken)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                        // Side by side; from the larger text sizes a row each, label and figure, so a
+                        // figure never breaks across lines (Dan's Pro Max, 29 Sep).
+                        if typeSize >= .xxLarge {
+                            VStack(spacing: 8) {
+                                ForEach(week, id: \.label) { stat in
+                                    HStack(alignment: .firstTextBaseline) {
+                                        Text(stat.label)
+                                            .font(.subheadline)
+                                            .foregroundStyle(ToolkitColor.secondaryText)
+                                        Spacer(minLength: ToolkitSpace.sm)
+                                        Text(stat.value)
+                                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                                            .foregroundStyle(ToolkitColor.primaryText)
+                                    }
+                                    .accessibilityElement(children: .ignore)
+                                    .accessibilityLabel("\(stat.label): \(stat.spoken)")
+                                }
                             }
+                        } else {
+                            HStack(alignment: .top, spacing: ToolkitSpace.md) {
+                                ForEach(week, id: \.label) { stat in
+                                    miniStat(stat.label, stat.value, spoken: stat.spoken)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
                         }
-                        .fixedSize(horizontal: false, vertical: true)
                     }
                     if let headline = team.headline, team.status == .live || team.status == .between {
                         Divider().overlay(ToolkitColor.heroLine)
@@ -496,8 +534,8 @@ struct GameweekCard: View {
         if let rank = entry.gwRank, entry.summaryGw == team.gameweek {
             stats.append(Stat(label: "GW\(team.gameweek) rank", value: Format.rank(rank), spoken: rank.formatted()))
         }
-        if let value = snapshot?.value {
-            stats.append(Stat(label: "Team value", value: Format.price(value), spoken: Format.price(value)))
+        if let value = squadValue {
+            stats.append(Stat(label: "Squad value", value: Format.price(value), spoken: Format.price(value)))
         }
         if let bank = snapshot?.bank {
             stats.append(Stat(label: "In the bank", value: Format.price(bank), spoken: Format.price(bank)))
@@ -553,9 +591,44 @@ private struct NextMoveTile: View {
     let systemImage: String
     let title: String
     let detail: String
+    /// A full-width row (icon, words, chevron) for the larger text sizes.
+    var asRow = false
     let action: () -> Void
 
     var body: some View {
+        if asRow {
+            Button(action: action) {
+                HStack(spacing: ToolkitSpace.md) {
+                    IconBadge(systemImage: systemImage)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .accessibilityHidden(true)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                .toolkitCard(radius: 16)
+                .contentShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+        } else {
+            tile
+        }
+    }
+
+    private var tile: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 IconBadge(systemImage: systemImage)

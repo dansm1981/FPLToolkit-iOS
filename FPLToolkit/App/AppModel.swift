@@ -16,6 +16,9 @@ final class AppModel {
     private(set) var watch: WatchStore?
     /// Alert history for the device; nil before a team is connected or exploring starts.
     private(set) var alerts: Resource<AlertHistory>?
+    /// The published squad's players, set when Today or Team loads it, so any player list can
+    /// mark "in your team" (Dan, 29 Sep). Empty without a team.
+    var squadIds: Set<Int> = []
     let router = Router()
     let push = PushManager()
 
@@ -91,6 +94,7 @@ final class AppModel {
         defaults.removeObject(forKey: Keys.exploring)
         self.entryId = entryId
         exploring = false
+        squadIds = []
         router.selectedTab = .today
         makeWatchStore()
         Task { await syncDevice() }
@@ -113,6 +117,7 @@ final class AppModel {
         cache.removeAll()
         entryId = nil
         exploring = false
+        squadIds = []
         watch = nil
         alerts = nil
         Task { await deviceSession.sync(entryId: nil) }

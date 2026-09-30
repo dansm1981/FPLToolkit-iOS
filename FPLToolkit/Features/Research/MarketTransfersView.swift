@@ -38,13 +38,13 @@ struct MarketTransfersView: View {
 
     private func transfersContent(_ d: MarketTransfers) -> some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
-            MarketList(title: "Most bought" + (d.gw.map { " · GW\($0)" } ?? ""), rows: d.bought) { row in
+            MarketList(title: "Most bought" + (d.gw.map { " · GW\($0)" } ?? ""), rows: d.bought, playerOf: { d.player($0.playerId) }) { row in
                 transferRow(row, d, figure: MarketFormat.count(row.transfersIn), words: "\(MarketFormat.count(row.transfersIn)) in")
             }
-            MarketList(title: "Most sold", rows: d.sold) { row in
+            MarketList(title: "Most sold", rows: d.sold, playerOf: { d.player($0.playerId) }) { row in
                 transferRow(row, d, figure: MarketFormat.count(row.transfersOut), words: "\(MarketFormat.count(row.transfersOut)) out")
             }
-            MarketList(title: "Net transfers", rows: d.net) { row in
+            MarketList(title: "Net transfers", rows: d.net, playerOf: { d.player($0.playerId) }) { row in
                 transferRow(row, d, figure: MarketFormat.count(row.net, signed: true), words: "net \(MarketFormat.count(row.net, signed: true))",
                             tint: row.net > 0 ? ToolkitColor.positive : row.net < 0 ? ToolkitColor.error : ToolkitColor.primaryText)
             }
@@ -68,7 +68,7 @@ struct MarketTransfersView: View {
 
     private func ownershipContent(_ d: MarketTransfers) -> some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
-            MarketList(title: "Most owned", rows: d.mostOwned) { ownRow($0, d) }
+            MarketList(title: "Most owned", rows: d.mostOwned, playerOf: { d.player($0.playerId) }) { ownRow($0, d) }
             VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
                 Picker("Position", selection: $position) {
                     ForEach([Position.gk, .def, .mid, .fwd], id: \.self) { Text($0.rawValue).tag($0) }

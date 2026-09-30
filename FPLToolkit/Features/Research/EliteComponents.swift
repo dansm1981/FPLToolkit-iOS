@@ -101,6 +101,20 @@ enum EliteFormat {
     }
 
     static func name(_ player: PlayerSummary?, _ id: Int) -> String { player?.webName ?? "Player \(id)" }
+
+    /// The Elite edge as a chip under the Elite figure: "+8.2pp vs all", green when the cohort owns
+    /// him more, red when less.
+    static func edgeChip(_ edge: String) -> RowChip {
+        let tone: RowChip.Tone = edge.hasPrefix("+") ? .up : (edge.hasPrefix("−") || edge.hasPrefix("-")) ? .down : .neutral
+        return RowChip(text: "\(edge) vs all", tone: tone)
+    }
+
+    /// The gap between the cohort's share and all managers', as the same chip.
+    static func edgeChip(elite: Double, overall: Double?) -> RowChip? {
+        guard let overall else { return nil }
+        let gap = elite - overall
+        return RowChip(text: "\(MarketFormat.points(gap)) vs all", tone: gap > 0.05 ? .up : gap < -0.05 ? .down : .neutral)
+    }
 }
 
 /// A player with a share of the cohort on the right, e.g. "36%" bought. Opens the player.
@@ -109,16 +123,21 @@ struct EliteShareRowView: View {
     let player: PlayerSummary?
     /// What the share is, for VoiceOver: "bought", "captained", "elite owned".
     let measure: String
+    /// For an ownership share: the gap to all managers under the figure.
+    var edgeVsAll = false
 
     var body: some View {
-        let changeWords = row.change.map { "ownership \($0.shown)" }
-        let extra = [changeWords, row.detail].compactMap { $0 }.joined(separator: " · ")
         let spokenChange = row.change.map { "ownership \($0.spoken) since last gameweek" }
         let spoken = [EliteFormat.name(player, row.playerId), "\(row.display) \(measure)", spokenChange, row.detail,
                       EliteFormat.price(player)].compactMap { $0 }.joined(separator: ", ")
-        MarketPlayerRow(
+        var chips: [RowChip] = []
+        if let detail = row.detail { chips.append(RowChip(text: detail.prefix(1).uppercased() + detail.dropFirst())) }
+        if let change = row.change, change.value != 0 { chips.append(.change("Own \(change.shown)", change.value)) }
+        let edge = edgeVsAll ? EliteFormat.edgeChip(elite: row.value, overall: player?.selectedByPct) : nil
+        return MarketPlayerRow(
             playerId: row.playerId, player: player, details: [EliteFormat.price(player)].compactMap { $0 },
-            extra: extra.isEmpty ? nil : extra, trailing: row.display, spoken: spoken
+            chips: chips, trailing: row.display, trailingChip: edge,
+            spoken: [spoken, edge.map { "\($0.text) managers" }].compactMap { $0 }.joined(separator: ", ")
         )
     }
 }
@@ -146,6 +165,8 @@ struct EliteFigureRowView: View {
     let figure: String
     let player: PlayerSummary?
     var extra: String?
+    var chips: [RowChip] = []
+    var figureColor: Color = ToolkitColor.primaryText
     /// The figure for VoiceOver: "36% vice-captain".
     let spokenFigure: String
 
@@ -154,7 +175,7 @@ struct EliteFigureRowView: View {
             .compactMap { $0 }.joined(separator: ", ")
         MarketPlayerRow(
             playerId: playerId, player: player, details: [EliteFormat.price(player)].compactMap { $0 },
-            extra: extra, trailing: figure, spoken: spoken
+            extra: extra, chips: chips, trailing: figure, trailingColor: figureColor, spoken: spoken
         )
     }
 }
@@ -165,15 +186,15 @@ struct EliteTemplatePickRow: View {
     let player: PlayerSummary?
 
     var body: some View {
-        let start = "start \(pick.start)"
-        let captain = pick.captain.map { "C \($0)" }
-        let extra = [start, captain].compactMap { $0 }.joined(separator: " · ")
         let spokenCaptain = pick.captain.map { "captained by \($0)" }
+        let edge = EliteFormat.edgeChip(elite: pick.owned.value, overall: player?.selectedByPct)
         let spoken = [EliteFormat.name(player, pick.playerId), "\(pick.owned.display) of elite managers",
-                      "starts for \(pick.start)", spokenCaptain, pick.price].compactMap { $0 }.joined(separator: ", ")
+                      edge.map { "\($0.text) managers" }, "starts for \(pick.start)", spokenCaptain, pick.price]
+            .compactMap { $0 }.joined(separator: ", ")
         MarketPlayerRow(
-            playerId: pick.playerId, player: player, details: [pick.price], extra: extra,
-            trailing: pick.owned.display, spoken: spoken
+            playerId: pick.playerId, player: player, details: [pick.price],
+            chips: [RowChip(text: "Start \(pick.start)")] + (pick.captain.map { [RowChip(text: "Cap \($0)")] } ?? []),
+            trailing: pick.owned.display, trailingChip: edge, spoken: spoken
         )
     }
 }

@@ -111,8 +111,8 @@ struct EliteOverviewView: View {
 
     private func owned(_ page: ElitePage<EliteOverview>, _ o: EliteOverview) -> some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
-            MarketList(title: "Most owned by elite managers", rows: o.mostOwned) {
-                EliteShareRowView(row: $0, player: page.player($0.playerId), measure: "of elite managers")
+            MarketList(title: "Most owned by elite managers", rows: o.mostOwned, playerOf: { page.player($0.playerId) }) {
+                EliteShareRowView(row: $0, player: page.player($0.playerId), measure: "of elite managers", edgeVsAll: true)
             }
             MarketList(title: "Elite favourites", rows: o.favourites) { edgeRow($0, page) }
             EliteNote(text: "Favourites: much higher elite ownership than the wider game. Avoids: popular picks the cohort is largely ignoring.")
@@ -123,8 +123,9 @@ struct EliteOverviewView: View {
     private func edgeRow(_ row: EliteOverview.Edge, _ page: ElitePage<EliteOverview>) -> some View {
         EliteFigureRowView(
             playerId: row.playerId, figure: row.edge, player: page.player(row.playerId),
-            extra: "Elite vs overall: \(row.detail)",
-            spokenFigure: "elite edge \(row.edge)"
+            chips: [RowChip(text: "Elite v all \(row.detail)")],
+            figureColor: row.edge.hasPrefix("−") || row.edge.hasPrefix("-") ? ToolkitColor.error : ToolkitColor.positive,
+            spokenFigure: "elite edge \(row.edge), elite versus overall \(row.detail)"
         )
     }
 
@@ -301,15 +302,18 @@ struct EliteOwnershipView: View {
 
     private func row(_ row: EliteOwnership.Row, _ page: ElitePage<EliteOwnership>) -> some View {
         let player = page.player(row.playerId)
-        let usage = "Start \(row.start) · bench \(row.bench) · cap \(row.captain)"
-        let edge = "Overall \(row.overall) · edge \(row.edge) · \(row.change.shown) since last GW"
         let spoken = [EliteFormat.name(player, row.playerId), "\(row.owned.display) of elite managers",
                       "starting \(row.start)", "benched \(row.bench)", "captained \(row.captain)",
                       "\(row.overall) overall", "elite edge \(row.edge)", "\(row.change.spoken) since last gameweek",
                       EliteFormat.price(player)].compactMap { $0 }.joined(separator: ", ")
+        // Elite against everyone first (Dan, 29 Sep): the gap sits under the Elite figure.
+        var chips = [RowChip(text: "All \(row.overall)"), RowChip(text: "Start \(row.start)")]
+        if row.captain != "0%" { chips.append(RowChip(text: "Cap \(row.captain)")) }
+        if row.change.value != 0 { chips.append(.change("\(row.change.shown) this GW", row.change.value)) }
         return MarketPlayerRow(
             playerId: row.playerId, player: player, details: [EliteFormat.price(player)].compactMap { $0 },
-            extra: "\(usage)\n\(edge)", trailing: row.owned.display, spoken: spoken
+            chips: chips, trailing: row.owned.display,
+            trailingChip: EliteFormat.edgeChip(row.edge), spoken: spoken
         )
     }
 }

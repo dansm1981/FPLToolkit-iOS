@@ -292,8 +292,9 @@ struct RankMoveArrow: View {
 
     var body: some View {
         if let previous, previous != current {
+            // Big enough that its edges don't blur into the card (the audit's contrast check).
             Image(systemName: current < previous ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
-                .font(.caption)
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(current < previous ? ToolkitColor.positive : ToolkitColor.error)
                 .accessibilityHidden(true)
         }
@@ -320,26 +321,34 @@ struct FigureGrid: View {
     let items: [Item]
 
     var body: some View {
-        let columns = min(2, items.count)
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .topLeading), count: max(columns, 1)),
-                  alignment: .leading, spacing: 12) {
-            ForEach(items) { item in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.label)
-                        .font(.caption)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                    Text(item.value)
-                        .font(.headline.monospacedDigit())
-                        .foregroundStyle(ToolkitColor.primaryText)
+        // Pairs in a plain grid (not lazy: every figure stays measurable as the text grows).
+        Grid(alignment: .topLeading, horizontalSpacing: 10, verticalSpacing: 12) {
+            ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { start in
+                GridRow {
+                    cell(items[start])
+                    if start + 1 < items.count { cell(items[start + 1]) } else { Color.clear.gridCellUnsizedAxes([.horizontal, .vertical]) }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(item.label): \(item.spoken ?? item.value)")
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .toolkitCard()
+    }
+
+    private func cell(_ item: Item) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(item.label)
+                .font(.caption)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(item.value)
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(item.label): \(item.spoken ?? item.value)")
     }
 }
 

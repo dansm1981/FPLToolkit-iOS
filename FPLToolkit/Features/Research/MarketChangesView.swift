@@ -88,13 +88,13 @@ struct MarketChangesView: View {
         let when = changes.day.map { changes.latest ? "latest" : "on \(MarketFormat.day($0))" } ?? ""
         return VStack(alignment: .leading, spacing: ToolkitSpace.xl) {
             MarketList(title: "Price rises · \(changes.risersCount)", rows: changes.risers,
-                       empty: "No price rises \(when).", initial: 20) { dayRow($0, changes) }
+                       empty: "No price rises \(when).", initial: 20, playerOf: { changes.player($0.playerId) }) { dayRow($0, changes) }
             MarketList(title: "Price falls · \(changes.fallersCount)", rows: changes.fallers,
-                       empty: "No price falls \(when).", initial: 20) { dayRow($0, changes) }
+                       empty: "No price falls \(when).", initial: 20, playerOf: { changes.player($0.playerId) }) { dayRow($0, changes) }
             MarketList(title: "Season risers · \(changes.seasonRisersCount)", rows: changes.seasonRisers,
-                       empty: "No rises yet this season.") { seasonRow($0, changes) }
+                       empty: "No rises yet this season.", playerOf: { changes.player($0.playerId) }) { seasonRow($0, changes) }
             MarketList(title: "Season fallers · \(changes.seasonFallersCount)", rows: changes.seasonFallers,
-                       empty: "No falls yet this season.") { seasonRow($0, changes) }
+                       empty: "No falls yet this season.", playerOf: { changes.player($0.playerId) }) { seasonRow($0, changes) }
             Text("Confirmed at FPL's nightly price update, from a daily record of every player's price. Net is this gameweek's transfers in minus out. Lists show up to 50 players.")
                 .font(.footnote)
                 .foregroundStyle(ToolkitColor.secondaryText)

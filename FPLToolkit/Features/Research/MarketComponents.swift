@@ -48,38 +48,106 @@ enum MarketFormat {
     }
 }
 
-/// A player in a market list: photo and name, then club, position and figures, with one figure
-/// picked out on the right. Opens the player. VoiceOver reads it as one row.
+/// A short fact on a player row ("Cap 81%", "+10pp this GW"): grey, or green and red for a
+/// direction, gold for "yours". Uses the tag colour pairs, so it keeps its contrast.
+struct RowChip: Hashable {
+    enum Tone: Hashable { case neutral, up, down, warn, accent }
+    let text: String
+    var tone: Tone = .neutral
+
+    /// Green for a rise, red for a fall, grey for none.
+    static func change(_ text: String, _ value: Double) -> RowChip {
+        RowChip(text: text, tone: value > 0 ? .up : value < 0 ? .down : .neutral)
+    }
+}
+
+struct RowChipView: View {
+    let chip: RowChip
+
+    var body: some View {
+        Text(chip.text)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(foreground)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(fill, in: Capsule())
+    }
+
+    private var foreground: Color {
+        switch chip.tone {
+        case .neutral: ToolkitColor.secondaryText
+        case .up: ToolkitColor.positive
+        case .down: ToolkitColor.error
+        case .warn: ToolkitColor.warning
+        case .accent: ToolkitColor.accent
+        }
+    }
+
+    private var fill: Color {
+        switch chip.tone {
+        case .neutral: ToolkitColor.raised
+        case .up: ToolkitColor.positiveFill
+        case .down: ToolkitColor.errorFill
+        case .warn: ToolkitColor.warningFill
+        case .accent: ToolkitColor.goldTag
+        }
+    }
+}
+
+/// The app's one player row (Dan, 29 Sep: "a standard format … well designed and compact"):
+/// photo; the name, with a gold shirt when he's in your team; badge, club, position and price;
+/// a few short facts as chips; the key figure on the right, with an optional chip under it (e.g.
+/// Elite against all managers). Opens the player; VoiceOver reads it as one row.
 struct MarketPlayerRow: View {
     @Environment(AppModel.self) private var appModel
     let playerId: Int
     let player: PlayerSummary?
-    /// Shown after club and position, e.g. "£6.2m", "11.3% owned".
+    /// After club and position, e.g. "£6.2m". Keep it short: longer facts go in `chips`.
     let details: [String]
+    /// A line of words under the details, for facts that aren't chips.
     var extra: String?
+    var chips: [RowChip] = []
     let trailing: String
     var trailingColor: Color = ToolkitColor.primaryText
+    /// Under the figure on the right, e.g. "+8pp vs all".
+    var trailingChip: RowChip?
     var badge: String?
     /// The whole row for VoiceOver; the visible words when nil.
     var spoken: String?
+
+    private var yours: Bool { appModel.squadIds.contains(playerId) }
 
     var body: some View {
         Button {
             appModel.router.openPlayer(playerId)
         } label: {
-            HStack(alignment: .center, spacing: ToolkitSpace.md) {
-                PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
+            HStack(alignment: .center, spacing: 10) {
+                PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo, size: 32)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(player?.webName ?? "Player \(playerId)")
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    ClubLabel(clubId: player?.clubId, text: detailLine)
-                        .font(.subheadline)
+                    HStack(spacing: 4) {
+                        Text(player?.webName ?? "Player \(playerId)")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        if yours {
+                            Image(systemName: "tshirt.fill")
+                                .font(.caption2)
+                                .foregroundStyle(ToolkitColor.accent)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    ClubLabel(clubId: player?.clubId, text: detailLine, logoSize: 12)
+                        .font(.caption)
                         .foregroundStyle(ToolkitColor.secondaryText)
                     if let extra {
                         Text(extra)
-                            .font(.subheadline)
+                            .font(.caption)
                             .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    if !chips.isEmpty {
+                        FlowLayout(spacing: 4, lineSpacing: 4) {
+                            ForEach(chips, id: \.self) { RowChipView(chip: $0) }
+                        }
+                        .padding(.top, 1)
                     }
                     if let badge {
                         Text(badge)
@@ -90,17 +158,20 @@ struct MarketPlayerRow: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
                 Spacer(minLength: ToolkitSpace.sm)
-                Text(trailing)
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(trailingColor)
-                    .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(trailing)
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(trailingColor)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let trailingChip { RowChipView(chip: trailingChip) }
+                }
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .padding(.vertical, ToolkitSpace.xs)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(spoken ?? visibleWords)
+            .accessibilityLabel(spoken.map { yours ? $0 + ", in your team" : $0 } ?? visibleWords)
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens the player")
@@ -116,41 +187,68 @@ struct MarketPlayerRow: View {
     }
 
     private var visibleWords: String {
-        [player?.webName ?? "Player \(playerId)", detailLine, extra, trailing, badge].compactMap { $0 }.joined(separator: ", ")
+        ([player?.webName ?? "Player \(playerId)", yours ? "in your team" : nil, detailLine, extra]
+            + chips.map(\.text) + [trailing, trailingChip?.text, badge])
+            .compactMap { $0 }.joined(separator: ", ")
     }
 }
 
-/// A titled list of market rows on a card, with "Show all" once it's longer than `initial`.
+/// A titled list of market rows on a card, with "Show all" once it's longer than `initial`. With
+/// `playerOf`, a long list gets a filter bar: position, club and top price (Dan, 29 Sep).
 struct MarketList<Row: Identifiable, Content: View>: View {
+    @Environment(AppModel.self) private var appModel
     let title: String
     let rows: [Row]
     var empty = "Nothing to show."
     var initial = 10
+    /// The row's player, for the filters; nil for lists that aren't of players.
+    var playerOf: ((Row) -> PlayerSummary?)?
     @ViewBuilder let row: (Row) -> Content
     @State private var expanded = false
+    @State private var position: Position?
+    @State private var club: Int?
+    @State private var maxPrice: Double?
+
+    /// Lists this long get the filter bar.
+    static var filterFrom: Int { 15 }
+
+    private var filtering: Bool { playerOf != nil && rows.count >= Self.filterFrom }
+
+    private var shownRows: [Row] {
+        guard filtering, let playerOf, position != nil || club != nil || maxPrice != nil else { return rows }
+        return rows.filter { item in
+            guard let p = playerOf(item) else { return false }
+            if let position, p.position != position { return false }
+            if let club, p.clubId != club { return false }
+            if let maxPrice, p.price > maxPrice + 0.001 { return false }
+            return true
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
             SectionLabel(text: title)
+            if filtering { filterBar }
             VStack(alignment: .leading, spacing: 0) {
-                if rows.isEmpty {
-                    Text(empty)
+                let all = shownRows
+                if all.isEmpty {
+                    Text(rows.isEmpty ? empty : "No players match these filters.")
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                         .padding(.vertical, ToolkitSpace.sm)
                 }
-                let shown = expanded ? rows : Array(rows.prefix(initial))
+                let shown = expanded ? all : Array(all.prefix(initial))
                 ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
                     row(item)
                 }
-                if rows.count > initial {
+                if all.count > initial {
                     Divider().overlay(ToolkitColor.border)
                     // The frame goes on the label: outside it, the tappable area stays the text's height.
                     Button {
                         expanded.toggle()
                     } label: {
-                        Text(expanded ? "Show fewer" : "Show all \(rows.count)")
+                        Text(expanded ? "Show fewer" : "Show all \(all.count)")
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .contentShape(Rectangle())
                     }
@@ -163,6 +261,44 @@ struct MarketList<Row: Identifiable, Content: View>: View {
             .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
             .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border, lineWidth: 1))
         }
+    }
+
+    private var filterBar: some View {
+        let clubs = (appModel.bootstrap?.value.clubs ?? []).sorted { $0.name < $1.name }
+        return FlowLayout(spacing: 8) {
+            Menu {
+                Picker("Position", selection: $position) {
+                    Text("All positions").tag(Position?.none)
+                    ForEach([Position.gk, .def, .mid, .fwd], id: \.self) { Text($0.plural).tag(Position?.some($0)) }
+                }
+            } label: {
+                FilterChipLabel(text: position?.rawValue ?? "All positions", active: position != nil, menu: true)
+            }
+            .accessibilityLabel("Position: \(position?.plural ?? "all")")
+            Menu {
+                Picker("Club", selection: $club) {
+                    Text("All clubs").tag(Int?.none)
+                    ForEach(clubs) { Text($0.name).tag(Int?.some($0.id)) }
+                }
+            } label: {
+                FilterChipLabel(text: club.flatMap { appModel.club($0)?.shortName } ?? "All clubs", active: club != nil, menu: true)
+            }
+            .accessibilityLabel("Club: \(club.flatMap { appModel.club($0)?.name } ?? "all clubs")")
+            Menu {
+                Picker("Top price", selection: $maxPrice) {
+                    Text("Any price").tag(Double?.none)
+                    ForEach(Array(stride(from: 4.5, through: 14.5, by: 0.5)), id: \.self) { price in
+                        Text("Up to \(Format.price(price))").tag(Double?.some(price))
+                    }
+                }
+            } label: {
+                FilterChipLabel(text: maxPrice.map { "Up to \(Format.price($0))" } ?? "Any price", active: maxPrice != nil, menu: true)
+            }
+            .accessibilityLabel("Price: \(maxPrice.map { "up to \(Format.price($0))" } ?? "any")")
+        }
+        .onChange(of: position) { expanded = false }
+        .onChange(of: club) { expanded = false }
+        .onChange(of: maxPrice) { expanded = false }
     }
 }
 

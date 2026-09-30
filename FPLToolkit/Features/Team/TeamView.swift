@@ -93,6 +93,9 @@ struct TeamView: View {
                 let resource = Resource(appModel.teamRepository.team(entryId: entryId))
                 self.resource = resource
                 await resource.load()
+                if let picks = resource.loaded?.value.snapshot?.picks {
+                    appModel.squadIds = Set(picks.map(\.playerId))
+                }
             }
         }
     }
@@ -103,7 +106,8 @@ struct TeamView: View {
             if let team = resource?.loaded?.value, let snapshot = team.snapshot {
                 InfoSheet(
                     title: "Your published squad",
-                    message: TeamText.sourceMessage(snapshot, nextGw: appModel.bootstrap?.value.gameweek.next?.id),
+                    message: TeamText.sourceMessage(snapshot, nextGw: appModel.bootstrap?.value.gameweek.next?.id,
+                                                    squadValue: TeamText.squadValue(team)),
                     links: [
                         InfoSheetLink(title: "Data & sources", detail: "Published and fetched times", systemImage: "icloud") { showingSources = true },
                         InfoSheetLink(title: "Plan changes", detail: "Keep a separate draft", systemImage: "calendar") { appModel.router.selectedTab = .planner },
@@ -141,6 +145,8 @@ struct TeamOverview: View {
     /// tiles' next fixture comes from them too (by position, it comes with the team).
     @State private var defenceRun: Resource<ResearchTicker>?
     @State private var attackRun: Resource<ResearchTicker>?
+    /// FPL's nearest price changes, for the List view's rise and fall chips (loaded when it's shown).
+    @State private var predictions: Resource<MarketPredictions>?
 
     private var fixtureView: FixtureView { FixtureView(model: fixtureModel, lens: fixtureLens) }
     /// xFDR by position: the team's own next fixtures, rated for each player's position.
@@ -184,7 +190,8 @@ struct TeamOverview: View {
                 case .list:
                     listView(snapshot)
                 case .fixtures:
-                    TeamFixturesView(team: team, snapshot: snapshot, view: fixtureView, menu: { squadMenu },
+                    TeamFixturesView(team: team, snapshot: snapshot, model: $fixtureModel, lens: $fixtureLens,
+                                     onInfo: { onSheet(.fdr) },
                                      onPlayer: onPlayer)
                 }
             } else {
@@ -223,7 +230,7 @@ struct TeamOverview: View {
         var items: [FigureGrid.Item] = []
         if let rank = team.entry.overallRank { items.append(.init(label: "Overall rank", value: Format.rank(rank))) }
         if let points = team.entry.totalPoints { items.append(.init(label: "Season points", value: points.formatted())) }
-        if let value = snapshot.value { items.append(.init(label: "Team value", value: Format.price(value))) }
+        if let value = TeamText.squadValue(team) { items.append(.init(label: "Squad value", value: Format.price(value))) }
         if let bank = snapshot.bank { items.append(.init(label: "In the bank", value: Format.price(bank))) }
         return items
     }
@@ -234,20 +241,22 @@ struct TeamOverview: View {
 
     // MARK: Pitch
 
-    private func metricBar(_ snapshot: Team.Snapshot) -> some View {
+    private func metricBar(_ snapshot: Team.Snapshot, tiles: Bool = true) -> some View {
         HStack {
             Text([nextGw.map { "GW\($0)" }, TeamSquad.formation(snapshot, team: team)].compactMap { $0 }.joined(separator: " · "))
                 .font(.footnote)
                 .foregroundStyle(ToolkitColor.secondaryText)
                 .accessibilityLabel("Formation \(TeamSquad.formation(snapshot, team: team))")
             Spacer()
-            squadMenu
+            squadMenu(tiles: tiles)
         }
     }
 
     /// What the tiles show, and which fixture difficulty: one gold menu (design v2).
-    private var squadMenu: some View {
+    /// The List view shows every figure, so its menu only has the fixture difficulty choice.
+    private func squadMenu(tiles: Bool = true) -> some View {
         Menu {
+            if tiles {
             Section("Show on tiles") {
                 ForEach(SquadMetric.allCases) { option in
                     Button {
@@ -256,6 +265,7 @@ struct TeamOverview: View {
                         if metric == option { Label(option.rawValue, systemImage: "checkmark") } else { Text(option.rawValue) }
                     }
                 }
+            }
             }
             Section("Fixture difficulty") {
                 ForEach(TeamText.fixtureChoices, id: \.label) { choice in
@@ -273,8 +283,13 @@ struct TeamOverview: View {
                 }
             }
             Section {
-                Button { onSheet(metric == .odds ? .odds : .fdr) } label: {
-                    Label(metric == .odds ? "About betting-market estimates" : "About fixture difficulty", systemImage: "info.circle")
+                Button { onSheet(tiles && metric == .odds ? .odds : .fdr) } label: {
+                    Label(tiles && metric == .odds ? "About betting-market estimates" : "About fixture difficulty", systemImage: "info.circle")
+                }
+                if !tiles {
+                    Button { onSheet(.odds) } label: {
+                        Label("About betting-market estimates", systemImage: "info.circle")
+                    }
                 }
                 if odds?.available == true {
                     Button { onSheet(.oddsCheck) } label: {
@@ -284,7 +299,7 @@ struct TeamOverview: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Text(menuTitle)
+                Text(tiles ? menuTitle : fixtureView.summary)
                 Image(systemName: "chevron.down").font(.caption.weight(.semibold)).accessibilityHidden(true)
             }
             .font(.subheadline.weight(.semibold))
@@ -292,8 +307,8 @@ struct TeamOverview: View {
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
-        .accessibilityLabel("Show on tiles: \(menuTitle)")
-        .accessibilityHint("Choose fixtures, price or odds, and the fixture difficulty")
+        .accessibilityLabel(tiles ? "Show on tiles: \(menuTitle)" : "Fixture difficulty: \(fixtureView.summary)")
+        .accessibilityHint(tiles ? "Choose fixtures, price or odds, and the fixture difficulty" : "Choose the fixture difficulty")
     }
 
     private var menuTitle: String {
@@ -413,11 +428,26 @@ struct TeamOverview: View {
 
     private func listView(_ snapshot: Team.Snapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            metricBar(snapshot)
+            metricBar(snapshot, tiles: false)
             rows(TeamSquad.rows(snapshot, team: team).flatMap { $0 })
             SectionHeader(title: "Bench")
             rows(TeamSquad.bench(snapshot))
+            Text("Odds are betting-market estimates for GW\(nextGw.map(String.init) ?? "–"); rise and fall are FPL's progress towards a price change, shown for players close to one.")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .task {
+            guard predictions == nil else { return }
+            let predictions = Resource(appModel.marketRepository.predictions(club: nil, position: nil, maxPrice: nil))
+            self.predictions = predictions
+            await predictions.load()
+        }
+    }
+
+    private func priceRow(_ id: Int) -> MarketPredictions.Row? {
+        guard let p = predictions?.loaded?.value else { return nil }
+        return p.risers.first { $0.playerId == id } ?? p.fallers.first { $0.playerId == id }
     }
 
     private func rows(_ picks: [Team.Pick]) -> some View {
@@ -426,7 +456,9 @@ struct TeamOverview: View {
                 if let player = team.player(pick.playerId) {
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
                     Button { onPlayer(pick.playerId) } label: {
-                        row(pick, player)
+                        TeamListRow(player: player,
+                                    role: pick.isCaptain ? "C" : pick.isViceCaptain ? "V" : nil,
+                                    odds: odds, price: priceRow(player.id), run: runCells(for: player))
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens the player")
@@ -435,33 +467,6 @@ struct TeamOverview: View {
         }
         .padding(.horizontal, 14)
         .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
-    }
-
-    private func row(_ pick: Team.Pick, _ player: PlayerSummary) -> PlayerListRow {
-        let role: String? = pick.isCaptain ? "C" : pick.isViceCaptain ? "V" : nil
-        let price = Format.price(player.price)
-        switch metric {
-        case .fixtures:
-            let fixture = player.nextFixture
-            let opponent = fixture.flatMap { $0.blank ? nil : appModel.club($0.opponentClubId) }
-            let value: String? = fixture.map { f in
-                if f.blank { return "No fixture" }
-                return [opponent?.shortName ?? "TBC", f.home.map { $0 ? "H" : "A" }].compactMap { $0 }.joined(separator: " ")
-            }
-            let variant = fixture?.xfdr.map { $0.modelLabel.replacingOccurrences(of: " · ", with: " ") }
-            let chip = fixture?.xfdr.map { (text: $0.display, tone: DifficultyTone(band: $0.band)) }
-            let spoken = [price, value.map { "next \($0)" }, fixture?.xfdr.map { "\($0.modelLabel) \($0.display)" }]
-            return PlayerListRow(player: player, role: role,
-                                 detail: [price, variant].compactMap { $0 }.joined(separator: " · "),
-                                 value: value, valueChip: chip,
-                                 spokenDetail: spoken.compactMap { $0 }.joined(separator: ", "))
-        case .price:
-            return PlayerListRow(player: player, role: role, detail: player.position.displayName, value: price)
-        case .odds:
-            return PlayerListRow(player: player, role: role, detail: price,
-                                 value: TeamText.oddsTile(player, odds: odds),
-                                 spokenDetail: "\(price), \(TeamText.oddsSpoken(player, odds: odds))")
-        }
     }
 
     private var noSnapshot: some View {
@@ -526,6 +531,16 @@ enum TeamSquad {
 // MARK: - Words
 
 enum TeamText {
+    /// The fifteen at today's prices, as FPL's "squad value" shows it. FPL's own `value` is from
+    /// the last deadline and includes the bank (Dan's £101.9m against his £99.9m + £2.2m).
+    /// Nil unless every player's price is here.
+    static func squadValue(_ team: Team) -> Double? {
+        guard let picks = team.snapshot?.picks, !picks.isEmpty else { return nil }
+        let prices = picks.compactMap { team.player($0.playerId)?.price }
+        guard prices.count == picks.count else { return nil }
+        return (prices.reduce(0, +) * 10).rounded() / 10
+    }
+
     static func chipName(_ code: String) -> String {
         switch code {
         case "wildcard": "Wildcard"
@@ -536,11 +551,11 @@ enum TeamText {
         }
     }
 
-    static func sourceMessage(_ snapshot: Team.Snapshot, nextGw: Int?) -> String {
+    static func sourceMessage(_ snapshot: Team.Snapshot, nextGw: Int?, squadValue: Double? = nil) -> String {
         var text = "This is your GW\(snapshot.gw) deadline squad, as published at the deadline on \(Format.deadline(snapshot.deadline))."
         if let nextGw { text += " The fixtures shown are for GW\(nextGw)." }
         text += " Transfers or captain changes made since that deadline aren't visible here yet, and refreshing doesn't make this your current, unpublished team."
-        if let value = snapshot.value { text += "\n\nSquad value \(Format.price(value))" + (snapshot.bank.map { ", \(Format.price($0)) in the bank." } ?? ".") }
+        if let value = squadValue { text += "\n\nSquad value \(Format.price(value)) at today's prices" + (snapshot.bank.map { ", \(Format.price($0)) in the bank." } ?? ".") }
         return text
     }
 
