@@ -81,6 +81,9 @@ struct TeamListRow: View {
         default:
             break
         }
+        if let risk = player.suspensionRisk {
+            chips.append(RowChip(text: risk.chip, tone: .warn))
+        }
         chips.append(contentsOf: oddsChips)
         if let price {
             let text = price.progress >= 0 ? "Rise \(price.progressDisplay)" : "Fall \(price.progressDisplay)"
@@ -111,7 +114,8 @@ struct TeamListRow: View {
         if role == "C" { parts.append("captain") }
         if role == "V" { parts.append("vice-captain") }
         parts.append(contentsOf: [appModel.club(player.clubId)?.name, player.position.displayName, Format.price(player.price)].compactMap { $0 })
-        parts.append(contentsOf: chips.map { chip in
+        if let risk = player.suspensionRisk { parts.append(risk.spoken) }
+        parts.append(contentsOf: chips.filter { !$0.text.contains("ban at") }.map { chip in
             chip.text.replacingOccurrences(of: "CS ", with: "clean sheet ")
                 .replacingOccurrences(of: "G/A ", with: "goal or assist ")
         })

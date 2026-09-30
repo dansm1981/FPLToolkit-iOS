@@ -154,6 +154,28 @@ struct PlayerSummary: Decodable, Sendable, Identifiable, Hashable {
     let availability: Availability
     let selectedByPct: Double?
     let nextFixture: FixtureDifficulty?
+    /// Present only when he's one yellow card from a ban (happy-backend-pal#51).
+    var suspensionRisk: SuspensionRisk? = nil
+
+    /// One yellow card from a Premier League ban: the server's reading of the rules.
+    struct SuspensionRisk: Decodable, Sendable, Hashable {
+        let yellowCards: Int
+        let threshold: Int
+        /// Nil when a commission decides.
+        let banMatches: Int?
+        /// League matches his club has before the cut-off; nil when there's none.
+        let matchesLeft: Int?
+
+        /// "4 yellows · ban at 5".
+        var chip: String { "\(yellowCards) yellows · ban at \(threshold)" }
+
+        /// "one yellow card from a 1-match ban, 14 matches before the cut-off".
+        var spoken: String {
+            let ban = banMatches.map { "a \($0)-match ban" } ?? "a ban set by a commission"
+            let window = matchesLeft.map { ", \($0) matches before the cut-off" } ?? ""
+            return "one yellow card from \(ban)\(window)"
+        }
+    }
 }
 
 struct FixtureDifficulty: Decodable, Sendable, Hashable {

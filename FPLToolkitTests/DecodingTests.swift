@@ -220,3 +220,15 @@ struct MatchStatsDecodingTests {
         #expect(stats.defcon.first?.side == .home)
     }
 }
+
+struct SuspensionRiskDecodingTests {
+    @Test func decodesTheRiskWhenPresentAndNotOtherwise() throws {
+        let base = #""id":1,"webName":"A","photo":null,"clubId":1,"position":"DEF","price":5.0,"availability":{"code":"a","level":"ok","chanceNext":null,"news":null},"selectedByPct":1.0,"nextFixture":null"#
+        let plain = try APIClient.decode(PlayerSummary.self, from: Data("{\(base)}".utf8))
+        #expect(plain.suspensionRisk == nil)
+        let risky = try APIClient.decode(PlayerSummary.self, from: Data(
+            "{\(base),\"suspensionRisk\":{\"yellowCards\":4,\"threshold\":5,\"banMatches\":1,\"matchesLeft\":14}}".utf8))
+        #expect(risky.suspensionRisk?.chip == "4 yellows · ban at 5")
+        #expect(risky.suspensionRisk?.spoken == "one yellow card from a 1-match ban, 14 matches before the cut-off")
+    }
+}

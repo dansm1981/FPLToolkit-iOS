@@ -129,7 +129,7 @@ struct DraftMoneySheet: View {
 
     private var transfersFooter: String {
         let estimated = draft.freeTransfers.estimated ? " The current figure is estimated from your FPL history." : ""
-        return "Later weeks follow FPL's rules: one more a week, up to five. Wildcard and Free Hit weeks don't use any.\(estimated)"
+        return "Later weeks follow FPL's rules: one more a week, up to five. Wildcard and Free Hit weeks don't use any, and add none.\(estimated)"
     }
 
     private func save() async {

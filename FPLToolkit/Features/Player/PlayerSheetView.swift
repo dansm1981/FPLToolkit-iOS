@@ -152,6 +152,13 @@ struct PlayerDetailContent: View {
             if player.availability.level == .doubt || player.availability.level == .out {
                 availabilityCard
             }
+            if let risk = player.suspensionRisk {
+                // One booking from a ban (Dan, 29 Sep).
+                InlineNotice(text: "\(player.webName) is on \(risk.yellowCards) yellow cards: one more brings "
+                             + (risk.banMatches.map { "a \($0)-match ban" } ?? "a ban set by a commission")
+                             + (risk.matchesLeft.map { " if it comes in his club's next \($0) league matches." } ?? "."),
+                             systemImage: "rectangle.portrait.fill")
+            }
             Picker("Section", selection: $tab) {
                 ForEach(PlayerDetailTab.allCases) { Text($0.rawValue).tag($0) }
             }
