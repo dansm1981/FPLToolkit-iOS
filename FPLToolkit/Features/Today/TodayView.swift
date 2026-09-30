@@ -65,6 +65,8 @@ struct TodayView: View {
         }
         .toolkitScreen()
         .navigationTitle("Today")
+        // The title in the top bar, so the team and the gameweek sit higher (Dan's mock, 30 Sep).
+        .navigationBarTitleDisplayMode(.inline)
         .settingsButton(entryId: entryId)
         .navigationDestination(item: $pushedPlayer) { ref in PlayerDetailView(playerId: ref.id, context: ref.context) }
         .navigationDestination(item: $pushedLeague) { league in LeagueView(league: league) }
@@ -123,8 +125,9 @@ struct TodayContent: View {
     private var today: Today { loaded.value }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            TeamIdentity(name: today.entry.name, manager: today.entry.manager)
+        VStack(alignment: .leading, spacing: 12) {
+            TeamIdentity(name: today.entry.name, manager: today.entry.manager, prominent: true)
+                .padding(.bottom, 2)
 
             if let next = today.gameweek.next {
                 DeadlineCard(next: next)
@@ -293,12 +296,12 @@ private struct DeadlineCard: View {
 
     var body: some View {
         TimelineView(.everyMinute) { context in
-            // Larger text: the countdown under the date, so neither line breaks. One layout that
-            // changes shape keeps the same views (a view moved elsewhere confuses the audit).
-            let stacked = typeSize >= .xxLarge
+            // The countdown in a pill beside the date (Dan's mock, 30 Sep); under it only at the
+            // accessibility sizes. One layout that changes shape keeps the same views.
+            let stacked = typeSize.isAccessibilitySize
             let layout = stacked
-                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
-                : AnyLayout(HStackLayout(spacing: ToolkitSpace.md))
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: ToolkitSpace.sm))
             HStack(alignment: stacked ? .top : .center, spacing: ToolkitSpace.md) {
                 Image(systemName: "clock")
                     .font(.body.weight(.medium))
@@ -314,22 +317,23 @@ private struct DeadlineCard: View {
                             .foregroundStyle(ToolkitColor.secondaryText)
                     }
                     .frame(maxWidth: stacked ? nil : .infinity, alignment: .leading)
-                    countdown(context.date)
+                    Text(Format.compactCountdown(to: next.deadline, now: context.date))
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize()
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(ToolkitColor.raised, in: Capsule())
+                        .overlay(Capsule().strokeBorder(ToolkitColor.cardLine))
                 }
-                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .toolkitCard(radius: 16)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("GW\(next.id) deadline, \(Format.deadline(next.deadline)), \(Format.spokenCountdown(to: next.deadline, now: context.date))")
         }
-    }
-
-    private func countdown(_ now: Date) -> some View {
-        Text(Format.compactCountdown(to: next.deadline, now: now))
-            .font(.headline.monospacedDigit())
-            .foregroundStyle(ToolkitColor.primaryText)
     }
 }
 
@@ -363,33 +367,24 @@ struct GameweekCard: View {
                     let week = weekStats(team)
                     if !week.isEmpty {
                         Divider().overlay(ToolkitColor.heroLine)
-                        // Side by side; from the larger text sizes a row each, label and figure, so a
-                        // figure never breaks across lines (Dan's Pro Max, 29 Sep).
-                        if typeSize >= .xxLarge {
-                            VStack(spacing: 8) {
-                                ForEach(week, id: \.label) { stat in
-                                    HStack(alignment: .firstTextBaseline) {
-                                        Text(stat.label)
-                                            .font(.subheadline)
-                                            .foregroundStyle(ToolkitColor.secondaryText)
-                                        Spacer(minLength: ToolkitSpace.sm)
-                                        Text(stat.value)
-                                            .font(.subheadline.weight(.semibold).monospacedDigit())
-                                            .foregroundStyle(ToolkitColor.primaryText)
-                                    }
-                                    .accessibilityElement(children: .ignore)
-                                    .accessibilityLabel("\(stat.label): \(stat.spoken)")
+                        // A row each, label and figure (Dan's mock, 30 Sep): a figure never breaks.
+                        VStack(spacing: 8) {
+                            ForEach(week, id: \.label) { stat in
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(stat.label)
+                                        .font(.subheadline)
+                                        .foregroundStyle(ToolkitColor.secondaryText)
+                                    Spacer(minLength: ToolkitSpace.sm)
+                                    Text(stat.value)
+                                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                                        .foregroundStyle(ToolkitColor.primaryText)
                                 }
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel("\(stat.label): \(stat.spoken)")
                             }
-                        } else {
-                            HStack(alignment: .top, spacing: ToolkitSpace.md) {
-                                ForEach(week, id: \.label) { stat in
-                                    miniStat(stat.label, stat.value, spoken: stat.spoken)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                            .fixedSize(horizontal: false, vertical: true)
                         }
+                        // Read together: one element rather than three short ones.
+                        .accessibilityElement(children: .combine)
                     }
                     if let headline = team.headline, team.status == .live || team.status == .between {
                         Divider().overlay(ToolkitColor.heroLine)
@@ -478,6 +473,8 @@ struct GameweekCard: View {
                     }
                 }
             }
+            // Its own width: the season figures take what is left and stay on one line.
+            .fixedSize()
             let season = seasonStats
             if !season.isEmpty {
                 Rectangle().fill(ToolkitColor.heroLine).frame(width: 1).frame(maxHeight: 80)
@@ -487,6 +484,7 @@ struct GameweekCard: View {
                             Text(stat.label)
                                 .font(.caption)
                                 .foregroundStyle(ToolkitColor.secondaryText)
+                            // One line (Dan's mock): the score gives way first.
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
                                 Text(stat.value)
                                     .font(.title3.weight(.bold).monospacedDigit())
@@ -495,6 +493,7 @@ struct GameweekCard: View {
                                     RankMoveArrow(current: move.current, previous: move.previous)
                                 }
                             }
+                            .fixedSize()
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("\(stat.label): \(stat.spoken)")
@@ -541,19 +540,6 @@ struct GameweekCard: View {
             stats.append(Stat(label: "In the bank", value: Format.price(bank), spoken: Format.price(bank)))
         }
         return stats
-    }
-
-    private func miniStat(_ label: String, _ value: String, spoken: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(ToolkitColor.secondaryText)
-            Text(value)
-                .font(.subheadline.weight(.semibold).monospacedDigit())
-                .foregroundStyle(ToolkitColor.primaryText)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(label): \(spoken)")
     }
 
     @ViewBuilder private func openRow(_ team: LiveTeam) -> some View {

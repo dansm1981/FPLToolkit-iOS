@@ -357,23 +357,26 @@ struct FigureGrid: View {
 struct TeamIdentity: View {
     let name: String
     var manager: String?
+    /// Today's header (Dan's mock, 30 Sep): a big shirt badge and the name in title weight.
+    var prominent = false
+    @ScaledMetric(relativeTo: .title2) private var badge: CGFloat = 52
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: prominent ? 14 : 10) {
             Image(systemName: "tshirt.fill")
-                .font(.footnote.weight(.semibold))
+                .font(prominent ? .title2.weight(.semibold) : .footnote.weight(.semibold))
                 .foregroundStyle(ToolkitColor.accent)
-                .frame(width: 30, height: 30)
-                .background(ToolkitColor.goldTag, in: RoundedRectangle(cornerRadius: 9))
+                .frame(width: prominent ? badge : 30, height: prominent ? badge : 30)
+                .background(ToolkitColor.goldTag, in: RoundedRectangle(cornerRadius: prominent ? 14 : 9))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: prominent ? 2 : 1) {
                 Text(name)
-                    .font(.headline)
+                    .font(prominent ? .title2.weight(.bold) : .headline)
                     .foregroundStyle(ToolkitColor.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
                 if let manager {
                     Text(manager)
-                        .font(.caption)
+                        .font(prominent ? .subheadline : .caption)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
             }
