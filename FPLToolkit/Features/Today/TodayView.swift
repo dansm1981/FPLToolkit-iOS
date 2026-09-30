@@ -158,6 +158,13 @@ struct TodayContent: View {
                 DeadlineCard(next: next)
             }
 
+            if let replay = live?.loaded?.value.replay {
+                ReplayBanner(replay: replay) {
+                    LiveReplay.end()
+                    Task { await live?.load(bypassCache: true) }
+                }
+            }
+
             GameweekCard(live: live, entry: today.entry, snapshot: team?.snapshot,
                          squadValue: team.flatMap(TeamText.squadValue),
                          onOpen: { appModel.router.showingMatchday = true }, onHistory: onHistory)

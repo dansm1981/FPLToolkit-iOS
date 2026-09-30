@@ -81,6 +81,25 @@ struct SettingsView: View {
                     LabeledContent("Version", value: Self.version)
                 }
                 .listRowBackground(ToolkitColor.surface)
+
+                #if DEBUG
+                if entryId != nil {
+                    Section("Developer") {
+                        NavigationLink {
+                            LiveReplayPicker {
+                                dismiss()
+                                // After the sheet has gone, so the full-screen Matchday can open.
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                    appModel.router.showingMatchday = true
+                                }
+                            }
+                        } label: {
+                            Label("Live matchday replay", systemImage: "play.circle")
+                        }
+                    }
+                    .listRowBackground(ToolkitColor.surface)
+                }
+                #endif
             }
             .scrollContentBackground(.hidden)
             .background(ToolkitColor.canvas.ignoresSafeArea())

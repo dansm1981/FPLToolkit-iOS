@@ -969,6 +969,42 @@ final class ScreenAuditTests: XCTestCase {
 
     /// Odds (Phase 3, P3-5): the Team tab's "Show odds" switch and the odds check sheet. Needs odds
     /// loaded for the next gameweek (48 hours before a deadline, or loaded early).
+    /// A live matchday replay frozen halfway (happy-backend-pal#58): Today and Matchday in their
+    /// live states, which a finished gameweek never shows. Skipped when the server has no matchday
+    /// recorded in the last 30 days. `auditApiBaseURL` as for test11.
+    func test21MatchdayReplay() async throws {
+        let base = setting("auditApiBaseURL", default: "https://www.fpltoolkit.co.uk/api/mobile/v1/")
+        let url = try XCTUnwrap(URL(string: base)?.appending(path: "live/replays"))
+        let (data, _) = try await URLSession.shared.data(from: url)
+        struct Item: Decodable { let id: String }
+        struct Payload: Decodable { let replays: [Item] }
+        struct List: Decodable { let data: Payload }
+        let replays = try JSONDecoder().decode(List.self, from: data).data.replays
+        // A stretch of play (not the whole gameweek), halfway through: matches in progress.
+        guard let id = replays.first(where: { !$0.id.hasSuffix("-all") })?.id ?? replays.first?.id else {
+            throw XCTSkip("No matchday recorded in the last 30 days")
+        }
+
+        var arguments = ["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600"]
+        if base != "https://www.fpltoolkit.co.uk/api/mobile/v1/" { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        let end = app.buttons["End replay"].firstMatch
+        waitFor(end, "Replay on Today", timeout: 60)
+        settle()
+        check(app, "80-today-replay", sizesAndLists: false)
+
+        let card = app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch
+        waitFor(card, "Gameweek on Today", timeout: 30)
+        card.tap()
+        waitFor(app.buttons["Your team"].firstMatch, "Matchday", timeout: 60)
+        waitFor(end, "Replay on Matchday", timeout: 30)
+        settle()
+        check(app, "81-matchday-replay")
+        app.buttons["Matches"].firstMatch.tap()
+        settle()
+        check(app, "82-matchday-replay-matches")
+    }
+
     func test20Odds() {
         var arguments = ["-entryId", team]
         let base = setting("auditApiBaseURL", default: "")

@@ -192,6 +192,18 @@ struct LiveTeam: Decodable, Sendable {
     let fixtures: [Fixture]
     let moments: [Moment]
     let players: [String: PlayerSummary]
+    /// Only on a live matchday replay: what's being replayed and how far through it is.
+    var replay: Replay?
+
+    /// A replay's position (happy-backend-pal#58).
+    struct Replay: Decodable, Sendable, Hashable {
+        let id: String
+        let label: String
+        /// The moment shown, in the original matchday's time.
+        let at: Date
+        let elapsedSeconds: Int
+        let durationSeconds: Int
+    }
 
     func player(_ id: Int?) -> PlayerSummary? { id.flatMap { players[String($0)] } }
     func fixture(_ id: Int) -> Fixture? { fixtures.first { $0.id == id } }

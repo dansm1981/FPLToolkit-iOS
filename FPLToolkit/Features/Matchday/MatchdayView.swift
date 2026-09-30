@@ -24,6 +24,8 @@ struct MatchdayView: View {
     @State private var showingHistory = false
 
     static let refreshSeconds: UInt64 = 30
+    /// A replay moves several match minutes a second: refresh more often.
+    static let replayRefreshSeconds: UInt64 = 10
 
     enum MatchdaySheet: Identifiable, Hashable {
         case points(Int), bench, follow, estimates, sources
@@ -73,11 +75,16 @@ struct MatchdayView: View {
         .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
         .task(id: entryId) {
             await load()
-            // Keep it live while matches are on; the server refreshes every 15 seconds.
+            // Keep it live while matches are on; the server refreshes every 15 seconds. A replay
+            // refreshes throughout.
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: Self.refreshSeconds * 1_000_000_000)
-                guard !Task.isCancelled, let status = table.current?.loaded?.value.status,
-                      [.live, .between, .awaitingBonus].contains(status) else { continue }
+                let replaying = LiveReplay.current != nil
+                try? await Task.sleep(nanoseconds: (replaying ? Self.replayRefreshSeconds : Self.refreshSeconds) * 1_000_000_000)
+                guard !Task.isCancelled else { continue }
+                if !replaying {
+                    guard let status = table.current?.loaded?.value.status,
+                          [.live, .between, .awaitingBonus].contains(status) else { continue }
+                }
                 await table.refresh()
                 remember()
             }
@@ -95,6 +102,12 @@ struct MatchdayView: View {
     /// up to date.
     private func remember() {
         guard let live = table.current?.loaded?.value else { return }
+        // A replay is past data: it leaves the "since you last checked" memory alone.
+        if live.replay != nil {
+            let updated = self.updated
+            Task { await MatchdayActivity.update(live, entryId: entryId, updated: updated) }
+            return
+        }
         if !capturedSince {
             since = MatchdayMemory.read(entryId: entryId, gameweek: live.gameweek)
             capturedSince = true
@@ -119,6 +132,12 @@ struct MatchdayView: View {
 
     @ViewBuilder
     private func content(_ live: LiveTeam) -> some View {
+        if let replay = live.replay {
+            ReplayBanner(replay: replay) {
+                LiveReplay.end()
+                reload()
+            }
+        }
         Text("GW\(live.gameweek) · \(MatchdayText.status(live.status))")
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)

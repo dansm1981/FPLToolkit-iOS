@@ -52,8 +52,8 @@ struct MatchdayTests {
     @Test func matchdayLink() throws {
         #expect(DeepLink(url: try #require(URL(string: "fpltoolkit://matchday"))) == .matchday)
         let repo = LiveRepository(client: .production, cache: .shared)
-        #expect(repo.team(entryId: 22615).path == "live/team/22615" && repo.team(entryId: 22615).query.isEmpty)
-        #expect(repo.team(entryId: 22615, gw: 5).query == [URLQueryItem(name: "gw", value: "5")])
+        #expect(repo.team(entryId: 22615).base.path == "live/team/22615" && repo.team(entryId: 22615).base.query.isEmpty)
+        #expect(repo.team(entryId: 22615, gw: 5).base.query == [URLQueryItem(name: "gw", value: "5")])
     }
 
     private func fixture() throws -> LiveTeam {

@@ -301,20 +301,42 @@ struct LiveRepository: Sendable {
     let cache: ResponseCache
 
     /// The gameweek whose deadline has most recently passed, unless `gw` is given.
-    func team(entryId: Int, gw: Int? = nil) -> CachedEndpoint<LiveTeam> {
-        .init(client: client, cache: cache, path: "live/team/\(entryId)",
-              query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
+    func team(entryId: Int, gw: Int? = nil) -> LiveEndpoint<LiveTeam> {
+        LiveEndpoint(base: .init(client: client, cache: cache, path: "live/team/\(entryId)",
+                                 query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []))
     }
 
     /// One match's FPL stats (goals, cards, saves, bonus, BPS, every DEFCON count).
-    func match(fixtureId: Int, gw: Int) -> CachedEndpoint<MatchStats> {
-        .init(client: client, cache: cache, path: "live/fixtures/\(fixtureId)",
-              query: [URLQueryItem(name: "gw", value: String(gw))])
+    func match(fixtureId: Int, gw: Int) -> LiveEndpoint<MatchStats> {
+        LiveEndpoint(base: .init(client: client, cache: cache, path: "live/fixtures/\(fixtureId)",
+                                 query: [URLQueryItem(name: "gw", value: String(gw))]))
+    }
+
+    /// Past matchdays that can be replayed (developer tool).
+    func replays() async throws -> LiveReplays {
+        try await client.get("live/replays", as: LiveReplays.self, bypassCache: true).envelope.data
     }
 
     /// Chances from bookmaker odds; the next gameweek unless `gw` is given.
     func odds(gw: Int? = nil) -> CachedEndpoint<Odds> {
         .init(client: client, cache: cache, path: "odds",
               query: gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? [])
+    }
+}
+
+/// A live endpoint that follows a running replay (`LiveReplay.current`): each fetch then asks for
+/// the replay's moment, and nothing is saved offline or shown from the saved copy.
+struct LiveEndpoint<T: Decodable & Sendable>: LoadableEndpoint {
+    let base: CachedEndpoint<T>
+
+    func fetch(bypassCache: Bool) async throws -> Loaded<T> {
+        guard let replay = LiveReplay.current else { return try await base.fetch(bypassCache: bypassCache) }
+        let fetched = try await base.client.get(base.path, query: base.query + replay.queryItems, as: T.self,
+                                                bypassCache: true)
+        return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+    }
+
+    func cached() -> Loaded<T>? {
+        LiveReplay.current == nil ? base.cached() : nil
     }
 }
