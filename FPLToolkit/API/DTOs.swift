@@ -321,8 +321,19 @@ struct Today: Decodable, Sendable {
     let attentionCount: Int
     let insights: [TeamInsight]
     let players: [String: PlayerSummary]
+    /// Each squad player's daily transfers in and out, last 7 days, oldest first (Team news
+    /// sparklines, happy-backend-pal#65); nil from servers before it.
+    let transferTrends: [String: [TransferDay]]?
+
+    /// One day's transfers for a player, from FPL's running totals.
+    struct TransferDay: Decodable, Sendable, Hashable {
+        let date: String
+        let `in`: Int
+        let out: Int
+    }
 
     func player(_ id: Int) -> PlayerSummary? { players[String(id)] }
+    func transfers(_ id: Int) -> [TransferDay]? { transferTrends?[String(id)] }
     var attentionInsights: [TeamInsight] { insights.filter(\.needsAttention) }
 }
 

@@ -9,6 +9,8 @@ struct InsightCard: View {
     var showsChevron = false
     /// A last line in small print, e.g. Watch's price and ownership trend (batch 3).
     var note: String?
+    /// The player's daily transfers, drawn as a sparkline under the note (Team news price notes).
+    var transfers: [Today.TransferDay]?
 
     var body: some View {
         ToolkitCard {
@@ -58,6 +60,10 @@ struct InsightCard: View {
             Text(insight.summary)
                 .foregroundStyle(ToolkitColor.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let transfers, transfers.count >= 2 {
+                TransferSparkline(days: transfers)
+            }
 
             if let value = insight.supportingValue {
                 HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {

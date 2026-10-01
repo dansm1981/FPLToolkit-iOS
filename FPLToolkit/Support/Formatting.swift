@@ -39,6 +39,18 @@ enum Format {
             .joined(separator: "\u{00A0}· ")
     }
 
+    /// "820", "12.3k", "1.2m": a count of managers, short enough for a chart's caption.
+    static func compactCount(_ n: Int) -> String {
+        let a = abs(n)
+        let sign = n < 0 ? "−" : ""
+        if a < 1_000 { return sign + String(a) }
+        if a < 1_000_000 {
+            let k = Double(a) / 1_000
+            return sign + (k < 100 ? k.formatted(.number.precision(.fractionLength(0...1))) : String(Int(k.rounded()))) + "k"
+        }
+        return sign + (Double(a) / 1_000_000).formatted(.number.precision(.fractionLength(0...1))) + "m"
+    }
+
     /// "Sat 10 Oct, 11:00"
     static func deadline(_ date: Date) -> String {
         date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute())

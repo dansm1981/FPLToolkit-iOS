@@ -57,7 +57,8 @@ struct TeamNewsSheet: View {
                 dismiss()
                 onSelectPlayer(insight.playerId)
             } label: {
-                InsightCard(insight: insight, player: today.player(insight.playerId), showsChevron: true)
+                InsightCard(insight: insight, player: today.player(insight.playerId), showsChevron: true,
+                            transfers: insight.category == .price ? today.transfers(insight.playerId) : nil)
             }
             .buttonStyle(.plain)
             .accessibilityHint("Opens the player")

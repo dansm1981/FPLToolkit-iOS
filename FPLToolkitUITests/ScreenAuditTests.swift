@@ -253,8 +253,13 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "03-today")
     }
 
+    /// My Team, its sheets and the pitch. `auditApiBaseURL` as for test11 (e.g. a branch's Team
+    /// news sparklines before they're live).
     func test03Team() {
-        let app = launch(["-entryId", team])
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
         app.tabBars.buttons["Team"].tap()
         showPitch(app)
         waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch, "Squad", timeout: 30)
