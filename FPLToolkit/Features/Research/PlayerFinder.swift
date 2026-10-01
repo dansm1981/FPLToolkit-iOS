@@ -8,6 +8,9 @@ import SwiftUI
 /// fixture difficulty horizon.
 struct PlayerFinder: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// The headshot's text scaling (as PlayerPhoto), to line the details up under the name.
+    @ScaledMetric(relativeTo: .body) private var photoUnit: CGFloat = 1
     let advanced: Bool
 
     @State private var search = ""
@@ -227,68 +230,97 @@ struct PlayerFinder: View {
         let name = player?.webName ?? "player"
         let f = figures(row, insights)
         let starred = appModel.isStarred(row.playerId)
-        return HStack(spacing: ToolkitSpace.xs) {
-            Button {
-                appModel.router.openPlayer(row.playerId)
-            } label: {
-                HStack(spacing: ToolkitSpace.sm) {
-                    PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: ToolkitSpace.sm) {
-                            Text(player?.webName ?? "Player \(row.playerId)")
-                                .font(.headline)
-                                .foregroundStyle(ToolkitColor.primaryText)
-                            if let player { AvailabilityBadge(availability: player.availability) }
-                        }
-                        ClubLabel(clubId: player?.clubId, text: detailLine(player, others: f.others))
-                            .font(.subheadline)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: ToolkitSpace.sm)
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(f.main)
-                            .font(.headline.monospacedDigit())
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        Text(f.mainLabel)
-                            .font(.caption)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                }
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                .contentShape(Rectangle())
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(([player?.webName ?? "Player", "\(f.mainLabel) \(f.main)"] as [String] + f.others).joined(separator: ", "))
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Opens the player")
-
-            Button {
-                Task { await appModel.toggleStar(row.playerId) }
-            } label: {
-                Image(systemName: starred ? "star.fill" : "star")
-                    .font(.body)
-                    .foregroundStyle(starred ? ToolkitColor.accent : ToolkitColor.secondaryText)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel(starred ? "Remove \(name) from your shortlist" : "Add \(name) to your shortlist")
-
-            if LastDraft.id != nil {
+        // At the largest text sizes the details get a full-width line under the name, rather than
+        // a narrow column beside the figure and buttons (Dan's phone at xxxLarge, 1 Oct).
+        let stacked = typeSize >= .xxLarge
+        let detail = detailLine(player, others: f.others)
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: ToolkitSpace.xs) {
                 Button {
-                    Task { await add(row.playerId, name: player?.webName ?? "Player") }
+                    appModel.router.openPlayer(row.playerId)
                 } label: {
-                    Group {
-                        if adding == row.playerId { ProgressView() } else { Image(systemName: "plus.circle") }
+                    HStack(spacing: ToolkitSpace.sm) {
+                        PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: ToolkitSpace.sm) {
+                                Text(player?.webName ?? "Player \(row.playerId)")
+                                    .font(.headline)
+                                    .foregroundStyle(ToolkitColor.primaryText)
+                                if let player { AvailabilityBadge(availability: player.availability) }
+                            }
+                            if !stacked {
+                                ClubLabel(clubId: player?.clubId, text: detail)
+                                    .font(.subheadline)
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                            }
+                        }
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: ToolkitSpace.sm)
+                        VStack(alignment: .trailing, spacing: 0) {
+                            Text(f.main)
+                                .font(.headline.monospacedDigit())
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            Text(f.mainLabel)
+                                .font(.caption)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                        }
                     }
-                    .font(.body)
-                    .foregroundStyle(ToolkitColor.link)
-                    .frame(width: 44, height: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(([player?.webName ?? "Player", "\(f.mainLabel) \(f.main)"] as [String] + f.others).joined(separator: ", "))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the player")
+
+                Button {
+                    Task { await appModel.toggleStar(row.playerId) }
+                } label: {
+                    Image(systemName: starred ? "star.fill" : "star")
+                        .font(.body)
+                        .foregroundStyle(starred ? ToolkitColor.accent : ToolkitColor.secondaryText)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.borderless)
-                .disabled(adding != nil)
-                .accessibilityLabel("Add \(name) to \(LastDraft.name ?? "your draft")")
+                .accessibilityLabel(starred ? "Remove \(name) from your shortlist" : "Add \(name) to your shortlist")
+
+                if LastDraft.id != nil {
+                    Button {
+                        Task { await add(row.playerId, name: player?.webName ?? "Player") }
+                    } label: {
+                        Group {
+                            if adding == row.playerId { ProgressView() } else { Image(systemName: "plus.circle") }
+                        }
+                        .font(.body)
+                        .foregroundStyle(ToolkitColor.link)
+                        .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(adding != nil)
+                    .accessibilityLabel("Add \(name) to \(LastDraft.name ?? "your draft")")
+                }
+            }
+            if stacked {
+                // Also opens the player; VoiceOver already reads it on the row above.
+                Button {
+                    appModel.router.openPlayer(row.playerId)
+                } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        ClubLogo(clubId: player?.clubId, size: 16)
+                            .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 3 }
+                        Text(detail)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, (32 * min(photoUnit, 1.5)).rounded() + ToolkitSpace.sm)
+                .padding(.bottom, ToolkitSpace.xs)
+                .accessibilityHidden(true)
             }
         }
         .padding(.vertical, ToolkitSpace.xs)
