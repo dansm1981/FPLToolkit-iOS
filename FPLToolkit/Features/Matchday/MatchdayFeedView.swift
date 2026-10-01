@@ -54,7 +54,9 @@ struct MatchdayFeed: View {
                     .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
             } else {
                 let days = Self.spansDays(shown)
-                LazyVStack(alignment: .leading, spacing: 0) {
+                // Not lazy: the accessibility audit grows the text and must still find the rows it
+                // pushes off screen (a LazyVStack drops them, reported as fixed-size text).
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
                         if days, index == 0 || !Self.sameDay(shown[index - 1].at, item.at) {
                             Text(Self.day.string(from: item.at))
