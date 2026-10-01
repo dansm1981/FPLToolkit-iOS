@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum MatchdayMode: String, CaseIterable, Identifiable {
-    case team = "Your team", moments = "Moments", matches = "Matches"
+    case team = "Your team", feed = "Live feed", matches = "Matches"
     var id: String { rawValue }
 }
 
@@ -16,6 +16,9 @@ struct MatchdayView: View {
     /// What the previous visit saw, captured once when this visit's first data arrives.
     @State private var since: MatchdayMemory.Seen?
     @State private var capturedSince = false
+    /// The live feed's items already seen when this visit began (the previous visit's, else this
+    /// visit's first load): items after them are marked new.
+    @State private var feedSeen: Set<String>?
     @State private var mode: MatchdayMode = .team
     @State private var sheet: MatchdaySheet?
     /// Whether the Live Activity is on the Lock Screen.
@@ -102,6 +105,12 @@ struct MatchdayView: View {
     /// up to date.
     private func remember() {
         guard let live = table.current?.loaded?.value else { return }
+        if feedSeen == nil, let feed = live.feed {
+            let previous = live.replay == nil
+                ? MatchdayMemory.read(entryId: entryId, gameweek: live.gameweek)?.feedIds
+                : nil
+            feedSeen = Set(previous ?? feed.map(\.id))
+        }
         // A replay is past data: it leaves the "since you last checked" memory alone.
         if live.replay != nil {
             let updated = self.updated
@@ -165,8 +174,12 @@ struct MatchdayView: View {
             CardGroup {
                 LinkRow(title: benchTitle(live), detail: benchDetail(live), systemImage: "tshirt") { sheet = .bench }
             }
-        case .moments:
-            MatchdayMoments(live: live)
+        case .feed:
+            if let feed = live.feed {
+                MatchdayFeed(live: live, feed: feed, seen: feedSeen)
+            } else {
+                MatchdayMoments(live: live)
+            }
         case .matches:
             MatchdayFixtures(live: live)
         }

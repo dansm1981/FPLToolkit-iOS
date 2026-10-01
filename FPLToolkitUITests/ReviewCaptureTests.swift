@@ -226,10 +226,10 @@ final class ReviewCaptureTests: XCTestCase {
         waitFor(app.buttons["Your team"].firstMatch, "Matchday", timeout: 60)
         settle()
         capture(app, "r50-matchday")
-        for mode in ["Moments", "Matches"] {
+        for mode in ["Live feed", "Matches"] {
             app.buttons[mode].firstMatch.tap()
             settle()
-            capture(app, "r50-matchday-" + mode.lowercased())
+            capture(app, "r50-matchday-" + mode.lowercased().replacingOccurrences(of: " ", with: "-"))
         }
         app.buttons["Your team"].firstMatch.tap()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch

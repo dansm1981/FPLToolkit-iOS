@@ -166,6 +166,41 @@ struct LiveTeam: Decodable, Sendable {
         let points: Int?
     }
 
+    /// One line of the live feed (happy-backend-pal#61; contract §32). The server writes the text,
+    /// detail and points; the app only lays them out.
+    struct FeedItem: Decodable, Sendable, Identifiable, Hashable {
+        enum Kind: String, FallbackDecodable {
+            case lineup, kickOff, halfTime, fullTime
+            case goal, ownGoal, assist, penaltyMissed, penaltySaved, yellowCard, redCard
+            case subbedOff, subbedOn
+            case defcon, save, sixtyMinutes, cleanSheet, cleanSheetLost
+            case bonusPosition, bonus
+            case unknown
+            static let fallback = Self.unknown
+        }
+        /// The app's filters; `match` items show under All only.
+        enum Group: String, FallbackDecodable {
+            case goals, defence, bonus, lineups, match
+            case unknown
+            static let fallback = Self.unknown
+        }
+        /// Stable across refreshes.
+        let id: String
+        let kind: Kind
+        let group: Group
+        let fixtureId: Int
+        let playerId: Int?
+        let minute: Int?
+        let at: Date
+        let state: Moment.State
+        let text: String
+        let detail: String?
+        /// The points it's worth to the player (before the captain's multiplier); nil when none change.
+        let points: Int?
+        let players: [Int]?
+        let lineup: Player.Lineup?
+    }
+
     struct Headline: Decodable, Sendable, Hashable {
         let text: String
         let kind: String
@@ -191,6 +226,9 @@ struct LiveTeam: Decodable, Sendable {
     let squad: [Player]
     let fixtures: [Fixture]
     let moments: [Moment]
+    /// Everything that happened to the squad, newest first; nil from servers before
+    /// happy-backend-pal#61 (Matchday then shows the moments).
+    let feed: [FeedItem]?
     let players: [String: PlayerSummary]
     /// Only on a live matchday replay: what's being replayed and how far through it is.
     var replay: Replay?

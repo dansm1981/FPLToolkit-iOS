@@ -106,6 +106,67 @@ enum MatchdayText {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
+    /// The live feed's time column: the match minute, or KO, HT and FT for the markers.
+    nonisolated static func feedTime(_ item: LiveTeam.FeedItem) -> String {
+        switch item.kind {
+        case .kickOff: return "KO"
+        case .halfTime: return "HT"
+        case .fullTime: return "FT"
+        default: return item.minute.map { "\($0)′" } ?? ""
+        }
+    }
+
+    nonisolated static func symbol(_ item: LiveTeam.FeedItem) -> String {
+        switch item.kind {
+        case .lineup:
+            switch item.lineup {
+            case .starting: "checkmark.circle"
+            case .bench: "chair.lounge"
+            default: "person.slash"
+            }
+        case .kickOff: "play.circle"
+        case .halfTime: "pause.circle"
+        case .fullTime: "flag.checkered"
+        case .goal: "soccerball"
+        case .ownGoal: "soccerball.inverse"
+        case .assist: "arrowshape.turn.up.right"
+        case .penaltyMissed: "xmark.circle"
+        case .penaltySaved, .save: "hand.raised"
+        case .yellowCard, .redCard: "rectangle.portrait"
+        case .subbedOff: "arrow.down.circle"
+        case .subbedOn: "arrow.up.circle"
+        case .defcon: "shield.lefthalf.filled"
+        case .sixtyMinutes: "clock"
+        case .cleanSheet: "shield"
+        case .cleanSheetLost: "shield.slash"
+        case .bonusPosition: "star.leadinghalf.filled"
+        case .bonus: "star.fill"
+        case .unknown: "circle"
+        }
+    }
+
+    /// "+2", "−1" (a true minus sign).
+    nonisolated static func signedPoints(_ points: Int) -> String {
+        points > 0 ? "+\(points)" : "−\(-points)"
+    }
+
+    /// One feed line for VoiceOver: when, what, the detail, and the points.
+    nonisolated static func spoken(_ item: LiveTeam.FeedItem, isNew: Bool) -> String {
+        var parts: [String] = []
+        if isNew { parts.append("New") }
+        switch item.kind {
+        case .kickOff, .halfTime, .fullTime: break
+        default: if let minute = item.minute { parts.append("Minute \(minute)") }
+        }
+        parts.append(item.text)
+        if let detail = item.detail { parts.append(detail) }
+        if let points = item.points, points != 0 {
+            let n = abs(points)
+            parts.append("\(points > 0 ? "Plus" : "Minus") \(n) point\(n == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: ". ")
+    }
+
     nonisolated static func fixtureName(_ f: LiveTeam.Fixture, club: (Int) -> String?) -> String {
         "\(club(f.homeClubId) ?? "Home") v \(club(f.awayClubId) ?? "Away")"
     }
@@ -118,6 +179,8 @@ enum MatchdayMemory {
         let total: Int
         let momentIds: [String]
         let at: Date
+        /// The live feed's items (nil when saved by a build before the feed).
+        var feedIds: [String]?
     }
 
     private nonisolated static func key(_ entryId: Int, _ gameweek: Int) -> String {
@@ -130,7 +193,8 @@ enum MatchdayMemory {
     }
 
     static func save(_ live: LiveTeam, entryId: Int, now: Date = .now) {
-        let seen = Seen(total: live.total.estimated, momentIds: live.moments.map(\.id), at: now)
+        let seen = Seen(total: live.total.estimated, momentIds: live.moments.map(\.id), at: now,
+                        feedIds: live.feed?.map(\.id))
         if let data = try? JSONEncoder().encode(seen) {
             UserDefaults.standard.set(data, forKey: key(entryId, live.gameweek))
         }

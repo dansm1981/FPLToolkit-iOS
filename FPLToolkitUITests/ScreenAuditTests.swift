@@ -1003,6 +1003,10 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Matches"].firstMatch.tap()
         settle()
         check(app, "82-matchday-replay-matches")
+        // The live feed (happy-backend-pal#61) ten minutes into a stretch of play.
+        app.buttons["Live feed"].firstMatch.tap()
+        settle()
+        check(app, "83-matchday-replay-feed")
     }
 
     func test20Odds() {
