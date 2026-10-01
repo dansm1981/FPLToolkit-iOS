@@ -395,7 +395,20 @@ struct GameweekCard: View {
                 VStack(alignment: .leading, spacing: 12) {
                     header(team)
                     // The score and the season's standing open the season history (Dan, 29 Sep).
-                    Button(action: onHistory) { scoreRow(team) }
+                    Button(action: onHistory) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            scoreRow(team)
+                            // At the large sizes this line is wider than the score's column, which
+                            // keeps its own width: it runs under the whole row instead (the card
+                            // spilled off the screen in a live gameweek at xxxLarge, 1 Oct).
+                            if typeSize.stacksRows, team.status != .finished, team.status != .upcoming {
+                                Text(TodayText.recordedLine(team))
+                                    .font(.caption)
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
                         .buttonStyle(.plain)
                         .accessibilityHint("Opens your season history")
                         .accessibilityIdentifier("season-history")
@@ -500,7 +513,7 @@ struct GameweekCard: View {
                             .foregroundStyle(ToolkitColor.secondaryText)
                     }
                     .accessibilityElement(children: .combine)
-                    if team.status != .finished {
+                    if team.status != .finished, !typeSize.stacksRows {
                         Text(TodayText.recordedLine(team))
                             .font(.caption)
                             .foregroundStyle(ToolkitColor.secondaryText)

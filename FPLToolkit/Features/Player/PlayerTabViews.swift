@@ -126,6 +126,7 @@ private struct Opponent {
 /// A simple two-column line: words on the left, a figure on the right, and the opponent's logo
 /// first when the line is about a match.
 private struct TabRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let title: String
     var detail: String?
     let value: String
@@ -134,8 +135,15 @@ private struct TabRow: View {
     var opponentClubId: Int?
 
     var body: some View {
-        HStack(spacing: ToolkitSpace.sm) {
-            if let opponentClubId { ClubLogo(clubId: opponentClubId, size: 20) }
+        // At the large sizes the logo sits by the first line, not halfway down a wrapped block.
+        let layout = typeSize.stacksRows
+            ? AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm))
+            : AnyLayout(HStackLayout(spacing: ToolkitSpace.sm))
+        layout {
+            if let opponentClubId {
+                ClubLogo(clubId: opponentClubId, size: 20)
+                    .alignmentGuide(.firstTextBaseline) { $0[.bottom] - $0.height * 0.2 }
+            }
             line
         }
         .padding(.vertical, ToolkitSpace.xs)
@@ -145,20 +153,17 @@ private struct TabRow: View {
     }
 
     private var line: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(ToolkitColor.primaryText)
-                if let detail {
-                    Text(detail)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                }
+        NameFigureRow {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(ToolkitColor.primaryText)
+        } details: {
+            if let detail {
+                FactLine(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
             }
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: ToolkitSpace.sm)
+        } figure: {
             Text(value)
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(tint)

@@ -12,7 +12,7 @@ struct ResearchView: View {
         List {
             Section {
                 row("Fixture ticker", systemImage: "list.number",
-                    detail: "Every club's run of fixtures, easiest first, over the next 1 to 24 gameweeks.") {
+                    detail: "Every club's run of fixtures, easiest first, over the next 1\u{00A0}to\u{00A0}24 gameweeks.") {
                     FixtureTickerView(entryId: entryId)
                 }
                 row("Rotation planner", systemImage: "arrow.triangle.2.circlepath",

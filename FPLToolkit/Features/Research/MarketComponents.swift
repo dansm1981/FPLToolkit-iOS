@@ -100,6 +100,9 @@ struct RowChipView: View {
 /// Elite against all managers). Opens the player; VoiceOver reads it as one row.
 struct MarketPlayerRow: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// The headshot's text scaling (as PlayerPhoto), to line the details up under the name.
+    @ScaledMetric(relativeTo: .body) private var photoUnit: CGFloat = 1
     let playerId: Int
     let player: PlayerSummary?
     /// After club and position, e.g. "£6.2m". Keep it short: longer facts go in `chips`.
@@ -121,50 +124,35 @@ struct MarketPlayerRow: View {
         Button {
             appModel.router.openPlayer(playerId)
         } label: {
-            HStack(alignment: .center, spacing: 10) {
-                PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo, size: 32)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(player?.webName ?? "Player \(playerId)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(ToolkitColor.primaryText)
-                        if yours {
-                            Image(systemName: "tshirt.fill")
-                                .font(.caption2)
-                                .foregroundStyle(ToolkitColor.accent)
-                                .accessibilityHidden(true)
+            Group {
+                if typeSize.stacksRows {
+                    // The large sizes (Dan's phone, 1 Oct): the figure stays beside the name and the
+                    // details take the full width under it, rather than a column a word or two wide.
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .center, spacing: 10) {
+                            photo
+                            nameLine
+                                .layoutPriority(1)
+                            Spacer(minLength: ToolkitSpace.sm)
+                            figure
+                                .fixedSize()
                         }
+                        detailsBlock
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.leading, (32 * min(photoUnit, 1.5)).rounded() + 10)
                     }
-                    ClubLabel(clubId: player?.clubId, text: detailLine, logoSize: 12)
-                        .font(.caption)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                    if let extra {
-                        Text(extra)
-                            .font(.caption)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                    if !chips.isEmpty {
-                        FlowLayout(spacing: 4, lineSpacing: 4) {
-                            ForEach(chips, id: \.self) { RowChipView(chip: $0) }
+                } else {
+                    HStack(alignment: .center, spacing: 10) {
+                        photo
+                        VStack(alignment: .leading, spacing: 2) {
+                            nameLine
+                            detailsBlock
                         }
-                        .padding(.top, 1)
-                    }
-                    if let badge {
-                        Text(badge)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(ToolkitColor.warning)
-                    }
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .multilineTextAlignment(.leading)
-                Spacer(minLength: ToolkitSpace.sm)
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text(trailing)
-                        .font(.headline.monospacedDigit())
-                        .foregroundStyle(trailingColor)
-                        .multilineTextAlignment(.trailing)
                         .fixedSize(horizontal: false, vertical: true)
-                    if let trailingChip { RowChipView(chip: trailingChip) }
+                        .multilineTextAlignment(.leading)
+                        Spacer(minLength: ToolkitSpace.sm)
+                        figure
+                    }
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -175,6 +163,60 @@ struct MarketPlayerRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens the player")
+    }
+
+    private var photo: some View {
+        PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo, size: 32)
+    }
+
+    private var nameLine: some View {
+        HStack(spacing: 4) {
+            Text(player?.webName ?? "Player \(playerId)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.primaryText)
+            if yours {
+                Image(systemName: "tshirt.fill")
+                    .font(.caption2)
+                    .foregroundStyle(ToolkitColor.accent)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private var detailsBlock: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ClubLabel(clubId: player?.clubId, text: detailLine, logoSize: 12)
+                .font(.caption)
+                .foregroundStyle(ToolkitColor.secondaryText)
+            if let extra {
+                Text(typeSize.stacksRows ? Format.unbroken(extra) : extra)
+                    .font(.caption)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            }
+            if !chips.isEmpty {
+                FlowLayout(spacing: 4, lineSpacing: 4) {
+                    ForEach(chips, id: \.self) { RowChipView(chip: $0) }
+                }
+                .padding(.top, 1)
+            }
+            if let badge {
+                Text(badge)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.warning)
+            }
+        }
+        .multilineTextAlignment(.leading)
+    }
+
+    private var figure: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            Text(trailing)
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(trailingColor)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
+            if let trailingChip { RowChipView(chip: trailingChip) }
+        }
     }
 
     private var detailLine: String {
@@ -308,7 +350,8 @@ struct MarketFigures: View {
     let items: [ResearchFigure]
 
     var body: some View {
-        let pair = typeSize.isAccessibilitySize
+        // One a row from xxLarge, so a name or figure never breaks mid-word in half the width.
+        let pair = typeSize.stacksRows
             ? AnyLayout(VStackLayout(spacing: ToolkitSpace.sm))
             : AnyLayout(HStackLayout(alignment: .top, spacing: ToolkitSpace.sm))
         VStack(spacing: ToolkitSpace.sm) {

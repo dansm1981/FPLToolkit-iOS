@@ -44,7 +44,8 @@ struct LeagueVsView: View {
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)
 
-        let row = typeSize.isAccessibilitySize
+        // One a row from xxLarge ("£100.9" / "m" and "TRANS-" / "FERS" in a third of the width).
+        let row = typeSize.stacksRows
             ? AnyLayout(VStackLayout(spacing: ToolkitSpace.sm))
             : AnyLayout(HStackLayout(alignment: .top, spacing: ToolkitSpace.sm))
         VStack(spacing: ToolkitSpace.sm) {

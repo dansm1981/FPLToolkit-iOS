@@ -4,6 +4,9 @@ import SwiftUI
 /// Elite page with this week's key figure from the overview. Replaces the hub's list of Elite rows.
 struct EliteHomeView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// The cards' icon column, grown with the text at the large sizes.
+    @ScaledMetric(relativeTo: .title3) private var iconColumn: CGFloat = 28
     let entryId: Int?
     @State private var overview: Resource<ElitePage<EliteOverview>>?
     @State private var you: Resource<ElitePage<TeamElite>>?
@@ -95,7 +98,7 @@ struct EliteHomeView: View {
 
     private var youFigure: String? {
         guard let body = you?.loaded?.value.body else { return nil }
-        return "You own \(body.template.owned) of the \(body.template.total)-man template · likeness \(body.likeness.you.display) (average Elite squad \(body.likeness.eliteAverage.display))"
+        return "You own \(body.template.owned) of the \(body.template.total)\u{2011}man template · likeness \(body.likeness.you.display) (average Elite squad \(body.likeness.eliteAverage.display))"
     }
 
     private var gapsFigure: String? {
@@ -120,18 +123,24 @@ struct EliteHomeView: View {
             destination()
         } label: {
             ToolkitCard {
-                HStack(alignment: .center, spacing: ToolkitSpace.md) {
+                // At the large sizes the icon sits by the title, not halfway down a long card, and
+                // its column grows with it.
+                let layout = typeSize.stacksRows
+                    ? AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: ToolkitSpace.md))
+                    : AnyLayout(HStackLayout(alignment: .center, spacing: ToolkitSpace.md))
+                layout {
                     Image(systemName: systemImage)
                         .font(.title3)
                         .foregroundStyle(ToolkitColor.accent)
-                        .frame(width: 28)
+                        .frame(width: typeSize.stacksRows ? iconColumn : 28)
+                        .alignmentGuide(.firstTextBaseline) { $0[.bottom] - $0.height * 0.2 }
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
                             .font(.headline)
                             .foregroundStyle(ToolkitColor.primaryText)
                         if let figure {
-                            Text(figure)
+                            FactLine(figure)
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(ToolkitColor.primaryText)
                                 .fixedSize(horizontal: false, vertical: true)

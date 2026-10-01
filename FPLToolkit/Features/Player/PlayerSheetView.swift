@@ -131,6 +131,9 @@ private struct PlayerMoreMenu: View {
 
 struct PlayerDetailContent: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// The fixtures' gameweek column, grown with the text at the large sizes.
+    @ScaledMetric(relativeTo: .footnote) private var gwColumn: CGFloat = 44
     let loaded: Loaded<PlayerSheet>
     let workload: Workload?
     var context: String?
@@ -462,7 +465,8 @@ struct PlayerDetailContent: View {
             Text("GW\(fixture.gw)")
                 .font(.footnote)
                 .foregroundStyle(ToolkitColor.secondaryText)
-                .frame(width: 44, alignment: .leading)
+                // Grows with the text at the large sizes ("GW" / "10" wrapped in 44 pt).
+                .frame(width: typeSize.stacksRows ? gwColumn : 44, alignment: .leading)
             if fixture.blank {
                 Text("No fixture")
                     .font(.body.weight(.semibold))
@@ -474,7 +478,7 @@ struct PlayerDetailContent: View {
                     Text(opponent?.name ?? "To be confirmed")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(ToolkitColor.primaryText)
-                    Text([fixture.home.map { $0 ? "Home" : "Away" }, fixture.kickoff.map { Format.deadline($0) }]
+                    FactLine([fixture.home.map { $0 ? "Home" : "Away" }, fixture.kickoff.map { Format.deadline($0) }]
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(.caption)
                         .foregroundStyle(ToolkitColor.secondaryText)

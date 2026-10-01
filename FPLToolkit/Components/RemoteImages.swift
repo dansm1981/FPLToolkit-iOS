@@ -157,14 +157,21 @@ struct ClubLogo: View {
 /// The logo beside a line of text that starts with the club's short name
 /// (e.g. "CHE · MID · £5.5"). Without a logo it's just the text.
 struct ClubLabel: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let clubId: Int?
     let text: String
     var logoSize: CGFloat = 14
 
     var body: some View {
-        HStack(spacing: 4) {
+        // At the large sizes the text often wraps: the badge sits on its first line, not halfway
+        // down the block.
+        let layout = typeSize.stacksRows
+            ? AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 4))
+            : AnyLayout(HStackLayout(spacing: 4))
+        layout {
             ClubLogo(clubId: clubId, size: logoSize)
-            Text(text)
+                .alignmentGuide(.firstTextBaseline) { $0[.bottom] - $0.height * 0.15 }
+            Text(typeSize.stacksRows ? Format.unbroken(text) : text)
         }
     }
 }

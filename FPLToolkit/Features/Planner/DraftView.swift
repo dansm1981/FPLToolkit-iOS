@@ -585,16 +585,21 @@ private struct UndoButtonStyle: ButtonStyle {
 
 /// "Plan only ⓘ · GW6 onwards" and "1 FT · £2.2m bank", with squad status when it isn't full.
 private struct DraftStatusLine: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let draft: PlannerDraft
     let onMoney: () -> Void
     let onSource: () -> Void
 
     var body: some View {
+        // At the large sizes the two halves go one above the other instead of both wrapping.
+        let line = typeSize.stacksRows
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+            : AnyLayout(HStackLayout())
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
+            line {
                 ContextLine(lead: "Plan only", parts: ["GW\(draft.firstEditableGw) onwards"],
                             leadHint: "Explains that a plan doesn't change your FPL team", onInfo: onSource)
-                Spacer(minLength: ToolkitSpace.sm)
+                if !typeSize.stacksRows { Spacer(minLength: ToolkitSpace.sm) }
                 Button(action: onMoney) {
                     Text(summary)
                         .font(.subheadline.weight(.semibold).monospacedDigit())

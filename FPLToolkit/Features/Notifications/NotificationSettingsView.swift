@@ -19,7 +19,7 @@ struct NotificationSettingsView: View {
                 let f = appModel.pushFeatures
                 Section {
                     if f?.priceAlerts == true {
-                        toggle("Price projections", "When a watched player may rise or fall tonight (15:00–22:30 UK)", \.notifications.price, prefs)
+                        toggle("Price projections", "When a watched player may rise or fall tonight (15:00\u{2060}–\u{2060}22:30 UK)", \.notifications.price, prefs)
                     }
                     if f?.availabilityAlerts == true {
                         toggle("Availability changes", "When FPL changes a watched player's status", \.notifications.availability, prefs)

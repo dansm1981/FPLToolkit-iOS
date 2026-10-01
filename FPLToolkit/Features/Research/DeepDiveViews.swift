@@ -26,6 +26,9 @@ private struct DeepDiveScreen<T: Decodable & Sendable, Content: View>: View {
 }
 
 /// An item and its place in a list, for rows with no identity of their own.
+/// "1 haul", "3 hauls".
+private func counted(_ n: Int, _ word: String) -> String { "\(n) \(word)\(n == 1 ? "" : "s")" }
+
 struct Ranked<Value>: Identifiable {
     let rank: Int
     let value: Value
@@ -44,11 +47,11 @@ struct HaulsView: View {
                 MarketList(title: "Most 10+ point gameweeks", rows: h.rows,
                            empty: "No gameweek history has been recorded yet this season.", initial: 25) { row in
                     let player = h.player(row.playerId)
-                    let figures = "Best \(row.best) · \(row.returns) returns · \(row.appearances) apps · \(row.points) pts"
+                    let figures = "Best \(row.best) · \(counted(row.returns, "return")) · \(counted(row.appearances, "app")) · \(row.points) pts"
                     MarketPlayerRow(
                         playerId: row.playerId, player: player, details: [EliteFormat.price(player)].compactMap { $0 },
                         extra: figures, trailing: "\(row.hauls)",
-                        spoken: [EliteFormat.name(player, row.playerId), "\(row.hauls) hauls", "best score \(row.best)",
+                        spoken: [EliteFormat.name(player, row.playerId), counted(row.hauls, "haul"), "best score \(row.best)",
                                  "\(row.returns) games with a goal or assist", "\(row.appearances) appearances",
                                  "\(row.points) points", EliteFormat.price(player)].compactMap { $0 }.joined(separator: ", ")
                     )
@@ -74,13 +77,13 @@ struct ConsistencyView: View {
                 MarketList(title: "Most consistent returners", rows: c.rows,
                            empty: "No gameweek history has been recorded yet this season.", initial: 25) { row in
                     let player = c.player(row.playerId)
-                    let figures = "\(row.goodGames)/\(row.appearances) games of 4+ · \(row.blanks) blanks · \(row.hauls) hauls · \(row.pointsPerGame) pts/game"
+                    let figures = "\(row.goodGames)/\(row.appearances) games of 4+ · \(counted(row.blanks, "blank")) · \(counted(row.hauls, "haul")) · \(row.pointsPerGame) pts/game"
                     MarketPlayerRow(
                         playerId: row.playerId, player: player, details: [EliteFormat.price(player)].compactMap { $0 },
                         extra: figures, trailing: row.consistency.display, trailingColor: colour(row.tone),
                         spoken: [EliteFormat.name(player, row.playerId), "consistency \(row.consistency.display)",
                                  "\(row.goodGames) of \(row.appearances) games returned 4 or more", "\(row.blanks) blanks",
-                                 "\(row.hauls) hauls", "\(row.pointsPerGame) points per game", EliteFormat.price(player)]
+                                 counted(row.hauls, "haul"), "\(row.pointsPerGame) points per game", EliteFormat.price(player)]
                             .compactMap { $0 }.joined(separator: ", ")
                     )
                 }

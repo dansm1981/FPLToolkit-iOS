@@ -246,6 +246,65 @@ struct ContextLine: View {
     }
 }
 
+/// A name with its details, and a figure at the end of the line. At the usual sizes it's laid out
+/// as before: the details under the name, the figure beside both. From xxLarge the figure stays on
+/// the name's line and the details run the full width under them, rather than in a column a word
+/// or two wide beside the figure (Dan's phone at xxxLarge, 1 Oct).
+struct NameFigureRow<Name: View, Details: View, Figure: View>: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    var alignment: VerticalAlignment = .firstTextBaseline
+    var spacing: CGFloat = ToolkitSpace.sm
+    @ViewBuilder var name: () -> Name
+    @ViewBuilder var details: () -> Details
+    @ViewBuilder var figure: () -> Figure
+
+    var body: some View {
+        if typeSize.stacksRows {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: spacing) {
+                    name()
+                    Spacer(minLength: spacing)
+                    figure()
+                        .fixedSize()
+                }
+                details()
+            }
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+        } else {
+            HStack(alignment: alignment, spacing: spacing) {
+                VStack(alignment: .leading, spacing: 2) {
+                    name()
+                    details()
+                }
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: spacing)
+                figure()
+            }
+        }
+    }
+}
+
+extension View {
+    /// An accessibility label only when one is given; otherwise the element's own words stand.
+    @ViewBuilder func accessibilityLabel(ifGiven label: String?) -> some View {
+        if let label { accessibilityLabel(label) } else { self }
+    }
+}
+
+/// A line of "·"-separated facts that, at the large sizes, wraps between facts rather than inside
+/// them (Format.unbroken). The same text at the usual sizes.
+struct FactLine: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(typeSize.stacksRows ? Format.unbroken(text) : text)
+    }
+}
+
 /// Lays views out left to right, wrapping to a new line when the next one doesn't fit.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8

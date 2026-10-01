@@ -458,11 +458,12 @@ private struct WatchRow: View {
                     .padding(.top, ToolkitSpace.xs)
                 }
                 if !trends.isEmpty {
-                    let layout = typeSize.isAccessibilitySize
+                    // One a line from xxLarge, each kept whole ("Owned" / "-0.5 pts (7d)" split).
+                    let layout = typeSize.stacksRows
                         ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
                         : AnyLayout(HStackLayout(spacing: ToolkitSpace.md))
                     layout {
-                        ForEach(trends, id: \.text) { Text($0.text) }
+                        ForEach(trends, id: \.text) { FactLine($0.text) }
                     }
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(ToolkitColor.secondaryText)

@@ -3,29 +3,39 @@ import SwiftUI
 /// "Replay · GW5: Sat 26 Sep, 15:00 kick-offs": shown on Matchday and Today while a live matchday
 /// replay runs, so a replay is never mistaken for a real matchday.
 struct ReplayBanner: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let replay: LiveTeam.Replay
     let onEnd: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: ToolkitSpace.sm) {
-            Image(systemName: "play.circle.fill")
-                .font(.title3)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Replay · \(replay.label)")
-                    .font(.subheadline.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("Showing \(Self.moment.string(from: replay.at)) · \(Self.remaining(replay)) left")
-                    .font(.footnote.monospacedDigit())
+        // At the large sizes "End" goes under the words rather than squeezing them.
+        let layout = typeSize.stacksRows
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: ToolkitSpace.sm))
+        layout {
+            HStack(alignment: typeSize.stacksRows ? .firstTextBaseline : .center, spacing: ToolkitSpace.sm) {
+                Image(systemName: "play.circle.fill")
+                    .font(.title3)
+                    .alignmentGuide(.firstTextBaseline) { $0[.bottom] - $0.height * 0.2 }
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(typeSize.stacksRows ? Format.keepingFiguresTogether("Replay · \(replay.label)") : "Replay · \(replay.label)")
+                        .font(.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Showing \(Self.moment.string(from: replay.at)) · \(Self.remaining(replay)) left")
+                        .font(.footnote.monospacedDigit())
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
             }
-            .accessibilityElement(children: .combine)
-            Spacer(minLength: ToolkitSpace.sm)
+            if !typeSize.stacksRows { Spacer(minLength: ToolkitSpace.sm) }
             Button("End", action: onEnd)
                 .font(.subheadline.weight(.bold))
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
                 .accessibilityLabel("End replay")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(ToolkitColor.onAccent)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

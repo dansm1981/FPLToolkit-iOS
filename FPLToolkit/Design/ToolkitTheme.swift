@@ -26,6 +26,13 @@ enum ToolkitColor {
     static let destructiveAction = Color(red: 0.639, green: 0.153, blue: 0.239)
 }
 
+extension DynamicTypeSize {
+    /// The sizes where side-by-side rows run out of width (xxLarge and up, Dan's own setting
+    /// included): rows put their details on full-width lines under the name instead. Below this
+    /// the layouts are unchanged.
+    var stacksRows: Bool { self >= .xxLarge }
+}
+
 enum ToolkitSpace {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8

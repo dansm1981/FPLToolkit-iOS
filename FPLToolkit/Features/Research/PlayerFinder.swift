@@ -232,7 +232,7 @@ struct PlayerFinder: View {
         let starred = appModel.isStarred(row.playerId)
         // At the largest text sizes the details get a full-width line under the name, rather than
         // a narrow column beside the figure and buttons (Dan's phone at xxxLarge, 1 Oct).
-        let stacked = typeSize >= .xxLarge
+        let stacked = typeSize.stacksRows
         let detail = detailLine(player, others: f.others)
         return VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: ToolkitSpace.xs) {
@@ -246,7 +246,7 @@ struct PlayerFinder: View {
                                 Text(player?.webName ?? "Player \(row.playerId)")
                                     .font(.headline)
                                     .foregroundStyle(ToolkitColor.primaryText)
-                                if let player { AvailabilityBadge(availability: player.availability) }
+                                if let player { AvailabilityBadge(availability: player.availability).fixedSize(horizontal: stacked, vertical: false) }
                             }
                             if !stacked {
                                 ClubLabel(clubId: player?.clubId, text: detail)
@@ -257,14 +257,7 @@ struct PlayerFinder: View {
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: ToolkitSpace.sm)
-                        VStack(alignment: .trailing, spacing: 0) {
-                            Text(f.main)
-                                .font(.headline.monospacedDigit())
-                                .foregroundStyle(ToolkitColor.primaryText)
-                            Text(f.mainLabel)
-                                .font(.caption)
-                                .foregroundStyle(ToolkitColor.secondaryText)
-                        }
+                        if !stacked { figure(f) }
                     }
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .contentShape(Rectangle())
@@ -274,57 +267,83 @@ struct PlayerFinder: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Opens the player")
 
-                Button {
-                    Task { await appModel.toggleStar(row.playerId) }
-                } label: {
-                    Image(systemName: starred ? "star.fill" : "star")
-                        .font(.body)
-                        .foregroundStyle(starred ? ToolkitColor.accent : ToolkitColor.secondaryText)
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(starred ? "Remove \(name) from your shortlist" : "Add \(name) to your shortlist")
-
-                if LastDraft.id != nil {
-                    Button {
-                        Task { await add(row.playerId, name: player?.webName ?? "Player") }
-                    } label: {
-                        Group {
-                            if adding == row.playerId { ProgressView() } else { Image(systemName: "plus.circle") }
-                        }
-                        .font(.body)
-                        .foregroundStyle(ToolkitColor.link)
-                        .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(adding != nil)
-                    .accessibilityLabel("Add \(name) to \(LastDraft.name ?? "your draft")")
-                }
+                // At the large sizes the star and "+" stay on the name's line and the figure moves
+                // down beside the details, so neither line is squeezed.
+                rowButtons(row, name: name, starred: starred, player: player)
             }
             if stacked {
-                // Also opens the player; VoiceOver already reads it on the row above.
-                Button {
-                    appModel.router.openPlayer(row.playerId)
-                } label: {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        ClubLogo(clubId: player?.clubId, size: 16)
-                            .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 3 }
-                        Text(detail)
-                            .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .center, spacing: ToolkitSpace.xs) {
+                    // Also opens the player; VoiceOver already reads it on the row above.
+                    Button {
+                        appModel.router.openPlayer(row.playerId)
+                    } label: {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            ClubLogo(clubId: player?.clubId, size: 16)
+                                .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 3 }
+                            Text(Format.unbroken(detail))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: ToolkitSpace.sm)
+                            figure(f)
+                                .fixedSize()
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .padding(.leading, (32 * min(photoUnit, 1.5)).rounded() + ToolkitSpace.sm)
+                    .accessibilityHidden(true)
                 }
-                .buttonStyle(.plain)
-                .padding(.leading, (32 * min(photoUnit, 1.5)).rounded() + ToolkitSpace.sm)
                 .padding(.bottom, ToolkitSpace.xs)
-                .accessibilityHidden(true)
             }
         }
         .padding(.vertical, ToolkitSpace.xs)
     }
+
+    /// The sort figure and its label, e.g. "47" over "Pts".
+    private func figure(_ f: (main: String, mainLabel: String, others: [String])) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text(f.main)
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+            Text(f.mainLabel)
+                .font(.caption)
+                .foregroundStyle(ToolkitColor.secondaryText)
+        }
+    }
+
+    /// The star (shortlist) and "+" (last draft) buttons.
+    @ViewBuilder
+    private func rowButtons(_ row: PlayerInsights.Row, name: String, starred: Bool, player: PlayerSummary?) -> some View {
+        Button {
+            Task { await appModel.toggleStar(row.playerId) }
+        } label: {
+            Image(systemName: starred ? "star.fill" : "star")
+                .font(.body)
+                .foregroundStyle(starred ? ToolkitColor.accent : ToolkitColor.secondaryText)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(starred ? "Remove \(name) from your shortlist" : "Add \(name) to your shortlist")
+
+        if LastDraft.id != nil {
+            Button {
+                Task { await add(row.playerId, name: player?.webName ?? "Player") }
+            } label: {
+                Group {
+                    if adding == row.playerId { ProgressView() } else { Image(systemName: "plus.circle") }
+                }
+                .font(.body)
+                .foregroundStyle(ToolkitColor.link)
+                .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.borderless)
+            .disabled(adding != nil)
+            .accessibilityLabel("Add \(name) to \(LastDraft.name ?? "your draft")")
+        }
+    }
+
 
     private func detailLine(_ player: PlayerSummary?, others: [String]) -> String {
         var parts: [String] = []

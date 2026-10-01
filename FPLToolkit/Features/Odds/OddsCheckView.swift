@@ -4,6 +4,7 @@ import SwiftUI
 /// squad for the next gameweek. Chances only, never prices or bookmakers, and framed as help with
 /// FPL decisions.
 struct OddsCheckView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
     let team: Team
@@ -76,26 +77,38 @@ struct OddsCheckView: View {
                 } else {
                     VStack(alignment: .leading, spacing: ToolkitSpace.md) {
                         ForEach(rows) { row in
-                            HStack(spacing: ToolkitSpace.md) {
-                                PlayerPhoto(path: row.player.photo, clubLogo: appModel.club(row.player.clubId)?.logo)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(row.player.webName)
-                                        .font(.headline)
-                                        .foregroundStyle(ToolkitColor.primaryText)
-                                    Text(row.chance.text)
-                                        .font(.subheadline)
-                                        .foregroundStyle(ToolkitColor.secondaryText)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer(minLength: ToolkitSpace.sm)
-                                VStack(alignment: .trailing, spacing: 0) {
-                                    Text(OddsChance.percent(row.chance.value))
-                                        .font(.title3.weight(.bold).monospacedDigit())
-                                        .foregroundStyle(ToolkitColor.primaryText)
-                                    if let move = row.chance.movement {
-                                        Text(move)
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(move.hasPrefix("↑") ? ToolkitColor.positive : ToolkitColor.error)
+                            Group {
+                                if typeSize.stacksRows {
+                                    // The large sizes: the chance stays beside the name, and its
+                                    // explanation takes the full width under them.
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: ToolkitSpace.md) {
+                                            PlayerPhoto(path: row.player.photo, clubLogo: appModel.club(row.player.clubId)?.logo)
+                                            Text(row.player.webName)
+                                                .font(.headline)
+                                                .foregroundStyle(ToolkitColor.primaryText)
+                                            Spacer(minLength: ToolkitSpace.sm)
+                                            figure(row).fixedSize()
+                                        }
+                                        FactLine(row.chance.text)
+                                            .font(.subheadline)
+                                            .foregroundStyle(ToolkitColor.secondaryText)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                } else {
+                                    HStack(spacing: ToolkitSpace.md) {
+                                        PlayerPhoto(path: row.player.photo, clubLogo: appModel.club(row.player.clubId)?.logo)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(row.player.webName)
+                                                .font(.headline)
+                                                .foregroundStyle(ToolkitColor.primaryText)
+                                            Text(row.chance.text)
+                                                .font(.subheadline)
+                                                .foregroundStyle(ToolkitColor.secondaryText)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                        Spacer(minLength: ToolkitSpace.sm)
+                                        figure(row)
                                     }
                                 }
                             }
@@ -104,6 +117,19 @@ struct OddsCheckView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private func figure(_ row: Row) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text(OddsChance.percent(row.chance.value))
+                .font(.title3.weight(.bold).monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+            if let move = row.chance.movement {
+                Text(move)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(move.hasPrefix("↑") ? ToolkitColor.positive : ToolkitColor.error)
             }
         }
     }

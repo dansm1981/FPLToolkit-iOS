@@ -111,6 +111,7 @@ private struct SeasonHistoryContent: View {
                             }
                         }
                         .frame(minHeight: 44)
+                        .padding(.horizontal, 15)
                         .accessibilityElement(children: .combine)
                     }
                 }
@@ -270,43 +271,72 @@ private struct ChartCard<Content: View>: View {
 /// One gameweek: points against the average, the chip, both ranks with the overall rank's move,
 /// and transfers or hits.
 private struct WeekRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let week: SeasonHistory.Week
     let previous: SeasonHistory.Week?
 
     var body: some View {
-        HStack(alignment: .top, spacing: ToolkitSpace.md) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text("GW\(week.gw)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    if let chip = week.chip {
-                        Tag(text: TeamText.chipName(chip), foreground: ToolkitColor.accent, fill: ToolkitColor.goldTag)
+        Group {
+            if typeSize.stacksRows {
+                // The large sizes: the points stay beside the gameweek, the details take the width.
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .top, spacing: ToolkitSpace.md) {
+                        title
+                        Spacer(minLength: ToolkitSpace.sm)
+                        figures
+                            .fixedSize()
                     }
+                    FactLine(details)
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(details)
-                    .font(.caption)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: ToolkitSpace.sm)
-            VStack(alignment: .trailing, spacing: 3) {
-                Text("\(week.points) pts")
-                    .font(.subheadline.weight(.bold).monospacedDigit())
-                    .foregroundStyle(ToolkitColor.primaryText)
-                if let rank = week.overallRank {
-                    HStack(spacing: 4) {
-                        Text(Format.rank(rank))
-                            .font(.caption.monospacedDigit())
+            } else {
+                HStack(alignment: .top, spacing: ToolkitSpace.md) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        title
+                        Text(details)
+                            .font(.caption)
                             .foregroundStyle(ToolkitColor.secondaryText)
-                        RankMoveArrow(current: rank, previous: previous?.overallRank)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    Spacer(minLength: ToolkitSpace.sm)
+                    figures
                 }
             }
         }
         .padding(.vertical, 10)
+        // Inside the card's edge (the rows sat flush against it at every size).
+        .padding(.horizontal, 15)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken)
+    }
+
+    private var title: some View {
+        HStack(spacing: 6) {
+            Text("GW\(week.gw)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.primaryText)
+            if let chip = week.chip {
+                Tag(text: TeamText.chipName(chip), foreground: ToolkitColor.accent, fill: ToolkitColor.goldTag)
+            }
+        }
+    }
+
+    private var figures: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            Text("\(week.points) pts")
+                .font(.subheadline.weight(.bold).monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+            if let rank = week.overallRank {
+                HStack(spacing: 4) {
+                    Text(Format.rank(rank))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    RankMoveArrow(current: rank, previous: previous?.overallRank)
+                }
+            }
+        }
     }
 
     private var details: String {

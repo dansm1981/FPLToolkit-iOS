@@ -94,7 +94,7 @@ struct LeaguesCard: View {
                 Text(league.name)
                     .font(.headline)
                     .foregroundStyle(ToolkitColor.primaryText)
-                Text(details(league))
+                FactLine(details(league))
                     .font(.subheadline)
                     .foregroundStyle(ToolkitColor.secondaryText)
             }

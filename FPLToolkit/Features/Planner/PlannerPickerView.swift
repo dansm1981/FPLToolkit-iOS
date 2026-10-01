@@ -384,6 +384,9 @@ private struct CandidateRow: View {
                         }
                     }
                     .multilineTextAlignment(.leading)
+                    // At the large sizes the details use the row's width, not just the fixture
+                    // boxes' (club and price wrapped beside an empty gap, 1 Oct).
+                    .frame(maxWidth: typeSize >= .xxLarge ? .infinity : nil, alignment: .leading)
                     Spacer(minLength: 4)
                     if typeSize < .xxLarge, let strip = candidate.fixtureStrip, !strip.isEmpty {
                         FixtureStrip(weeks: strip, roomy: true)

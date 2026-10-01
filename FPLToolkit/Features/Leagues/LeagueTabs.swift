@@ -24,6 +24,9 @@ private struct LeagueCard<Content: View>: View {
 /// and short facts as chips.
 private struct LeagueRow: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// The headshot's text scaling (as PlayerPhoto), to line the details up under the name.
+    @ScaledMetric(relativeTo: .body) private var photoUnit: CGFloat = 1
     let title: String
     var player: PlayerSummary?
     var detail: String?
@@ -31,45 +34,81 @@ private struct LeagueRow: View {
     var value: String?
 
     var body: some View {
-        HStack(alignment: player == nil ? .firstTextBaseline : .center, spacing: ToolkitSpace.sm) {
-            if let player {
-                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 28)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(ToolkitColor.primaryText)
-                    if let player, appModel.squadIds.contains(player.id) {
-                        Image(systemName: "tshirt.fill")
-                            .font(.caption2)
-                            .foregroundStyle(ToolkitColor.accent)
-                            .accessibilityLabel("in your team")
+        Group {
+            if typeSize.stacksRows {
+                // The large sizes: the value stays beside the name, and the details take the full
+                // width under it (Dan's phone at xxxLarge, 1 Oct).
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: player == nil ? .firstTextBaseline : .center, spacing: ToolkitSpace.sm) {
+                        if let player {
+                            PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 28)
+                        }
+                        titleLine
+                        Spacer(minLength: ToolkitSpace.sm)
+                        valueText
+                            .fixedSize()
                     }
+                    detailsBlock
+                        .padding(.leading, player == nil ? 0 : (28 * min(photoUnit, 1.5)).rounded() + ToolkitSpace.sm)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                if let player {
-                    ClubLabel(clubId: player.clubId,
-                              text: [appModel.club(player.clubId)?.shortName, player.position.rawValue, Format.price(player.price)]
-                                .compactMap { $0 }.joined(separator: " · "),
-                              logoSize: 11)
-                        .font(.caption)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                }
-                if let detail {
-                    Text(detail).font(.footnote).foregroundStyle(ToolkitColor.secondaryText)
-                }
-                if !chips.isEmpty {
-                    FlowLayout(spacing: 4, lineSpacing: 4) {
-                        ForEach(chips, id: \.self) { RowChipView(chip: $0) }
+            } else {
+                HStack(alignment: player == nil ? .firstTextBaseline : .center, spacing: ToolkitSpace.sm) {
+                    if let player {
+                        PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 28)
                     }
+                    VStack(alignment: .leading, spacing: 2) {
+                        titleLine
+                        detailsBlock
+                    }
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: ToolkitSpace.sm)
+                    valueText
                 }
-            }
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: ToolkitSpace.sm)
-            if let value {
-                Text(value).font(.subheadline.weight(.semibold).monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var titleLine: some View {
+        HStack(spacing: 4) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(ToolkitColor.primaryText)
+            if let player, appModel.squadIds.contains(player.id) {
+                Image(systemName: "tshirt.fill")
+                    .font(.caption2)
+                    .foregroundStyle(ToolkitColor.accent)
+                    .accessibilityLabel("in your team")
+            }
+        }
+    }
+
+    private var detailsBlock: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let player {
+                ClubLabel(clubId: player.clubId,
+                          text: [appModel.club(player.clubId)?.shortName, player.position.rawValue, Format.price(player.price)]
+                            .compactMap { $0 }.joined(separator: " · "),
+                          logoSize: 11)
+                    .font(.caption)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+            }
+            if let detail {
+                FactLine(detail).font(.footnote).foregroundStyle(ToolkitColor.secondaryText)
+            }
+            if !chips.isEmpty {
+                FlowLayout(spacing: 4, lineSpacing: 4) {
+                    ForEach(chips, id: \.self) { RowChipView(chip: $0) }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var valueText: some View {
+        if let value {
+            Text(value).font(.subheadline.weight(.semibold).monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
+        }
     }
 }
 

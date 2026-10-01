@@ -5,6 +5,9 @@ import SwiftUI
 /// shared finder: filters, sorts and a star on every player). The shortlist is also the watch
 /// list, so shortlisted players are watched for alerts. The list lives on the server, per device.
 struct ShortlistView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// The headshot's text scaling (as PlayerPhoto), to line the details up under the name.
+    @ScaledMetric(relativeTo: .body) private var photoUnit: CGFloat = 1
     @Environment(AppModel.self) private var appModel
     /// The draft "+" adds to (its gameweek on screen); nil opens without one.
     let draftModel: DraftModel?
@@ -151,54 +154,80 @@ struct ShortlistView: View {
     private func row(_ item: PlannerShortlist.Item, list: PlannerShortlist) -> some View {
         let player = list.player(item.playerId)
         let name = player?.webName ?? "Player \(item.playerId)"
-        return HStack(alignment: .center, spacing: ToolkitSpace.md) {
-            Button {
-                appModel.router.openPlayer(item.playerId)
-            } label: {
-                HStack(spacing: ToolkitSpace.md) {
-                    PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: ToolkitSpace.sm) {
-                            Text(name)
-                                .font(.headline)
-                                .foregroundStyle(ToolkitColor.primaryText)
-                            if let player { AvailabilityBadge(availability: player.availability) }
-                        }
-                        ClubLabel(clubId: player?.clubId, text: details(player))
-                            .font(.subheadline)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                }
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.borderless)
-            .accessibilityHint("Opens the player")
-
-            Button {
-                Task { await appModel.setStarred(false, playerId: item.playerId) }
-            } label: {
-                Image(systemName: "star.fill")
-                    .foregroundStyle(ToolkitColor.accent)
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Remove \(name) from your shortlist")
-
-            if let draftModel, draftModel.draft?.isEditable == true {
+        // At the large sizes the details get a full-width line under the name and buttons, rather
+        // than a narrow column between them (Dan's phone at xxxLarge, 1 Oct).
+        let stacked = typeSize.stacksRows
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .center, spacing: ToolkitSpace.md) {
                 Button {
-                    Task { await add(item.playerId, name: name, to: draftModel) }
+                    appModel.router.openPlayer(item.playerId)
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
+                    HStack(spacing: ToolkitSpace.md) {
+                        PlayerPhoto(path: player?.photo, clubLogo: appModel.club(player?.clubId)?.logo)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: ToolkitSpace.sm) {
+                                Text(name)
+                                    .font(.headline)
+                                    .foregroundStyle(ToolkitColor.primaryText)
+                                if let player { AvailabilityBadge(availability: player.availability).fixedSize(horizontal: stacked, vertical: false) }
+                            }
+                            if !stacked {
+                                ClubLabel(clubId: player?.clubId, text: details(player))
+                                    .font(.subheadline)
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                            }
+                        }
+                    }
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(ifGiven: stacked ? "\(name), \(details(player))" : nil)
+                .accessibilityHint("Opens the player")
+
+                Button {
+                    Task { await appModel.setStarred(false, playerId: item.playerId) }
+                } label: {
+                    Image(systemName: "star.fill")
                         .foregroundStyle(ToolkitColor.accent)
                         .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.borderless)
-                .disabled(draftModel.isApplying)
-                .accessibilityLabel("Add \(name) to the draft")
+                .accessibilityLabel("Remove \(name) from your shortlist")
+
+                if let draftModel, draftModel.draft?.isEditable == true {
+                    Button {
+                        Task { await add(item.playerId, name: name, to: draftModel) }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(ToolkitColor.accent)
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(draftModel.isApplying)
+                    .accessibilityLabel("Add \(name) to the draft")
+                }
+            }
+            if stacked {
+                // Also opens the player; VoiceOver reads it on the row above.
+                Button {
+                    appModel.router.openPlayer(item.playerId)
+                } label: {
+                    ClubLabel(clubId: player?.clubId, text: details(player))
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .padding(.leading, (32 * min(photoUnit, 1.5)).rounded() + ToolkitSpace.md)
+                .padding(.bottom, ToolkitSpace.xs)
+                .accessibilityHidden(true)
             }
         }
     }

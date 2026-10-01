@@ -67,6 +67,7 @@ struct WorkloadSection: View {
 /// Congestion's player view: your squad by minutes in all competitions over the last 14 days.
 /// A skeleton until both answers are in (see WorkloadSection); a failure hides the card.
 struct SquadMinutesCard: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(AppModel.self) private var appModel
     let entryId: Int
     @State private var team: Resource<Team>?
@@ -117,27 +118,51 @@ struct SquadMinutesCard: View {
     }
 
     private func row(_ player: PlayerSummary, _ w: Workload?) -> some View {
-        HStack(spacing: ToolkitSpace.md) {
-            PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(player.webName)
-                    .font(.headline)
-                    .foregroundStyle(ToolkitColor.primaryText)
-                if let last = w?.lastMatch {
-                    Text("Last: \(WorkloadText.match(last))")
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+        let minutes = VStack(alignment: .trailing, spacing: 0) {
+            Text("\(w?.last14 ?? 0)")
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+            Text("min")
+                .font(.caption)
+                .foregroundStyle(ToolkitColor.secondaryText)
+        }
+        let last = w?.lastMatch.map { "Last: \(WorkloadText.match($0))" }
+        return Group {
+            if typeSize.stacksRows {
+                // The large sizes: the minutes stay beside the name; the last match takes the width.
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: ToolkitSpace.md) {
+                        PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
+                        Text(player.webName)
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        Spacer(minLength: ToolkitSpace.sm)
+                        minutes.fixedSize()
+                    }
+                    if let last {
+                        FactLine(last)
+                            .font(.footnote)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-            }
-            Spacer(minLength: ToolkitSpace.sm)
-            VStack(alignment: .trailing, spacing: 0) {
-                Text("\(w?.last14 ?? 0)")
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(ToolkitColor.primaryText)
-                Text("min")
-                    .font(.caption)
-                    .foregroundStyle(ToolkitColor.secondaryText)
+            } else {
+                HStack(spacing: ToolkitSpace.md) {
+                    PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(player.webName)
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                        if let last {
+                            Text(last)
+                                .font(.footnote)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Spacer(minLength: ToolkitSpace.sm)
+                    minutes
+                }
             }
         }
         .padding(.vertical, ToolkitSpace.sm)

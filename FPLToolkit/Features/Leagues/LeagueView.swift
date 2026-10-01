@@ -195,9 +195,9 @@ private struct OverviewSection: View {
     let overview: LeagueOverview
     let onManager: (Int) -> Void
 
-    /// Two figures a row, stacked at accessibility text sizes so no heading is cut off.
+    /// Two figures a row, one a row from xxLarge so names and figures aren't broken mid-word.
     private var row: AnyLayout {
-        typeSize.isAccessibilitySize
+        typeSize.stacksRows
             ? AnyLayout(VStackLayout(spacing: ToolkitSpace.sm))
             : AnyLayout(HStackLayout(alignment: .top, spacing: ToolkitSpace.sm))
     }
@@ -290,18 +290,15 @@ private struct OverviewSection: View {
                     }
                     ForEach(rows.prefix(5)) { row in
                         Button { appModel.router.openPlayer(row.playerId) } label: {
-                            HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(name(row.playerId))
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(ToolkitColor.primaryText)
-                                    Text("\(row.band) · league EO \(Int(row.eo.rounded()))% · owned \(Int(row.leagueOwnPct.rounded()))% here, \(Int(row.globalPct.rounded()))% overall")
-                                        .font(.footnote)
-                                        .foregroundStyle(ToolkitColor.secondaryText)
-                                }
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: ToolkitSpace.sm)
+                            NameFigureRow {
+                                Text(name(row.playerId))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(ToolkitColor.primaryText)
+                            } details: {
+                                FactLine("\(row.band) · league EO \(Int(row.eo.rounded()))% · owned \(Int(row.leagueOwnPct.rounded()))% here, \(Int(row.globalPct.rounded()))% overall")
+                                    .font(.footnote)
+                                    .foregroundStyle(ToolkitColor.secondaryText)
+                            } figure: {
                                 Text("\(row.score)")
                                     .font(.subheadline.weight(.semibold).monospacedDigit())
                                     .foregroundStyle(ToolkitColor.primaryText)
@@ -320,6 +317,7 @@ private struct OverviewSection: View {
 
 /// One rival: who, the gap, why they're a rival, and how your squads differ (the website's card).
 private struct RivalCard: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let rival: LeagueRival
     let name: (Int) -> String
     let compare: () -> Void
@@ -327,19 +325,23 @@ private struct RivalCard: View {
     var body: some View {
         ToolkitCard {
             VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                HStack(alignment: .firstTextBaseline) {
+                // The gap goes under the name at the large sizes, so neither is squeezed.
+                let header = typeSize.stacksRows
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+                    : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
+                header {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(rival.displayName).font(.headline).foregroundStyle(ToolkitColor.primaryText)
                         if let team = rival.teamName, rival.managerName != nil {
                             Text(team).font(.footnote).foregroundStyle(ToolkitColor.secondaryText)
                         }
                     }
-                    Spacer(minLength: ToolkitSpace.sm)
+                    if !typeSize.stacksRows { Spacer(minLength: ToolkitSpace.sm) }
                     Text(gapText)
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(ToolkitColor.primaryText)
                 }
-                Text((rival.reasons + ["\(rival.shared)/15 shared"]).joined(separator: " · "))
+                FactLine((rival.reasons + ["\(rival.shared)/15 shared"]).joined(separator: " · "))
                     .font(.footnote)
                     .foregroundStyle(ToolkitColor.secondaryText)
                 HStack(alignment: .top, spacing: ToolkitSpace.md) {
@@ -377,6 +379,7 @@ private struct RivalCard: View {
 // MARK: - Standings
 
 private struct StandingsSection: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let standings: LeagueStandings
     let onManager: (Int) -> Void
 
@@ -405,30 +408,58 @@ private struct StandingsSection: View {
             }
             .frame(minWidth: 28)
             .foregroundStyle(ToolkitColor.primaryText)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.teamName ?? "Team \(row.entryId)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(row.isMe ? ToolkitColor.accent : ToolkitColor.primaryText)
-                Text(row.managerName ?? "")
-                    .font(.footnote)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                Text(details(row))
-                    .font(.footnote)
-                    .foregroundStyle(ToolkitColor.secondaryText)
+            if typeSize.stacksRows {
+                // The large sizes: the totals sit beside the team and manager, and the details
+                // take the full width under them.
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .top, spacing: ToolkitSpace.sm) {
+                        teamAndManager(row)
+                        Spacer(minLength: ToolkitSpace.sm)
+                        totals(row)
+                            .fixedSize()
+                    }
+                    FactLine(details(row))
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 2) {
+                    teamAndManager(row)
+                    Text(details(row))
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: ToolkitSpace.sm)
+                totals(row)
             }
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: ToolkitSpace.sm)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(row.total.map(String.init) ?? "–").font(.headline.monospacedDigit())
-                Text("GW \(row.gwPoints.map(String.init) ?? "–")").font(.footnote.monospacedDigit())
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            .foregroundStyle(ToolkitColor.primaryText)
         }
         .padding(.vertical, ToolkitSpace.sm)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+    }
+
+    private func teamAndManager(_ row: LeagueStandings.Row) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(row.teamName ?? "Team \(row.entryId)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(row.isMe ? ToolkitColor.accent : ToolkitColor.primaryText)
+            Text(row.managerName ?? "")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+        }
+    }
+
+    private func totals(_ row: LeagueStandings.Row) -> some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text(row.total.map(String.init) ?? "–").font(.headline.monospacedDigit())
+            Text("GW \(row.gwPoints.map(String.init) ?? "–")").font(.footnote.monospacedDigit())
+                .foregroundStyle(ToolkitColor.secondaryText)
+        }
+        .foregroundStyle(ToolkitColor.primaryText)
     }
 
     private func details(_ row: LeagueStandings.Row) -> String {

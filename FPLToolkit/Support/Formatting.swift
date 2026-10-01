@@ -2,6 +2,43 @@ import Foundation
 
 /// Display formatting only. Timestamps arrive in UTC; everything here shows them in the device's time zone.
 enum Format {
+    /// Keeps scores and figures with their units when a sentence wraps (large text sizes): "3–0",
+    /// "BRE 3–0 CHE", "6 pts", "81 minutes", "(1 match)", "+£0.1m", "Sat 31 Oct at 15:00" never
+    /// split across lines.
+    static func keepingFiguresTogether(_ text: String) -> String {
+        var out = text.replacing(#/(\d)–(\d)/#) { "\($0.1)\u{2060}–\u{2060}\($0.2)" }
+        out = out.replacing(#/([A-Z]{3}) (\d)/#) { "\($0.1)\u{00A0}\($0.2)" }
+        out = out.replacing(#/(\d) ([A-Z]{3})\b/#) { "\($0.1)\u{00A0}\($0.2)" }
+        out = out.replacing(#/(\d) (pts?|points?|mins?|minutes?|saves?|bonus|of|match|matches|owned)\b/#) {
+            "\($0.1)\u{00A0}\($0.2)"
+        }
+        // A sign stays with its money ("+" / "£0.1m" split; before a digit it can't).
+        out = out.replacing(#/([+\-−–])£/#) { "\($0.1)\u{2060}£" }
+        // Dates and times: "Sat 31", "31 Oct", "at 15:00".
+        out = out.replacing(#/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (\d)/#) { "\($0.1)\u{00A0}\($0.2)" }
+        out = out.replacing(#/(\d) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/#) { "\($0.1)\u{00A0}\($0.2)" }
+        out = out.replacing(#/\bat (\d)/#) { "at\u{00A0}\($0.1)" }
+        return out
+    }
+
+    /// A "·"-separated line that wraps between its facts, not inside them (large text sizes, Dan's
+    /// phone, 1 Oct): each short fact keeps its spaces and slashes ("£5.8m", "0/h", "16.5% owned",
+    /// "LEE (H)", "Tomorrow 94.1% (3/5)"), and a line ends with "·" rather than starting with one.
+    /// Longer facts can still wrap inside, but keep their figures with their units.
+    static func unbroken(_ line: String) -> String {
+        line.components(separatedBy: " · ")
+            .map { fact in
+                guard fact.count <= 24 else { return keepingFiguresTogether(fact) }
+                return fact
+                    .replacingOccurrences(of: " ", with: "\u{00A0}")
+                    .replacingOccurrences(of: "/", with: "/\u{2060}")
+                    .replacingOccurrences(of: "–", with: "\u{2060}–\u{2060}")
+                    .replacingOccurrences(of: "-", with: "\u{2011}")
+                    .replacing(#/([+−])£/#) { "\($0.1)\u{2060}£" }
+            }
+            .joined(separator: "\u{00A0}· ")
+    }
+
     /// "Sat 10 Oct, 11:00"
     static func deadline(_ date: Date) -> String {
         date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute())

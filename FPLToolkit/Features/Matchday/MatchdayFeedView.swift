@@ -126,19 +126,23 @@ struct MatchdayFeedRow: View {
                         ClubLogo(clubId: club, size: 16)
                             .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 3 }
                     }
-                    Text(item.text)
+                    Text(typeSize.stacksRows ? Format.keepingFiguresTogether(item.text) : item.text)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(ToolkitColor.primaryText)
                         .strikethrough(item.state == .withdrawn)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if isNew || item.detail != nil {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    // At the large sizes "New" sits above the detail rather than narrowing it.
+                    let line = typeSize.stacksRows
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
+                    line {
                         if isNew {
                             Tag(text: "New", foreground: ToolkitColor.onAccent, fill: ToolkitColor.accent)
                         }
                         if let detail = item.detail {
-                            Text(detail)
+                            Text(typeSize.stacksRows ? Format.unbroken(detail) : detail)
                                 .font(.caption)
                                 .foregroundStyle(ToolkitColor.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
