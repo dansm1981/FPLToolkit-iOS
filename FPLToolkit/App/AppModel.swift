@@ -129,6 +129,7 @@ final class AppModel {
         try await deviceSession.reset()
         shortlist.reset()
         leagues.reset()
+        MatchdayWatch.forget()
         disconnect()
     }
 

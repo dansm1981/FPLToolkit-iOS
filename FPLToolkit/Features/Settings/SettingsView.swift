@@ -24,6 +24,11 @@ struct SettingsView: View {
                         } label: {
                             Label("Data & sources", systemImage: "icloud")
                         }
+                        NavigationLink {
+                            MatchdayWatchSettingsView()
+                        } label: {
+                            Label("Live matchday", systemImage: "eye")
+                        }
                         Button("Change team", role: .destructive) {
                             confirmingChange = true
                         }

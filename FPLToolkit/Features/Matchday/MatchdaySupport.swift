@@ -159,6 +159,7 @@ enum MatchdayText {
         default: if let minute = item.minute { parts.append("Minute \(minute)") }
         }
         parts.append(item.text)
+        if let reason = item.watching { parts.append("Watching: \(reason)") }
         if let detail = item.detail { parts.append(detail) }
         if let points = item.points, points != 0 {
             let n = abs(points)

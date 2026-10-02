@@ -178,9 +178,9 @@ struct LiveTeam: Decodable, Sendable {
             case unknown
             static let fallback = Self.unknown
         }
-        /// The app's filters; `match` items show under All only.
+        /// The app's filters; `match` items show under All only; `watching` is players to watch.
         enum Group: String, FallbackDecodable {
-            case goals, defence, bonus, lineups, match
+            case goals, defence, bonus, lineups, match, watching
             case unknown
             static let fallback = Self.unknown
         }
@@ -199,6 +199,59 @@ struct LiveTeam: Decodable, Sendable {
         let points: Int?
         let players: [Int]?
         let lineup: Player.Lineup?
+        /// A watched player's item (group `watching`): why they're watched, e.g. "54% owned".
+        var watching: String?
+    }
+
+    /// Matchday's players to watch (happy-backend-pal#66; contract §34): the groups switched on in
+    /// Settings → Notifications → Live matchday, each with its players' live figures.
+    struct Watching: Decodable, Sendable, Hashable {
+        let groups: [Group]
+
+        struct Group: Decodable, Sendable, Hashable, Identifiable {
+            enum Kind: String, FallbackDecodable {
+                case highlyOwned, eliteDifferentials, rivals
+                case unknown
+                static let fallback = Self.unknown
+            }
+            let kind: Kind
+            let title: String
+            let detail: String?
+            let players: [WatchedPlayer]
+            let rivals: [Rival]
+            var id: String { kind.rawValue }
+        }
+
+        /// One watched player: live figures and why they're there ("54% owned").
+        struct WatchedPlayer: Decodable, Sendable, Hashable, Identifiable {
+            let playerId: Int
+            let reason: String
+            let points: Int
+            let minutes: Int
+            let state: Player.State
+            let provisionalBonus: Int
+            var id: Int { playerId }
+        }
+
+        /// A mini-league rival: where they stand, their live gameweek, their captain and the
+        /// players they have that you don't.
+        struct Rival: Decodable, Sendable, Hashable, Identifiable {
+            let entryId: Int
+            let manager: String?
+            let team: String?
+            let rank: Int?
+            /// "1st · leader · 12 pts ahead of you".
+            let label: String
+            /// FPL total at the league's last sync.
+            let total: Int?
+            /// Their live gameweek score, FPL-recorded; nil until their picks for it are synced.
+            let live: Int?
+            /// Toolkit's estimate of their bonus to come, kept out of `live`.
+            let provisionalBonus: Int
+            let captainId: Int?
+            let players: [WatchedPlayer]
+            var id: Int { entryId }
+        }
     }
 
     struct Headline: Decodable, Sendable, Hashable {
@@ -229,6 +282,8 @@ struct LiveTeam: Decodable, Sendable {
     /// Everything that happened to the squad, newest first; nil from servers before
     /// happy-backend-pal#61 (Matchday then shows the moments).
     let feed: [FeedItem]?
+    /// Only when the request asked for players to watch.
+    var watching: Watching?
     let players: [String: PlayerSummary]
     /// Only on a live matchday replay: what's being replayed and how far through it is.
     var replay: Replay?

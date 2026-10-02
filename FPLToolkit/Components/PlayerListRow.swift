@@ -20,68 +20,91 @@ struct PlayerListRow: View {
     var showsChevron = true
     /// What VoiceOver reads after the name; defaults to the visible text.
     var spokenDetail: String?
+    /// A long detail (Matchday's players to watch): it runs to as many lines as it needs, and from
+    /// xxLarge it takes the full width under the name rather than a narrow column beside the value
+    /// (as Player finder rows, Dan's phone at xxxLarge). Others stop at two lines below the
+    /// accessibility sizes.
+    var wrapsDetail = false
+    /// The headshot's text scaling (as PlayerPhoto), to line a detail below up under the name.
+    @ScaledMetric(relativeTo: .body) private var photoUnit: CGFloat = 1
 
     var body: some View {
         let layout = typeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: ToolkitSpace.sm))
             : AnyLayout(HStackLayout(alignment: .center, spacing: 10))
-        layout {
-            HStack(spacing: 10) {
-                PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 34)
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(player.webName)
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(ToolkitColor.primaryText)
-                            .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                        if let role {
-                            Text(role)
-                                .font(.caption.weight(.heavy))
-                                .foregroundStyle(ToolkitColor.accent)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(ToolkitColor.goldTag, in: RoundedRectangle(cornerRadius: 5))
-                                // Caption, not caption2, and never squeezed by a long name: the
-                                // accessibility audit flagged the badge at larger text sizes.
+        let detailBelow = wrapsDetail && typeSize.stacksRows && !typeSize.isAccessibilitySize
+        VStack(alignment: .leading, spacing: 4) {
+            layout {
+                HStack(spacing: 10) {
+                    PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 34)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text(player.webName)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(ToolkitColor.primaryText)
+                                .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                            if let role {
+                                Text(role)
+                                    .font(.caption.weight(.heavy))
+                                    .foregroundStyle(ToolkitColor.accent)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(ToolkitColor.goldTag, in: RoundedRectangle(cornerRadius: 5))
+                                    // Caption, not caption2, and never squeezed by a long name: the
+                                    // accessibility audit flagged the badge at larger text sizes.
+                                    .fixedSize()
+                            }
+                            AvailabilityBadge(availability: player.availability)
+                        }
+                        if !detailBelow {
+                            ClubLabel(clubId: player.clubId, text: metaLine, logoSize: 13)
+                                .font(.caption)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .lineLimit(typeSize.isAccessibilitySize || wrapsDetail ? nil : 2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                if !typeSize.isAccessibilitySize { Spacer(minLength: ToolkitSpace.sm) }
+                if value != nil || valueDetail != nil || valueChip != nil {
+                    VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 3) {
+                        if let value {
+                            Text(value)
+                                .font(.body.weight(.bold).monospacedDigit())
+                                .foregroundStyle(ToolkitColor.primaryText)
+                        }
+                        if let valueDetail {
+                            // Caption, not caption2, and never squeezed: the audit reported "+2 est."
+                            // in caption2 as not resizing.
+                            Text(valueDetail)
+                                .font(.caption)
+                                .foregroundStyle(ToolkitColor.secondaryText)
                                 .fixedSize()
                         }
-                        AvailabilityBadge(availability: player.availability)
+                        if let valueChip {
+                            Text(valueChip.text)
+                                .font(.caption.weight(.bold).monospacedDigit())
+                                .foregroundStyle(valueChip.tone.text)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
+                                .background(valueChip.tone.fill, in: RoundedRectangle(cornerRadius: 5))
+                        }
                     }
-                    ClubLabel(clubId: player.clubId, text: metaLine, logoSize: 13)
-                        .font(.caption)
+                }
+                if showsChevron && !typeSize.isAccessibilitySize {
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(ToolkitColor.secondaryText)
-                        .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityHidden(true)
                 }
             }
-            if !typeSize.isAccessibilitySize { Spacer(minLength: ToolkitSpace.sm) }
-            if value != nil || valueDetail != nil || valueChip != nil {
-                VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 3) {
-                    if let value {
-                        Text(value)
-                            .font(.body.weight(.bold).monospacedDigit())
-                            .foregroundStyle(ToolkitColor.primaryText)
-                    }
-                    if let valueDetail {
-                        Text(valueDetail)
-                            .font(.caption2)
-                            .foregroundStyle(ToolkitColor.secondaryText)
-                    }
-                    if let valueChip {
-                        Text(valueChip.text)
-                            .font(.caption.weight(.bold).monospacedDigit())
-                            .foregroundStyle(valueChip.tone.text)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(valueChip.tone.fill, in: RoundedRectangle(cornerRadius: 5))
-                    }
-                }
-            }
-            if showsChevron && !typeSize.isAccessibilitySize {
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
+            if detailBelow {
+                ClubLabel(clubId: player.clubId, text: metaLine, logoSize: 13)
+                    .font(.caption)
                     .foregroundStyle(ToolkitColor.secondaryText)
-                    .accessibilityHidden(true)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, (34 * min(photoUnit, 1.5)).rounded() + 10)
             }
         }
         .padding(.vertical, ToolkitSpace.md)

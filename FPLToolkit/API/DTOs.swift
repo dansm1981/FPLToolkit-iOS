@@ -500,6 +500,45 @@ struct DevicePrefs: Codable, Sendable, Equatable {
     var notifications: Notifications
     var quietHours: QuietHours
     var autoTrackSquad: Bool
+    /// Matchday's players to watch (happy-backend-pal#66); nil from servers before it.
+    var matchday: MatchdayPrefs?
+
+    /// Which players Matchday shows beside your own team, and how many mini-league rivals.
+    struct MatchdayPrefs: Codable, Sendable, Equatable {
+        var highlyOwned: Bool
+        var eliteDifferentials: Bool
+        var rivals: Bool
+        var rivalsLeague: Int?
+        var rivalsAbove: Int
+        var rivalsBelow: Int
+        var rivalsLeader: Bool
+        var inFeed: Bool
+
+        /// Rivals above or below you, at most (the server clamps to the same).
+        static let maxEachSide = 5
+
+        /// The server's defaults: highly owned only, two rivals each side and the leader.
+        static let standard = MatchdayPrefs(highlyOwned: true, eliteDifferentials: false, rivals: false,
+                                            rivalsLeague: nil, rivalsAbove: 2, rivalsBelow: 2,
+                                            rivalsLeader: true, inFeed: true)
+
+        enum CodingKeys: String, CodingKey {
+            case highlyOwned, eliteDifferentials, rivals, rivalsLeague, rivalsAbove, rivalsBelow, rivalsLeader, inFeed
+        }
+
+        // The league is sent as null when cleared, not left out.
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(highlyOwned, forKey: .highlyOwned)
+            try c.encode(eliteDifferentials, forKey: .eliteDifferentials)
+            try c.encode(rivals, forKey: .rivals)
+            if let rivalsLeague { try c.encode(rivalsLeague, forKey: .rivalsLeague) } else { try c.encodeNil(forKey: .rivalsLeague) }
+            try c.encode(rivalsAbove, forKey: .rivalsAbove)
+            try c.encode(rivalsBelow, forKey: .rivalsBelow)
+            try c.encode(rivalsLeader, forKey: .rivalsLeader)
+            try c.encode(inFeed, forKey: .inFeed)
+        }
+    }
 }
 
 struct DeviceInfo: Decodable, Sendable {
@@ -517,6 +556,7 @@ struct DeviceUpdate: Encodable, Sendable {
     struct PrefsPatch: Encodable, Sendable {
         var notifications: DevicePrefs.Notifications?
         var quietHours: DevicePrefs.QuietHours?
+        var matchday: DevicePrefs.MatchdayPrefs?
     }
 
     var entryId: Int??

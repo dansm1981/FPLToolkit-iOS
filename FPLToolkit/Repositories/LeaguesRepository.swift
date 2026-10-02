@@ -113,6 +113,7 @@ final class LeaguesStore {
         updateError = nil
         do {
             list = try await repository.remove(leagueId)
+            MatchdayWatch.leagueRemoved(leagueId)
         } catch let error as APIError {
             updateError = ErrorCopy(error)
         } catch {}

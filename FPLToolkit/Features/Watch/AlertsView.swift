@@ -62,6 +62,11 @@ struct AlertsView: View {
 
             Section {
                 toggle("Live match day", "When your players are playing, straight to Matchday", \.liveMatchday)
+                NavigationLink {
+                    MatchdayWatchSettingsView()
+                } label: {
+                    label("Players to watch", "Highly owned players, Elite differentials or mini-league rivals beside your team")
+                }
                 toggle("Captain not starting", "When line-ups come out, about 30 minutes before kick-off", \.captainNotStarting)
                 toggle("Line-up clash", "One of your starters is out while a bench player starts", \.lineupClash)
                 toggle("Gameweek wrap-up", "Once bonus is added: your final points and rank change", \.wrapUp)

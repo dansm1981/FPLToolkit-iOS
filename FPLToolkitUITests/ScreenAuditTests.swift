@@ -363,6 +363,25 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Notifications"].tap()
         waitFor(app.staticTexts["Quiet hours"].firstMatch, "Notification settings")
         check(app, "08-notifications", sizesAndLists: false)
+
+        // Live matchday (Dan, 2 Oct): who Matchday watches. Rivals open the league, how many
+        // above and below, and the leader; the switch is put back as it was.
+        app.buttons["Live matchday"].firstMatch.tap()
+        let rivals = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Mini-league rivals'")).firstMatch
+        waitFor(rivals, "Live matchday")
+        settle()
+        check(app, "08c-live-matchday", sizesAndLists: false)
+        let wasOn = rivals.value as? String == "1"
+        let flip = { rivals.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
+        if !wasOn { flip() }
+        waitFor(app.steppers.firstMatch, "Rivals settings")
+        settle()
+        check(app, "08d-live-matchday-rivals", sizesAndLists: false)
+        if !wasOn {
+            flip()
+            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.steppers.firstMatch)
+            waitForExpectations(timeout: 20)
+        }
     }
 
     /// Imports the team into a draft the first time (kept on the simulator's device for later runs).
@@ -986,11 +1005,16 @@ final class ScreenAuditTests: XCTestCase {
         struct List: Decodable { let data: Payload }
         let replays = try JSONDecoder().decode(List.self, from: data).data.replays
         // A stretch of play (not the whole gameweek), halfway through: matches in progress.
-        guard let id = replays.first(where: { !$0.id.hasSuffix("-all") })?.id ?? replays.first?.id else {
+        // `auditReplay` picks one (e.g. gw5-2, Saturday's matches).
+        let chosen = setting("auditReplay", default: "")
+        guard let id = replays.first(where: { $0.id == chosen })?.id
+                ?? replays.first(where: { !$0.id.hasSuffix("-all") })?.id ?? replays.first?.id else {
             throw XCTSkip("No matchday recorded in the last 30 days")
         }
 
-        var arguments = ["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600"]
+        // Players to watch (happy-backend-pal#66): every group, rivals from League of Experts.
+        var arguments = ["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600",
+                         "-matchdayWatch", "owned,elite,rivals", "-matchdayWatchLeague", "783382"]
         if base != "https://www.fpltoolkit.co.uk/api/mobile/v1/" { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
         let end = app.buttons["End replay"].firstMatch
@@ -1005,6 +1029,18 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(end, "Replay on Matchday", timeout: 30)
         settle()
         check(app, "81-matchday-replay")
+        // Players to watch under the bench, then one rival opened to their players.
+        let watching = app.staticTexts["Players to watch"].firstMatch
+        reveal(watching, in: app)
+        settle()
+        check(app, "81b-matchday-watching")
+        let rival = app.buttons.matching(NSPredicate(format: "label CONTAINS ', you have '")).firstMatch
+        reveal(rival, in: app)
+        rival.tap()
+        settle()
+        check(app, "81c-matchday-rival-open")
+        for _ in 0..<4 { app.swipeDown() }
+        settle()
         app.buttons["Matches"].firstMatch.tap()
         settle()
         check(app, "82-matchday-replay-matches")

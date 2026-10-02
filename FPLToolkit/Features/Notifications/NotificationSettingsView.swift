@@ -15,6 +15,17 @@ struct NotificationSettingsView: View {
             }
             .listRowBackground(ToolkitColor.surface)
 
+            Section {
+                NavigationLink {
+                    MatchdayWatchSettingsView()
+                } label: {
+                    Label("Live matchday", systemImage: "eye")
+                }
+            } footer: {
+                Text("Who Matchday watches beside your team. Matchday alerts will follow it too.")
+            }
+            .listRowBackground(ToolkitColor.surface)
+
             if let prefs {
                 let f = appModel.pushFeatures
                 Section {

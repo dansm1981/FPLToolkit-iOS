@@ -25,6 +25,10 @@ struct MatchdayView: View {
     @State private var following = false
     @State private var followError: String?
     @State private var showingHistory = false
+    /// Players to watch: the player opened, the settings, and what the last load asked for.
+    @State private var pushedPlayer: PlayerRef?
+    @State private var showingWatchSettings = false
+    @State private var watched: DevicePrefs.MatchdayPrefs?
 
     static let refreshSeconds: UInt64 = 30
     /// A replay moves several match minutes a second: refresh more often.
@@ -76,6 +80,12 @@ struct MatchdayView: View {
             }
         }
         .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
+        .navigationDestination(item: $pushedPlayer) { ref in PlayerDetailView(playerId: ref.id, context: ref.context) }
+        .navigationDestination(isPresented: $showingWatchSettings) { MatchdayWatchSettingsView() }
+        .onChange(of: showingWatchSettings) { _, showing in
+            // Back from the settings: load again if who's watched changed.
+            if !showing, watched != MatchdayWatch.current { reload() }
+        }
         .task(id: entryId) {
             await load()
             // Keep it live while matches are on; the server refreshes every 15 seconds. A replay
@@ -97,7 +107,9 @@ struct MatchdayView: View {
     private func reload() { Task { await load() } }
 
     private func load() async {
-        await table.load(appModel.liveRepository.team(entryId: entryId))
+        let watch = MatchdayWatch.current
+        watched = watch
+        await table.load(appModel.liveRepository.team(entryId: entryId, watch: watch))
         remember()
     }
 
@@ -174,6 +186,9 @@ struct MatchdayView: View {
             CardGroup {
                 LinkRow(title: benchTitle(live), detail: benchDetail(live), systemImage: "tshirt") { sheet = .bench }
             }
+            MatchdayWatchingSection(live: live,
+                                    onPlayer: { id, reason in pushedPlayer = PlayerRef(id: id, context: reason) },
+                                    onSettings: { showingWatchSettings = true })
         case .feed:
             if let feed = live.feed {
                 MatchdayFeed(live: live, feed: feed, seen: feedSeen)

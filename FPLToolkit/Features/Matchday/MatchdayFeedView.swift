@@ -8,6 +8,8 @@ enum MatchdayFeedFilter: String, CaseIterable, Identifiable {
     case defence = "DEFCON & saves"
     case bonus = "Bonus"
     case lineups = "Line-ups & subs"
+    /// Players to watch (happy-backend-pal#66); offered only when the feed has some.
+    case watching = "Watching"
 
     var id: String { rawValue }
 
@@ -18,6 +20,7 @@ enum MatchdayFeedFilter: String, CaseIterable, Identifiable {
         case .defence: item.group == .defence
         case .bonus: item.group == .bonus
         case .lineups: item.group == .lineups
+        case .watching: item.group == .watching
         }
     }
 }
@@ -35,16 +38,16 @@ struct MatchdayFeed: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.md) {
             FlowLayout(spacing: 8) {
-                ForEach(MatchdayFeedFilter.allCases) { f in
+                ForEach(filters) { f in
                     Button { filter = f } label: {
-                        FilterChipLabel(text: f.rawValue, active: filter == f, menu: false)
+                        FilterChipLabel(text: f.rawValue, active: active == f, menu: false)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Show \(f.rawValue)")
-                    .accessibilityAddTraits(filter == f ? .isSelected : [])
+                    .accessibilityAddTraits(active == f ? .isSelected : [])
                 }
             }
-            let shown = feed.filter(filter.includes)
+            let shown = feed.filter(active.includes)
             if shown.isEmpty {
                 Text(emptyText)
                     .foregroundStyle(ToolkitColor.secondaryText)
@@ -77,8 +80,16 @@ struct MatchdayFeed: View {
         }
     }
 
+    /// The chosen filter, or All once its chip has gone (players to watch switched off).
+    private var active: MatchdayFeedFilter { filters.contains(filter) ? filter : .all }
+
+    private var filters: [MatchdayFeedFilter] {
+        let watching = feed.contains { $0.group == .watching }
+        return MatchdayFeedFilter.allCases.filter { $0 != .watching || watching }
+    }
+
     private var emptyText: String {
-        if filter != .all { return "Nothing under \(filter.rawValue) yet." }
+        if active != .all { return "Nothing under \(active.rawValue) yet." }
         return live.status == .upcoming
             ? "Nothing yet: line-ups arrive about an hour before kick-off, then everything that happens to your players shows here."
             : "Nothing for your players yet."
@@ -132,6 +143,16 @@ struct MatchdayFeedRow: View {
                         .strikethrough(item.state == .withdrawn)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if let reason = item.watching {
+                    Label {
+                        Text(typeSize.stacksRows ? Format.unbroken(reason) : reason)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "eye")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.information)
+                }
                 if isNew || item.detail != nil {
                     // At the large sizes "New" sits above the detail rather than narrowing it.
                     let line = typeSize.stacksRows
@@ -173,10 +194,11 @@ struct MatchdayFeedRow: View {
         return nil
     }
 
+    /// A watched player's points aren't yours: they're shown plainly.
     private func pointsTag(_ points: Int) -> some View {
         Tag(text: MatchdayText.signedPoints(points),
-            foreground: points > 0 ? ToolkitColor.positive : ToolkitColor.error,
-            fill: points > 0 ? ToolkitColor.positiveFill : ToolkitColor.errorFill)
+            foreground: item.watching != nil ? ToolkitColor.secondaryText : points > 0 ? ToolkitColor.positive : ToolkitColor.error,
+            fill: item.watching != nil ? ToolkitColor.raised : points > 0 ? ToolkitColor.positiveFill : ToolkitColor.errorFill)
             .monospacedDigit()
     }
 }
