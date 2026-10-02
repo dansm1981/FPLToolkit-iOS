@@ -10,7 +10,7 @@ struct RivalView: View {
     let entryId: Int
 
     enum Tab: String, CaseIterable, Identifiable {
-        case overview = "Overview", teams = "Teams", stats = "Stats"
+        case overview = "Overview", teams = "Teams", stats = "Stats", transfers = "Transfers"
         var id: String { rawValue }
     }
 
@@ -109,6 +109,7 @@ struct RivalView: View {
         case .overview: RivalOverview(data: d)
         case .teams: RivalTeams(data: d)
         case .stats: RivalStats(data: d)
+        case .transfers: RivalTransfersTab(data: d)
         }
     }
 
@@ -243,6 +244,10 @@ private struct RivalOverview: View {
             .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: 14))
             .accessibilityElement(children: .combine)
         }
+        // Their latest moves (Dan, 2 Oct): captain, chip, transfers, hits.
+        if let moves = data.latest {
+            RivalLatestMovesCard(data: data, moves: moves)
+        }
         SectionHeader(title: "Across the season")
         CardGroup {
             let season = data.stats.season
@@ -284,22 +289,23 @@ private struct RivalOverview: View {
 
 // MARK: - Teams
 
-/// Differences only by default (brief §5): what only you have, what only they have, shared players
-/// at different multipliers, then the ones that cancel as one quiet line. Full teams on a tap.
+/// Side by side first (Dan, 2 Oct): both teams in two columns by position. Differences on a tap:
+/// what only you have, what only they have, shared players at different multipliers, then the
+/// ones that cancel as one quiet line (brief §5).
 private struct RivalTeams: View {
     @Environment(AppModel.self) private var appModel
     let data: RivalComparison
-    @State private var full = false
+    @State private var sideBySide = true
 
     var body: some View {
         if let teams = data.teams {
             let name = data.rival.name
             HStack(spacing: 8) {
-                chip("Differences", active: !full) { full = false }
-                chip("Full teams", active: full) { full = true }
+                chip("Side by side", active: sideBySide) { sideBySide = true }
+                chip("Differences", active: !sideBySide) { sideBySide = false }
             }
-            if full {
-                fullTeams(teams, name: name)
+            if sideBySide {
+                RivalSideBySide(data: data, teams: teams)
             } else {
                 Text(RivalTeamsText.summary(teams.summary, name: name))
                     .font(.subheadline)
@@ -367,45 +373,6 @@ private struct RivalTeams: View {
             .buttonStyle(.plain)
             .accessibilityHint("Opens the player")
         }
-    }
-
-    @ViewBuilder
-    private func fullTeams(_ teams: RivalComparison.Teams, name: String) -> some View {
-        team("Your team", teams.rows.filter { $0.you != nil }.sorted { ($0.you?.position ?? 0) < ($1.you?.position ?? 0) }) { $0.you }
-        team("\(name)'s team", teams.rows.filter { $0.them != nil }.sorted { ($0.them?.position ?? 0) < ($1.them?.position ?? 0) }) { $0.them }
-    }
-
-    @ViewBuilder
-    private func team(_ title: String, _ rows: [RivalComparison.PlayerRow], side: @escaping (RivalComparison.PlayerRow) -> RivalComparison.Side?) -> some View {
-        SectionHeader(title: title)
-        VStack(spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                if index > 0 { Divider().overlay(ToolkitColor.border).opacity(index == 11 ? 0 : 1) }
-                if index == 11 {
-                    Text("Bench")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 12)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                if let summary = data.player(row.playerId) {
-                    let s = side(row)
-                    Button { appModel.router.openPlayer(row.playerId) } label: {
-                        PlayerListRow(player: summary,
-                                      role: s?.isCaptain == true ? "C" : s?.isViceCaptain == true ? "V" : nil,
-                                      detail: Format.unbroken([RivalViewText.role(s), RivalViewText.state(row)].filter { !$0.isEmpty }.joined(separator: " · ")),
-                                      // Counted points (captain's multiplier in); bench players' own points.
-                                      value: "\(row.points * max(s?.multiplier ?? 1, 1))",
-                                      wrapsDetail: true)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Opens the player")
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
     }
 }
 

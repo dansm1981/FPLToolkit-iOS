@@ -856,7 +856,135 @@
                 "Wildcard"
             ]
         },
+        "latest": {
+            "gameweek": 5,
+            "captainId": 411,
+            "viceCaptainId": 426,
+            "captainMultiplier": 2,
+            "chip": null,
+            "chipLabel": null,
+            "transfers": [],
+            "hits": 0
+        },
+        "transfers": {
+            "total": 11,
+            "hits": 0,
+            "weeks": [
+                {
+                    "gw": 4,
+                    "chip": "freehit",
+                    "chipLabel": "Free Hit",
+                    "hits": 0,
+                    "note": "Free Hit: their team went back afterwards",
+                    "moves": [
+                        {
+                            "out": 496,
+                            "in": 1,
+                            "outCost": 4.5,
+                            "inCost": 6
+                        },
+                        {
+                            "out": 229,
+                            "in": 356,
+                            "outCost": 6,
+                            "inCost": 6.5
+                        },
+                        {
+                            "out": 277,
+                            "in": 202,
+                            "outCost": 4,
+                            "inCost": 5
+                        },
+                        {
+                            "out": 532,
+                            "in": 115,
+                            "outCost": 4.9,
+                            "inCost": 4.8
+                        },
+                        {
+                            "out": 426,
+                            "in": 154,
+                            "outCost": 12,
+                            "inCost": 9.6
+                        },
+                        {
+                            "out": 454,
+                            "in": 40,
+                            "outCost": 6.1,
+                            "inCost": 7.6
+                        },
+                        {
+                            "out": 481,
+                            "in": 12,
+                            "outCost": 6.3,
+                            "inCost": 9.5
+                        },
+                        {
+                            "out": 411,
+                            "in": 379,
+                            "outCost": 15.5,
+                            "inCost": 9.1
+                        },
+                        {
+                            "out": 259,
+                            "in": 334,
+                            "outCost": 4,
+                            "inCost": 5
+                        }
+                    ]
+                },
+                {
+                    "gw": 3,
+                    "chip": "3xc",
+                    "chipLabel": "Triple Captain",
+                    "hits": 0,
+                    "note": null,
+                    "moves": [
+                        {
+                            "out": 423,
+                            "in": 277,
+                            "outCost": 4.5,
+                            "inCost": 4
+                        },
+                        {
+                            "out": 237,
+                            "in": 454,
+                            "outCost": 6,
+                            "inCost": 6.1
+                        }
+                    ]
+                }
+            ]
+        },
         "players": {
+            "1": {
+                "id": 1,
+                "webName": "Raya",
+                "photo": "images/players/1?v=tm195r",
+                "clubId": 1,
+                "position": "GK",
+                "price": 6.1,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 42.3,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 13,
+                    "home": true,
+                    "kickoff": "2026-10-10T11:30:00.000Z",
+                    "xfdr": {
+                        "value": 1,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
             "8": {
                 "id": 8,
                 "webName": "Calafiori",
@@ -880,6 +1008,34 @@
                     "xfdr": {
                         "value": 1,
                         "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
+            "12": {
+                "id": 12,
+                "webName": "Saka",
+                "photo": "images/players/12?v=tm195r",
+                "clubId": 1,
+                "position": "MID",
+                "price": 9.5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 13.7,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 13,
+                    "home": true,
+                    "kickoff": "2026-10-10T11:30:00.000Z",
+                    "xfdr": {
+                        "value": 1.42,
+                        "lens": "attack",
                         "source": "market",
                         "band": 1
                     }
@@ -1081,6 +1237,34 @@
                     }
                 }
             },
+            "202": {
+                "id": 202,
+                "webName": "Richards",
+                "photo": "images/players/202?v=tm195r",
+                "clubId": 8,
+                "position": "DEF",
+                "price": 4.9,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 0.6,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 18,
+                    "home": true,
+                    "kickoff": "2026-10-11T13:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.01,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
             "229": {
                 "id": 229,
                 "webName": "Tarkowski",
@@ -1106,6 +1290,34 @@
                         "lens": "clean_sheet",
                         "source": "market",
                         "band": 2
+                    }
+                }
+            },
+            "237": {
+                "id": 237,
+                "webName": "Ndiaye",
+                "photo": "images/players/237?v=tm195r",
+                "clubId": 15,
+                "position": "MID",
+                "price": 5.8,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 6.7,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 14,
+                    "home": false,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.09,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
                     }
                 }
             },
@@ -1221,6 +1433,34 @@
                     }
                 }
             },
+            "334": {
+                "id": 334,
+                "webName": "Muharemovi\u0107",
+                "photo": "images/players/334?v=tm195r",
+                "clubId": 13,
+                "position": "DEF",
+                "price": 5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 4.3,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 1,
+                    "home": false,
+                    "kickoff": "2026-10-10T11:30:00.000Z",
+                    "xfdr": {
+                        "value": 4.45,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 4
+                    }
+                }
+            },
             "346": {
                 "id": 346,
                 "webName": "Calvert-Lewin",
@@ -1249,6 +1489,34 @@
                     }
                 }
             },
+            "356": {
+                "id": 356,
+                "webName": "Virgil",
+                "photo": "images/players/356?v=tm195r",
+                "clubId": 14,
+                "position": "DEF",
+                "price": 6.5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 16.2,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 15,
+                    "home": true,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.1,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
             "368": {
                 "id": 368,
                 "webName": "Szoboszlai",
@@ -1263,6 +1531,34 @@
                     "news": null
                 },
                 "selectedByPct": 32.8,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 15,
+                    "home": true,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.08,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "379": {
+                "id": 379,
+                "webName": "Isak",
+                "photo": "images/players/379?v=tm195r",
+                "clubId": 14,
+                "position": "FWD",
+                "price": 9.1,
+                "availability": {
+                    "code": "d",
+                    "level": "doubt",
+                    "chanceNext": 75,
+                    "news": "Thigh injury - 75% chance of playing"
+                },
+                "selectedByPct": 22.3,
                 "nextFixture": {
                     "gw": 6,
                     "blank": false,
@@ -1330,6 +1626,34 @@
                         "lens": "attack",
                         "source": "market",
                         "band": 3
+                    }
+                }
+            },
+            "423": {
+                "id": 423,
+                "webName": "Shaw",
+                "photo": "images/players/423?v=tm195r",
+                "clubId": 16,
+                "position": "DEF",
+                "price": 4.3,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": 100,
+                    "news": null
+                },
+                "selectedByPct": 7.7,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 19,
+                    "home": true,
+                    "kickoff": "2026-10-10T16:30:00.000Z",
+                    "xfdr": {
+                        "value": 1.94,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 2
                     }
                 }
             },
@@ -1561,7 +1885,7 @@
     },
     "meta": {
         "apiVersion": "1",
-        "generatedAt": "2026-10-02T10:34:50.404Z",
+        "generatedAt": "2026-10-02T12:29:23.126Z",
         "freshness": []
     }
 }

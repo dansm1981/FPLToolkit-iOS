@@ -1,0 +1,390 @@
+import SwiftUI
+
+// MARK: - Their latest moves (Overview)
+
+/// "Andy's GW5": captain and vice as picked, chip, transfers and hits (Dan, 2 Oct: theirs only).
+struct RivalLatestMovesCard: View {
+    let data: RivalComparison
+    let moves: RivalComparison.Moves
+
+    var body: some View {
+        let name = data.rival.name
+        SectionHeader(title: "\(name)'s GW\(moves.gameweek)")
+        CardGroup {
+            fact("Captain", moves.captainId.map { "\(player($0)) ×\(moves.captainMultiplier)" } ?? "–")
+            RowDivider()
+            fact("Vice-captain", moves.viceCaptainId.map(player) ?? "–")
+            RowDivider()
+            fact("Chip", moves.chipLabel ?? "None")
+            RowDivider()
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Transfers")
+                    .font(.footnote)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                if moves.transfers.isEmpty {
+                    Text("None")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                }
+                ForEach(Array(moves.transfers.enumerated()), id: \.offset) { _, t in
+                    RivalTransferLine(data: data, transfer: t)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 12)
+            RowDivider()
+            fact("Points spent on hits", moves.hits > 0 ? "−\(moves.hits)" : "None")
+        }
+    }
+
+    private func player(_ id: Int) -> String { data.player(id)?.webName ?? "Player \(id)" }
+
+    private func fact(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.primaryText)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 15)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// One transfer: who went out and who came in, at the prices then.
+struct RivalTransferLine: View {
+    let data: RivalComparison
+    let transfer: RivalComparison.Transfer
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label {
+                Text(side(transfer.out, transfer.outCost))
+            } icon: {
+                Image(systemName: "arrow.down.circle")
+                    .foregroundStyle(ToolkitColor.error)
+            }
+            Label {
+                Text(side(transfer.in, transfer.inCost))
+            } icon: {
+                Image(systemName: "arrow.up.circle")
+                    .foregroundStyle(ToolkitColor.positive)
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(ToolkitColor.primaryText)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken)
+    }
+
+    private func name(_ id: Int) -> String { data.player(id)?.webName ?? "Player \(id)" }
+
+    private func side(_ id: Int, _ cost: Double?) -> String {
+        cost.map { "\(name(id)) · \(Format.price($0))" } ?? name(id)
+    }
+
+    private var spoken: String {
+        let out = transfer.outCost.map { " at \(Format.price($0))" } ?? ""
+        let into = transfer.inCost.map { " at \(Format.price($0))" } ?? ""
+        return "\(name(transfer.out)) out\(out), \(name(transfer.in)) in\(into)"
+    }
+}
+
+// MARK: - Transfers tab
+
+/// Every transfer this season, by gameweek, newest first (Dan, 2 Oct).
+struct RivalTransfersTab: View {
+    let data: RivalComparison
+
+    var body: some View {
+        if let history = data.transfers {
+            Text(RivalMovesText.summary(history))
+                .font(.headline)
+                .foregroundStyle(ToolkitColor.primaryText)
+            if history.weeks.isEmpty {
+                RivalNote(text: "\(data.rival.name) hasn't made a transfer this season.")
+            }
+            ForEach(history.weeks) { week in
+                SectionHeader(title: RivalMovesText.weekTitle(week))
+                if let note = week.note {
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                CardGroup {
+                    ForEach(Array(week.moves.enumerated()), id: \.offset) { index, t in
+                        if index > 0 { RowDivider() }
+                        RivalTransferLine(data: data, transfer: t)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 15)
+                            .padding(.vertical, 10)
+                    }
+                }
+            }
+            Text("Prices are FPL's at the time of each transfer.")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+        } else {
+            RivalNote(text: "Transfers aren't available yet. Pull to refresh.")
+        }
+    }
+}
+
+enum RivalMovesText {
+    /// "11 transfers this season · 4 pts on hits".
+    nonisolated static func summary(_ h: RivalComparison.TransferHistory) -> String {
+        let transfers = "\(h.total) transfer\(h.total == 1 ? "" : "s") this season"
+        return h.hits > 0 ? "\(transfers) · \(h.hits) pts on hits" : "\(transfers) · no hits"
+    }
+
+    /// "GW4 · Free Hit", "GW5 · −4 hit", "GW6".
+    nonisolated static func weekTitle(_ w: RivalComparison.TransferHistory.Week) -> String {
+        var parts = ["GW\(w.gw)"]
+        if let chip = w.chipLabel { parts.append(chip) }
+        if w.hits > 0 { parts.append("−\(w.hits) hit") }
+        return parts.joined(separator: " · ")
+    }
+}
+
+// MARK: - Side by side (Teams)
+
+/// Your team and theirs in two columns (Dan, 2 Oct: "more side by side than two lists"), grouped
+/// goalkeepers, defenders, midfielders, forwards, then the bench, with each group's points. A
+/// player you both count sits on one row, marked "="; the rest pair up biggest first. From xxLarge
+/// each pair stacks, yours above theirs.
+struct RivalSideBySide: View {
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let data: RivalComparison
+    let teams: RivalComparison.Teams
+
+    /// A position group, then the bench.
+    enum Band: CaseIterable {
+        case gk, def, mid, fwd, bench
+        var title: String {
+            switch self {
+            case .gk: "Goalkeepers"
+            case .def: "Defenders"
+            case .mid: "Midfielders"
+            case .fwd: "Forwards"
+            case .bench: "Bench"
+            }
+        }
+    }
+
+    struct Cell: Hashable {
+        let row: RivalComparison.PlayerRow
+        let side: RivalComparison.Side
+        /// Counted points (the captain's multiplier in); a bench player's own points.
+        var value: Int { row.points * max(side.multiplier, 1) }
+    }
+
+    struct Line: Identifiable, Hashable {
+        let you: Cell?
+        let them: Cell?
+        var shared: Bool { you != nil && you?.row.playerId == them?.row.playerId }
+        var id: String { "\(you?.row.playerId ?? 0)-\(them?.row.playerId ?? 0)" }
+    }
+
+    var body: some View {
+        let name = data.rival.name
+        VStack(spacing: 0) {
+            header(name)
+            ForEach(Band.allCases, id: \.self) { group in
+                let lines = Self.lines(teams.rows, group: group) { data.player($0)?.position }
+                if !lines.isEmpty {
+                    Divider().overlay(ToolkitColor.border)
+                    groupHeader(group, lines: lines, name: name)
+                    ForEach(lines) { line in
+                        lineView(line, name: name)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+    }
+
+    /// The group's players on each side, shared ones first on one row, then pairs biggest first.
+    nonisolated static func lines(_ rows: [RivalComparison.PlayerRow], group: Band,
+                                  position: (Int) -> Position?) -> [Line] {
+        func inGroup(_ row: RivalComparison.PlayerRow, _ side: RivalComparison.Side?) -> Cell? {
+            guard let side else { return nil }
+            let counted = side.multiplier > 0
+            switch group {
+            case .bench: return counted ? nil : Cell(row: row, side: side)
+            case .gk, .def, .mid, .fwd:
+                guard counted else { return nil }
+                let wanted: Position = group == .gk ? .gk : group == .def ? .def : group == .mid ? .mid : .fwd
+                return position(row.playerId) == wanted ? Cell(row: row, side: side) : nil
+            }
+        }
+        let byValue: (Cell, Cell) -> Bool = { $0.value != $1.value ? $0.value > $1.value : $0.side.position < $1.side.position }
+        let yours = rows.compactMap { inGroup($0, $0.you) }
+        let theirs = rows.compactMap { inGroup($0, $0.them) }
+        let sharedIds = Set(yours.map(\.row.playerId)).intersection(theirs.map(\.row.playerId))
+        let shared = yours.filter { sharedIds.contains($0.row.playerId) }.sorted(by: byValue).map { cell in
+            Line(you: cell, them: theirs.first { $0.row.playerId == cell.row.playerId })
+        }
+        let restYours = yours.filter { !sharedIds.contains($0.row.playerId) }.sorted(by: byValue)
+        let restTheirs = theirs.filter { !sharedIds.contains($0.row.playerId) }.sorted(by: byValue)
+        let pairs = (0..<max(restYours.count, restTheirs.count)).map { i in
+            Line(you: i < restYours.count ? restYours[i] : nil, them: i < restTheirs.count ? restTheirs[i] : nil)
+        }
+        return shared + pairs
+    }
+
+    private func header(_ name: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            column("You", data.rival.you)
+            column(name, data.rival.them)
+        }
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func column(_ title: String, _ points: Int?) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(ToolkitColor.primaryText)
+            Text(points.map { "\($0) pts this gameweek" } ?? "–")
+                .font(.caption)
+                .foregroundStyle(ToolkitColor.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func groupHeader(_ group: Band, lines: [Line], name: String) -> some View {
+        let you = lines.compactMap(\.you).reduce(0) { $0 + $1.value }
+        let them = lines.compactMap(\.them).reduce(0) { $0 + $1.value }
+        return Text("\(group.title) · you \(you) · \(name) \(them)")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(ToolkitColor.secondaryText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder
+    private func lineView(_ line: Line, name: String) -> some View {
+        VStack(spacing: 0) {
+            if typeSize.stacksRows {
+                VStack(alignment: .leading, spacing: 4) {
+                    if line.shared, let cell = line.you {
+                        cellView(cell, label: "Both of you")
+                    } else {
+                        cellView(line.you, label: "You")
+                        cellView(line.them, label: name)
+                    }
+                }
+            } else {
+                HStack(spacing: 6) {
+                    cellView(line.you, label: nil)
+                    Image(systemName: "equal")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .opacity(line.shared ? 1 : 0)
+                        .accessibilityHidden(true)
+                    cellView(line.them, label: nil)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .background(line.shared ? ToolkitColor.raised.opacity(0.5) : .clear, in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken(line, name: name))
+    }
+
+    @ViewBuilder
+    private func cellView(_ cell: Cell?, label: String?) -> some View {
+        if let cell, let summary = data.player(cell.row.playerId) {
+            Button { appModel.router.openPlayer(cell.row.playerId) } label: {
+                HStack(spacing: 6) {
+                    PlayerPhoto(path: summary.photo, clubLogo: appModel.club(summary.clubId)?.logo, size: 26)
+                    VStack(alignment: .leading, spacing: 1) {
+                        if let label {
+                            Text(label)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                        }
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(summary.webName)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(ToolkitColor.primaryText)
+                                .lineLimit(typeSize.stacksRows ? nil : 2)
+                            if let badge = badge(cell.side) {
+                                Text(badge)
+                                    .font(.caption.weight(.heavy))
+                                    .foregroundStyle(ToolkitColor.accent)
+                                    .fixedSize()
+                            }
+                        }
+                        Text(RivalSideBySide.state(cell))
+                            .font(.caption)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                    }
+                    Spacer(minLength: 2)
+                    Text("\(cell.value)")
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize()
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            Text("–")
+                .font(.subheadline)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .opacity(label == nil ? 1 : 0)
+        }
+    }
+
+    private func badge(_ side: RivalComparison.Side) -> String? {
+        if side.multiplier >= 3 { return "TC" }
+        if side.multiplier == 2 { return "C" }
+        if side.isViceCaptain { return "V" }
+        return nil
+    }
+
+    /// "Playing", "Finished", "Yet to play", "Sub in".
+    nonisolated static func state(_ cell: Cell) -> String {
+        var text: String
+        switch cell.row.state {
+        case .blank: text = "No match"
+        case .notStarted: text = "Yet to play"
+        case .inPlay: text = "Playing"
+        case .done: text = cell.row.minutes > 0 ? "Finished" : "Didn't play"
+        case .unknown: text = ""
+        }
+        if cell.side.autoSub == .in { text += text.isEmpty ? "Sub in" : " · sub in" }
+        if cell.side.autoSub == .out { text += text.isEmpty ? "Subbed out" : " · subbed out" }
+        return text
+    }
+
+    private func spoken(_ line: Line, name: String) -> String {
+        func describe(_ cell: Cell?) -> String {
+            guard let cell, let summary = data.player(cell.row.playerId) else { return "nobody" }
+            var text = summary.webName
+            if let badge = badge(cell.side) { text += badge == "C" ? ", captain" : badge == "TC" ? ", triple captain" : ", vice-captain" }
+            return "\(text), \(cell.value) point\(cell.value == 1 ? "" : "s")"
+        }
+        if line.shared, let cell = line.you {
+            return "Both of you: \(describe(cell))" + (line.them?.side.multiplier != cell.side.multiplier ? ", for \(name) \(line.them.map { "\($0.value)" } ?? "")" : "")
+        }
+        return "You: \(describe(line.you)). \(name): \(describe(line.them))"
+    }
+}

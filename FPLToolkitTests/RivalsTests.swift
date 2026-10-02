@@ -54,6 +54,44 @@ struct RivalsTests {
         #expect(d.chipsAvailable == .init(you: ["Free Hit"], them: ["Wildcard"]))
     }
 
+    @Test func sideBySidePairsSharedPlayersFirst() throws {
+        let d = try fixture("rival-1699334", as: RivalComparison.self)
+        let teams = try #require(d.teams)
+        let position: (Int) -> Position? = { d.player($0)?.position }
+        let fwd = RivalSideBySide.lines(teams.rows, group: .fwd, position: position)
+        // Haaland is both captains: one row, first.
+        let first = try #require(fwd.first)
+        #expect(first.shared && d.player(first.you?.row.playerId)?.webName == "Haaland" && first.you?.value == 12)
+        // Each side has its XI once across the four groups, and its bench in the last.
+        let xi = [RivalSideBySide.Band.gk, .def, .mid, .fwd].flatMap { RivalSideBySide.lines(teams.rows, group: $0, position: position) }
+        #expect(xi.compactMap(\.you).count == 11 && xi.compactMap(\.them).count == 11)
+        let bench = RivalSideBySide.lines(teams.rows, group: .bench, position: position)
+        #expect(bench.compactMap(\.you).count == 4 && bench.allSatisfy { ($0.you?.side.multiplier ?? 0) == 0 })
+        // Points by group match the server's figures for the gameweek.
+        let def = RivalSideBySide.lines(teams.rows, group: .def, position: position)
+        #expect(def.compactMap(\.you).reduce(0) { $0 + $1.value } == d.stats.gw?.you.byPosition?.def)
+        // Pairs within a group run biggest first.
+        let mine = def.filter { !$0.shared }.compactMap(\.you).map(\.value)
+        #expect(mine == mine.sorted(by: >))
+        // Their moves (happy-backend-pal#70): GW5 as picked, and the season's transfers.
+        let latest = try #require(d.latest)
+        #expect(latest.gameweek == 5 && d.player(latest.captainId)?.webName == "Haaland" && latest.captainMultiplier == 2)
+        #expect(latest.transfers.isEmpty && latest.chip == nil && latest.hits == 0)
+        let history = try #require(d.transfers)
+        #expect(history.total == 11 && history.weeks.map(\.gw) == [4, 3])
+        #expect(history.weeks[0].note == "Free Hit: their team went back afterwards" && history.weeks[0].moves.count == 9)
+        #expect(history.weeks[1].moves.first?.outCost == 4.5 && history.weeks[1].chipLabel == "Triple Captain")
+    }
+
+    @Test func transferWording() {
+        let week = RivalComparison.TransferHistory.Week(gw: 4, chip: "freehit", chipLabel: "Free Hit", hits: 0,
+                                                       note: "Free Hit: their team went back afterwards", moves: [])
+        #expect(RivalMovesText.weekTitle(week) == "GW4 · Free Hit")
+        #expect(RivalMovesText.weekTitle(.init(gw: 5, chip: nil, chipLabel: nil, hits: 4, note: nil, moves: [])) == "GW5 · −4 hit")
+        #expect(RivalMovesText.summary(.init(total: 11, hits: 0, weeks: [week])) == "11 transfers this season · no hits")
+        #expect(RivalMovesText.summary(.init(total: 1, hits: 4, weeks: [])) == "1 transfer this season · 4 pts on hits")
+    }
+
     @Test func playerPageNamesYourRivals() throws {
         let leagues = try fixture("player-411-leagues", as: PlayerLeagues.self)
         let rivals = try #require(leagues.rivals)

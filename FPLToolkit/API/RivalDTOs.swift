@@ -223,7 +223,47 @@ struct RivalComparison: Decodable, Sendable {
     let teamsNote: String?
     let stats: AllStats
     let chipsAvailable: Chips
+    /// Their moves in the latest gameweek with a synced team (happy-backend-pal#70).
+    let latest: Moves?
+    /// Every transfer this season; nil from servers before #70.
+    let transfers: TransferHistory?
     let players: [String: PlayerSummary]
+
+    struct Transfer: Decodable, Sendable, Hashable {
+        let out: Int
+        let `in`: Int
+        /// £m at the time.
+        let outCost: Double?
+        let inCost: Double?
+    }
+
+    struct Moves: Decodable, Sendable, Hashable {
+        let gameweek: Int
+        /// As picked; the vice takes over only if the captain doesn't play.
+        let captainId: Int?
+        let viceCaptainId: Int?
+        let captainMultiplier: Int
+        let chip: String?
+        let chipLabel: String?
+        let transfers: [Transfer]
+        let hits: Int
+    }
+
+    struct TransferHistory: Decodable, Sendable, Hashable {
+        struct Week: Decodable, Sendable, Hashable, Identifiable {
+            let gw: Int
+            let chip: String?
+            let chipLabel: String?
+            let hits: Int
+            /// "Free Hit: their team went back afterwards".
+            let note: String?
+            let moves: [Transfer]
+            var id: Int { gw }
+        }
+        let total: Int
+        let hits: Int
+        let weeks: [Week]
+    }
 
     func player(_ id: Int?) -> PlayerSummary? { id.flatMap { players[String($0)] } }
 }

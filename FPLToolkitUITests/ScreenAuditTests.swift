@@ -1105,6 +1105,10 @@ final class ScreenAuditTests: XCTestCase {
         app.segmentedControls.buttons["Stats"].firstMatch.tap()
         settle()
         check(app, "88-rival-stats")
+        // Every transfer this season (happy-backend-pal#70).
+        app.segmentedControls.buttons["Transfers"].firstMatch.tap()
+        settle()
+        check(app, "88b-rival-transfers")
 
         // Today: the featured rival under your leagues.
         app.tabBars.buttons["Today"].tap()
