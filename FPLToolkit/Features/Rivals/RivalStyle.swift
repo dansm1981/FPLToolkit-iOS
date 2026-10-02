@@ -26,12 +26,12 @@ struct RivalVersusHero: View {
                 ? AnyLayout(VStackLayout(spacing: 8))
                 : AnyLayout(HStackLayout(alignment: .center, spacing: 8))
             layout {
-                side("YOU", rival.you, colour: RivalColor.you, leads: (gap ?? 0) > 0)
+                side("YOU", rival.you, colour: RivalColor.you, shirt: "RivalShirtYou", leads: (gap ?? 0) > 0)
                 Text("VS")
                     .font(.title2.weight(.black).italic())
                     .foregroundStyle(RivalColor.leader)
                     .accessibilityHidden(true)
-                side(rival.name.uppercased(), rival.them, colour: RivalColor.them, leads: (gap ?? 0) < 0)
+                side(rival.name.uppercased(), rival.them, colour: RivalColor.them, shirt: "RivalShirtThem", leads: (gap ?? 0) < 0)
             }
             if let gap {
                 // The crown and gold only when you lead.
@@ -50,20 +50,27 @@ struct RivalVersusHero: View {
         .padding(.vertical, 20)
         .padding(.horizontal, 14)
         .frame(maxWidth: .infinity)
+        // Dan's artwork (2 Oct): floodlit stadium behind, darkened so the figures read.
         .background {
             ZStack {
-                LinearGradient(colors: [RivalColor.you.opacity(0.45), ToolkitColor.surface, RivalColor.them.opacity(0.4)],
+                Image("RivalStadium")
+                    .resizable()
+                    .scaledToFill()
+                LinearGradient(colors: [.black.opacity(0.15), .black.opacity(0.55)], startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [RivalColor.you.opacity(0.25), .clear, RivalColor.them.opacity(0.25)],
                                startPoint: .leading, endPoint: .trailing)
-                RadialGradient(colors: [RivalColor.leader.opacity(0.25), .clear], center: .top, startRadius: 4, endRadius: 220)
             }
-            .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            .accessibilityHidden(true)
         }
+        // The stadium fills the card and no further.
+        .clipShape(RoundedRectangle(cornerRadius: ToolkitRadius.card))
         .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(RivalColor.leader.opacity(0.35)))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken)
     }
 
-    private func side(_ title: String, _ points: Int?, colour: Color, leads: Bool) -> some View {
+    /// The name and score printed on the shirt back; the shirt grows with the text.
+    private func side(_ title: String, _ points: Int?, colour: Color, shirt: String, leads: Bool) -> some View {
         VStack(spacing: 2) {
             HStack(spacing: 4) {
                 if leads { Image(systemName: "crown.fill").font(.caption).foregroundStyle(RivalColor.leader) }
@@ -76,7 +83,16 @@ struct RivalVersusHero: View {
             Text(points.map(String.init) ?? "–")
                 .font(.system(size: scoreSize, weight: .black).monospacedDigit())
                 .foregroundStyle(ToolkitColor.primaryText)
-            Capsule().fill(colour).frame(width: 36, height: 4)
+        }
+        .shadow(color: .black.opacity(0.5), radius: 3, y: 1)
+        .padding(.top, 34)
+        .padding(.bottom, 26)
+        .padding(.horizontal, 18)
+        .background {
+            Image(shirt)
+                .resizable()
+                .scaledToFit()
+                .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity)
     }
