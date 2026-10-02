@@ -10,7 +10,7 @@ struct RivalView: View {
     let entryId: Int
 
     enum Tab: String, CaseIterable, Identifiable {
-        case overview = "Overview", teams = "Teams", stats = "Stats", transfers = "Transfers"
+        case overview = "Overview", teams = "Teams", stats = "Stats", transfers = "GW Audit"
         var id: String { rawValue }
     }
 
@@ -109,7 +109,8 @@ struct RivalView: View {
         case .overview: RivalOverview(data: d)
         case .teams: RivalTeams(data: d)
         case .stats: RivalStats(data: d)
-        case .transfers: RivalTransfersTab(data: d)
+        case .transfers:
+            if d.audit != nil { RivalAuditTab(data: d) } else { RivalTransfersTab(data: d) }
         }
     }
 
@@ -243,6 +244,10 @@ private struct RivalOverview: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: 14))
             .accessibilityElement(children: .combine)
+        }
+        // How you stack up for the next gameweek (Dan, 2 Oct).
+        if let outlook = data.outlook {
+            RivalOutlookCard(data: data, outlook: outlook)
         }
         // Their latest moves (Dan, 2 Oct): captain, chip, transfers, hits.
         if let moves = data.latest {

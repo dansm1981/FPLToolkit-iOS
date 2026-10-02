@@ -866,6 +866,177 @@
             "transfers": [],
             "hits": 0
         },
+        "audit": {
+            "weeks": [
+                {
+                    "gw": 5,
+                    "points": 56,
+                    "captainId": 411,
+                    "viceCaptainId": 426,
+                    "captainMultiplier": 2,
+                    "chip": null,
+                    "chipLabel": null,
+                    "note": null,
+                    "transfers": [],
+                    "hits": 0
+                },
+                {
+                    "gw": 4,
+                    "points": 106,
+                    "captainId": 165,
+                    "viceCaptainId": 379,
+                    "captainMultiplier": 2,
+                    "chip": "freehit",
+                    "chipLabel": "Free Hit",
+                    "note": "Free Hit: their team went back afterwards",
+                    "transfers": [
+                        {
+                            "out": 496,
+                            "in": 1,
+                            "outCost": 4.5,
+                            "inCost": 6
+                        },
+                        {
+                            "out": 229,
+                            "in": 356,
+                            "outCost": 6,
+                            "inCost": 6.5
+                        },
+                        {
+                            "out": 277,
+                            "in": 202,
+                            "outCost": 4,
+                            "inCost": 5
+                        },
+                        {
+                            "out": 532,
+                            "in": 115,
+                            "outCost": 4.9,
+                            "inCost": 4.8
+                        },
+                        {
+                            "out": 426,
+                            "in": 154,
+                            "outCost": 12,
+                            "inCost": 9.6
+                        },
+                        {
+                            "out": 454,
+                            "in": 40,
+                            "outCost": 6.1,
+                            "inCost": 7.6
+                        },
+                        {
+                            "out": 481,
+                            "in": 12,
+                            "outCost": 6.3,
+                            "inCost": 9.5
+                        },
+                        {
+                            "out": 411,
+                            "in": 379,
+                            "outCost": 15.5,
+                            "inCost": 9.1
+                        },
+                        {
+                            "out": 259,
+                            "in": 334,
+                            "outCost": 4,
+                            "inCost": 5
+                        }
+                    ],
+                    "hits": 0
+                },
+                {
+                    "gw": 3,
+                    "points": 52,
+                    "captainId": 411,
+                    "viceCaptainId": 426,
+                    "captainMultiplier": 3,
+                    "chip": "3xc",
+                    "chipLabel": "Triple Captain",
+                    "note": null,
+                    "transfers": [
+                        {
+                            "out": 423,
+                            "in": 277,
+                            "outCost": 4.5,
+                            "inCost": 4
+                        },
+                        {
+                            "out": 237,
+                            "in": 454,
+                            "outCost": 6,
+                            "inCost": 6.1
+                        }
+                    ],
+                    "hits": 0
+                },
+                {
+                    "gw": 2,
+                    "points": 113,
+                    "captainId": 426,
+                    "viceCaptainId": 411,
+                    "captainMultiplier": 2,
+                    "chip": null,
+                    "chipLabel": null,
+                    "note": null,
+                    "transfers": [],
+                    "hits": 0
+                },
+                {
+                    "gw": 1,
+                    "points": 65,
+                    "captainId": 411,
+                    "viceCaptainId": 426,
+                    "captainMultiplier": 2,
+                    "chip": "bboost",
+                    "chipLabel": "Bench Boost",
+                    "note": null,
+                    "transfers": [],
+                    "hits": 0
+                }
+            ]
+        },
+        "outlook": {
+            "gameweek": 6,
+            "theirGameweek": 5,
+            "yourGameweek": 5,
+            "threats": [
+                {
+                    "playerId": 124,
+                    "expected": 10.7,
+                    "multiplier": 1
+                },
+                {
+                    "playerId": 229,
+                    "expected": 8.3,
+                    "multiplier": 1
+                },
+                {
+                    "playerId": 346,
+                    "expected": 4.3,
+                    "multiplier": 1
+                }
+            ],
+            "opportunities": [
+                {
+                    "playerId": 391,
+                    "expected": 7.7,
+                    "multiplier": 1
+                },
+                {
+                    "playerId": 449,
+                    "expected": 5.7,
+                    "multiplier": 1
+                },
+                {
+                    "playerId": 40,
+                    "expected": 5.3,
+                    "multiplier": 1
+                }
+            ]
+        },
         "transfers": {
             "total": 11,
             "hits": 0,
@@ -1885,7 +2056,7 @@
     },
     "meta": {
         "apiVersion": "1",
-        "generatedAt": "2026-10-02T12:29:23.126Z",
+        "generatedAt": "2026-10-02T13:43:38.402Z",
         "freshness": []
     }
 }

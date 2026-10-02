@@ -227,6 +227,44 @@ struct RivalComparison: Decodable, Sendable {
     let latest: Moves?
     /// Every transfer this season; nil from servers before #70.
     let transfers: TransferHistory?
+    /// Every gameweek they've played (happy-backend-pal#71).
+    let audit: Audit?
+    /// Their starters you don't own and yours they don't, for the next gameweek (#71).
+    let outlook: Outlook?
+
+    struct Audit: Decodable, Sendable, Hashable {
+        struct Week: Decodable, Sendable, Hashable, Identifiable {
+            let gw: Int
+            /// Net points.
+            let points: Int
+            /// Nil where that gameweek's picks weren't kept.
+            let captainId: Int?
+            let viceCaptainId: Int?
+            let captainMultiplier: Int
+            let chip: String?
+            let chipLabel: String?
+            let note: String?
+            let transfers: [Transfer]
+            let hits: Int
+            var id: Int { gw }
+        }
+        let weeks: [Week]
+    }
+
+    struct Outlook: Decodable, Sendable, Hashable {
+        struct Player: Decodable, Sendable, Hashable, Identifiable {
+            let playerId: Int
+            /// FPL's expected points for the gameweek.
+            let expected: Double
+            let multiplier: Int
+            var id: Int { playerId }
+        }
+        let gameweek: Int
+        let theirGameweek: Int
+        let yourGameweek: Int
+        let threats: [Player]
+        let opportunities: [Player]
+    }
     let players: [String: PlayerSummary]
 
     struct Transfer: Decodable, Sendable, Hashable {

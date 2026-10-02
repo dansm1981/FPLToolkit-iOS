@@ -62,6 +62,9 @@ struct RivalsTests {
         // Haaland is both captains: one row, first.
         let first = try #require(fwd.first)
         #expect(first.shared && d.player(first.you?.row.playerId)?.webName == "Haaland" && first.you?.value == 12)
+        // Green when the same player counts the same; red for two different players.
+        #expect(first.match == .same)
+        #expect(xiLines(teams, position).filter { !$0.shared }.allSatisfy { $0.match != .same })
         // Each side has its XI once across the four groups, and its bench in the last.
         let xi = [RivalSideBySide.Band.gk, .def, .mid, .fwd].flatMap { RivalSideBySide.lines(teams.rows, group: $0, position: position) }
         #expect(xi.compactMap(\.you).count == 11 && xi.compactMap(\.them).count == 11)
@@ -81,6 +84,25 @@ struct RivalsTests {
         #expect(history.total == 11 && history.weeks.map(\.gw) == [4, 3])
         #expect(history.weeks[0].note == "Free Hit: their team went back afterwards" && history.weeks[0].moves.count == 9)
         #expect(history.weeks[1].moves.first?.outCost == 4.5 && history.weeks[1].chipLabel == "Triple Captain")
+        // GW Audit and how you stack up (happy-backend-pal#71).
+        let audit = try #require(d.audit)
+        #expect(audit.weeks.map(\.gw) == [5, 4, 3, 2, 1] && audit.weeks[4].chipLabel == "Bench Boost")
+        #expect(d.player(audit.weeks[1].captainId)?.webName == "João Pedro" && audit.weeks[1].transfers.count == 9)
+        let outlook = try #require(d.outlook)
+        #expect(outlook.gameweek == 6 && outlook.threats.count == 3 && outlook.opportunities.count == 3)
+        #expect(d.player(outlook.threats.first?.playerId)?.webName == "Groß")
+    }
+
+    private func xiLines(_ teams: RivalComparison.Teams, _ position: (Int) -> Position?) -> [RivalSideBySide.Line] {
+        [RivalSideBySide.Band.gk, .def, .mid, .fwd].flatMap { RivalSideBySide.lines(teams.rows, group: $0, position: position) }
+    }
+
+    @Test func outlookWording() {
+        let captain = RivalComparison.Outlook.Player(playerId: 1, expected: 6.2, multiplier: 2)
+        #expect(RivalMovesText.expected(captain) == "12.4 xP")
+        let o = RivalComparison.Outlook(gameweek: 6, theirGameweek: 5, yourGameweek: 5, threats: [captain], opportunities: [])
+        #expect(RivalMovesText.outlookNote(o, name: "Andy")
+            == "xP is FPL's expected points for GW6, doubled for a captain. Compares Andy's GW5 team with your GW5 team: transfers before the deadline may change it.")
     }
 
     @Test func transferWording() {
