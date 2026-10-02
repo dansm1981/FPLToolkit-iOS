@@ -1,7 +1,15 @@
 import SwiftUI
 
+/// Watch's two halves (Dan, 2 Oct 2026): the players you watch and the managers you've added as
+/// rivals ("Follow your team. Keep an eye on theirs.").
+enum WatchMode: String, CaseIterable, Identifiable {
+    case players = "Players", rivals = "Rivals"
+    var id: String { rawValue }
+}
+
 /// S10. The players this device watches: the published squad (if followed) plus manual picks,
 /// each with why it's watched. Alerts for them arrive once pushes are switched on (Step 4).
+/// Rivals sit beside them.
 struct WatchView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.scenePhase) private var scenePhase
@@ -10,10 +18,13 @@ struct WatchView: View {
     @State private var searchAvailable = false
     @State private var query = ""
     @State private var search: PlayerSearchModel?
+    @State private var mode: WatchMode = .players
 
     var body: some View {
         Group {
-            if let store = appModel.watch {
+            if mode == .rivals {
+                RivalsContent()
+            } else if let store = appModel.watch {
                 if let search, !query.trimmingCharacters(in: .whitespaces).isEmpty {
                     SearchResults(search: search, store: store)
                 } else {
@@ -21,9 +32,18 @@ struct WatchView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Picker("Show", selection: $mode) {
+                ForEach(WatchMode.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, ToolkitSpace.page)
+            .padding(.vertical, ToolkitSpace.sm)
+            .background(ToolkitColor.canvas)
+        }
         // The search field is added once search is known to be live, which swaps the view inside
-        // this modifier; tasks attached after it keep running through that swap.
-        .modifier(PlayerSearchField(isOn: searchAvailable, query: $query))
+        // this modifier; tasks attached after it keep running through that swap. Rivals has none.
+        .modifier(PlayerSearchField(isOn: searchAvailable && mode == .players, query: $query))
         .task {
             await appModel.watch?.refreshIfStale()
             await appModel.mergeStarLists()

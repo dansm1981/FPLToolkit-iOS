@@ -1,0 +1,1567 @@
+{
+    "data": {
+        "season": "2026/27",
+        "gameweek": 5,
+        "status": "finished",
+        "rival": {
+            "entryId": 1699334,
+            "manager": "Andy McBride",
+            "team": "Andiletic BilBride",
+            "nickname": null,
+            "name": "Andy",
+            "featured": true,
+            "state": "ok",
+            "leagues": [
+                {
+                    "id": 783382,
+                    "name": "LEAGUE OF EXPERTS",
+                    "rank": 1
+                }
+            ],
+            "gapBefore": -19,
+            "you": 45,
+            "them": 56,
+            "youBonus": 0,
+            "themBonus": 0,
+            "gap": -30,
+            "gapText": "30 pts behind Andy",
+            "swingText": "Andy has gained 11 this gameweek"
+        },
+        "startText": "Started GW5 19 behind",
+        "explanation": "Andy has gained 30 pts over the last 5 gameweeks",
+        "teams": {
+            "gameweek": 5,
+            "rows": [
+                {
+                    "playerId": 449,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 4,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 13,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 13,
+                    "note": null
+                },
+                {
+                    "playerId": 249,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 11,
+                        "isCaptain": false,
+                        "isViceCaptain": true,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 6,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 6,
+                    "note": null
+                },
+                {
+                    "playerId": 391,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 2,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 4,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 4,
+                    "note": null
+                },
+                {
+                    "playerId": 40,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 6,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 2,
+                    "note": null
+                },
+                {
+                    "playerId": 480,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 7,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 2,
+                    "note": null
+                },
+                {
+                    "playerId": 154,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 9,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 2,
+                    "note": null
+                },
+                {
+                    "playerId": 31,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 5,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 1,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 1,
+                    "note": null
+                },
+                {
+                    "playerId": 565,
+                    "group": "yours",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 8,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 0,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 21,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 229,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 2,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 14,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": -14,
+                    "note": null
+                },
+                {
+                    "playerId": 124,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 8,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 14,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": -14,
+                    "note": null
+                },
+                {
+                    "playerId": 259,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 5,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 4,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": -4,
+                    "note": null
+                },
+                {
+                    "playerId": 368,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 6,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 80,
+                    "effect": -2,
+                    "note": null
+                },
+                {
+                    "playerId": 426,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 7,
+                        "isCaptain": false,
+                        "isViceCaptain": true,
+                        "autoSub": null
+                    },
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": -2,
+                    "note": null
+                },
+                {
+                    "playerId": 481,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 9,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": -2,
+                    "note": null
+                },
+                {
+                    "playerId": 346,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 10,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": -2,
+                    "note": null
+                },
+                {
+                    "playerId": 277,
+                    "group": "theirs",
+                    "you": null,
+                    "them": {
+                        "multiplier": 1,
+                        "position": 3,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 1,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 77,
+                    "effect": -1,
+                    "note": null
+                },
+                {
+                    "playerId": 411,
+                    "group": "shared",
+                    "you": {
+                        "multiplier": 2,
+                        "position": 10,
+                        "isCaptain": true,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": {
+                        "multiplier": 2,
+                        "position": 11,
+                        "isCaptain": true,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 6,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 496,
+                    "group": "shared",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 1,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": {
+                        "multiplier": 1,
+                        "position": 1,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 8,
+                    "group": "shared",
+                    "you": {
+                        "multiplier": 1,
+                        "position": 3,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": {
+                        "multiplier": 1,
+                        "position": 4,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 1,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 109,
+                    "group": "bench",
+                    "you": {
+                        "multiplier": 0,
+                        "position": 12,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": {
+                        "multiplier": 0,
+                        "position": 12,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 6,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 115,
+                    "group": "bench",
+                    "you": {
+                        "multiplier": 0,
+                        "position": 14,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 6,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 290,
+                    "group": "bench",
+                    "you": {
+                        "multiplier": 0,
+                        "position": 15,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": null,
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 77,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 532,
+                    "group": "bench",
+                    "you": null,
+                    "them": {
+                        "multiplier": 0,
+                        "position": 15,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 2,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 90,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 165,
+                    "group": "bench",
+                    "you": {
+                        "multiplier": 0,
+                        "position": 13,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "them": {
+                        "multiplier": 0,
+                        "position": 14,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 0,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 0,
+                    "effect": 0,
+                    "note": null
+                },
+                {
+                    "playerId": 454,
+                    "group": "bench",
+                    "you": null,
+                    "them": {
+                        "multiplier": 0,
+                        "position": 13,
+                        "isCaptain": false,
+                        "isViceCaptain": false,
+                        "autoSub": null
+                    },
+                    "points": 0,
+                    "provisionalBonus": 0,
+                    "state": "done",
+                    "minutes": 0,
+                    "effect": 0,
+                    "note": null
+                }
+            ],
+            "summary": {
+                "yours": 30,
+                "theirs": 41,
+                "multiplier": 0,
+                "shared": 3
+            },
+            "provisional": false
+        },
+        "teamsNote": null,
+        "stats": {
+            "gw": {
+                "period": "gw",
+                "gameweeks": [
+                    5
+                ],
+                "you": {
+                    "points": 45,
+                    "transfers": 2,
+                    "hits": 0,
+                    "bench": 14,
+                    "chips": [],
+                    "captainPoints": 12,
+                    "byPosition": {
+                        "gk": 2,
+                        "def": 19,
+                        "mid": 6,
+                        "fwd": 18
+                    }
+                },
+                "them": {
+                    "points": 56,
+                    "transfers": 0,
+                    "hits": 0,
+                    "bench": 8,
+                    "chips": [],
+                    "captainPoints": 12,
+                    "byPosition": {
+                        "gk": 2,
+                        "def": 20,
+                        "mid": 20,
+                        "fwd": 14
+                    }
+                },
+                "gapStart": -19,
+                "gapTrend": [
+                    {
+                        "gw": 5,
+                        "gap": -30
+                    }
+                ],
+                "gapChange": -11,
+                "outscored": {
+                    "won": 0,
+                    "lost": 1,
+                    "drawn": 0,
+                    "of": 1
+                },
+                "captains": [
+                    {
+                        "gw": 5,
+                        "you": {
+                            "playerId": 411,
+                            "points": 12,
+                            "multiplier": 2
+                        },
+                        "them": {
+                            "playerId": 411,
+                            "points": 12,
+                            "multiplier": 2
+                        }
+                    }
+                ],
+                "summary": "Andy has gained 11 this gameweek"
+            },
+            "last5": {
+                "period": "last5",
+                "gameweeks": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "you": {
+                    "points": 362,
+                    "transfers": 3,
+                    "hits": 0,
+                    "bench": 54,
+                    "chips": [
+                        {
+                            "chip": "bboost",
+                            "label": "Bench Boost",
+                            "gw": 1
+                        },
+                        {
+                            "chip": "wildcard",
+                            "label": "Wildcard",
+                            "gw": 3
+                        },
+                        {
+                            "chip": "3xc",
+                            "label": "Triple Captain",
+                            "gw": 4
+                        }
+                    ],
+                    "captainPoints": 95,
+                    "byPosition": {
+                        "gk": 22,
+                        "def": 119,
+                        "mid": 118,
+                        "fwd": 103
+                    }
+                },
+                "them": {
+                    "points": 392,
+                    "transfers": 2,
+                    "hits": 0,
+                    "bench": 72,
+                    "chips": [
+                        {
+                            "chip": "bboost",
+                            "label": "Bench Boost",
+                            "gw": 1
+                        },
+                        {
+                            "chip": "3xc",
+                            "label": "Triple Captain",
+                            "gw": 3
+                        },
+                        {
+                            "chip": "freehit",
+                            "label": "Free Hit",
+                            "gw": 4
+                        }
+                    ],
+                    "captainPoints": 113,
+                    "byPosition": {
+                        "gk": 28,
+                        "def": 99,
+                        "mid": 151,
+                        "fwd": 114
+                    }
+                },
+                "gapStart": 0,
+                "gapTrend": [
+                    {
+                        "gw": 1,
+                        "gap": -2
+                    },
+                    {
+                        "gw": 2,
+                        "gap": -13
+                    },
+                    {
+                        "gw": 3,
+                        "gap": -6
+                    },
+                    {
+                        "gw": 4,
+                        "gap": -19
+                    },
+                    {
+                        "gw": 5,
+                        "gap": -30
+                    }
+                ],
+                "gapChange": -30,
+                "outscored": {
+                    "won": 1,
+                    "lost": 4,
+                    "drawn": 0,
+                    "of": 5
+                },
+                "captains": [
+                    {
+                        "gw": 1,
+                        "you": {
+                            "playerId": 426,
+                            "points": 4,
+                            "multiplier": 2
+                        },
+                        "them": {
+                            "playerId": 411,
+                            "points": 4,
+                            "multiplier": 2
+                        }
+                    },
+                    {
+                        "gw": 2,
+                        "you": {
+                            "playerId": 426,
+                            "points": 46,
+                            "multiplier": 2
+                        },
+                        "them": {
+                            "playerId": 426,
+                            "points": 46,
+                            "multiplier": 2
+                        }
+                    },
+                    {
+                        "gw": 3,
+                        "you": {
+                            "playerId": 411,
+                            "points": 18,
+                            "multiplier": 2
+                        },
+                        "them": {
+                            "playerId": 411,
+                            "points": 27,
+                            "multiplier": 3
+                        }
+                    },
+                    {
+                        "gw": 4,
+                        "you": {
+                            "playerId": 154,
+                            "points": 15,
+                            "multiplier": 3
+                        },
+                        "them": {
+                            "playerId": 165,
+                            "points": 24,
+                            "multiplier": 2
+                        }
+                    },
+                    {
+                        "gw": 5,
+                        "you": {
+                            "playerId": 411,
+                            "points": 12,
+                            "multiplier": 2
+                        },
+                        "them": {
+                            "playerId": 411,
+                            "points": 12,
+                            "multiplier": 2
+                        }
+                    }
+                ],
+                "summary": "Andy has gained 30 pts over the last 5 gameweeks"
+            },
+            "season": {
+                "period": "season",
+                "gameweeks": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "you": {
+                    "points": 362,
+                    "transfers": 3,
+                    "hits": 0,
+                    "bench": 54,
+                    "chips": [
+                        {
+                            "chip": "bboost",
+                            "label": "Bench Boost",
+                            "gw": 1
+                        },
+                        {
+                            "chip": "wildcard",
+                            "label": "Wildcard",
+                            "gw": 3
+                        },
+                        {
+                            "chip": "3xc",
+                            "label": "Triple Captain",
+                            "gw": 4
+                        }
+                    ],
+                    "captainPoints": null,
+                    "byPosition": null
+                },
+                "them": {
+                    "points": 392,
+                    "transfers": 2,
+                    "hits": 0,
+                    "bench": 72,
+                    "chips": [
+                        {
+                            "chip": "bboost",
+                            "label": "Bench Boost",
+                            "gw": 1
+                        },
+                        {
+                            "chip": "3xc",
+                            "label": "Triple Captain",
+                            "gw": 3
+                        },
+                        {
+                            "chip": "freehit",
+                            "label": "Free Hit",
+                            "gw": 4
+                        }
+                    ],
+                    "captainPoints": null,
+                    "byPosition": null
+                },
+                "gapStart": 0,
+                "gapTrend": [
+                    {
+                        "gw": 1,
+                        "gap": -2
+                    },
+                    {
+                        "gw": 2,
+                        "gap": -13
+                    },
+                    {
+                        "gw": 3,
+                        "gap": -6
+                    },
+                    {
+                        "gw": 4,
+                        "gap": -19
+                    },
+                    {
+                        "gw": 5,
+                        "gap": -30
+                    }
+                ],
+                "gapChange": -30,
+                "outscored": {
+                    "won": 1,
+                    "lost": 4,
+                    "drawn": 0,
+                    "of": 5
+                },
+                "captains": null,
+                "summary": "Andy has gained 30 pts this season"
+            }
+        },
+        "chipsAvailable": {
+            "you": [
+                "Free Hit"
+            ],
+            "them": [
+                "Wildcard"
+            ]
+        },
+        "players": {
+            "8": {
+                "id": 8,
+                "webName": "Calafiori",
+                "photo": "images/players/8?v=tm195r",
+                "clubId": 1,
+                "position": "DEF",
+                "price": 5.8,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 50.5,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 13,
+                    "home": true,
+                    "kickoff": "2026-10-10T11:30:00.000Z",
+                    "xfdr": {
+                        "value": 1,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
+            "31": {
+                "id": 31,
+                "webName": "Konsa",
+                "photo": "images/players/31?v=tm195r",
+                "clubId": 1,
+                "position": "DEF",
+                "price": 4.6,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 19.4,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 13,
+                    "home": true,
+                    "kickoff": "2026-10-10T11:30:00.000Z",
+                    "xfdr": {
+                        "value": 1,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
+            "40": {
+                "id": 40,
+                "webName": "Rogers",
+                "photo": "images/players/40?v=tm195r",
+                "clubId": 6,
+                "position": "MID",
+                "price": 7.7,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 40.5,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 3,
+                    "home": true,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 1,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
+            "109": {
+                "id": 109,
+                "webName": "Verbruggen",
+                "photo": "images/players/109?v=tm195r",
+                "clubId": 5,
+                "position": "GK",
+                "price": 4.5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 21.6,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 20,
+                    "home": false,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.57,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "115": {
+                "id": 115,
+                "webName": "De Cuyper",
+                "photo": "images/players/115?v=tm195r",
+                "clubId": 5,
+                "position": "DEF",
+                "price": 5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 27.8,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 20,
+                    "home": false,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.57,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "124": {
+                "id": 124,
+                "webName": "Gro\u00df",
+                "photo": "images/players/124?v=tm195r",
+                "clubId": 5,
+                "position": "MID",
+                "price": 5.8,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 29,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 20,
+                    "home": false,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.99,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "154": {
+                "id": 154,
+                "webName": "Palmer",
+                "photo": "images/players/154?v=tm195r",
+                "clubId": 6,
+                "position": "MID",
+                "price": 9.7,
+                "availability": {
+                    "code": "d",
+                    "level": "doubt",
+                    "chanceNext": 75,
+                    "news": "Muscular injury - 75% chance of playing"
+                },
+                "selectedByPct": 25.6,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 3,
+                    "home": true,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 1,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
+            "165": {
+                "id": 165,
+                "webName": "Jo\u00e3o Pedro",
+                "photo": "images/players/165?v=tm195r",
+                "clubId": 6,
+                "position": "FWD",
+                "price": 7.7,
+                "availability": {
+                    "code": "d",
+                    "level": "doubt",
+                    "chanceNext": 75,
+                    "news": "Knee injury - 75% chance of playing"
+                },
+                "selectedByPct": 65.1,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 3,
+                    "home": true,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 1,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 1
+                    }
+                }
+            },
+            "229": {
+                "id": 229,
+                "webName": "Tarkowski",
+                "photo": "images/players/229?v=tm195r",
+                "clubId": 9,
+                "position": "DEF",
+                "price": 6.2,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 16.6,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 11,
+                    "home": false,
+                    "kickoff": "2026-10-11T13:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.16,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 2
+                    }
+                }
+            },
+            "249": {
+                "id": 249,
+                "webName": "Barry",
+                "photo": "images/players/249?v=tm195r",
+                "clubId": 9,
+                "position": "FWD",
+                "price": 5.7,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 8.3,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 11,
+                    "home": false,
+                    "kickoff": "2026-10-11T13:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.83,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "259": {
+                "id": 259,
+                "webName": "Diop",
+                "photo": "images/players/259?v=tm195r",
+                "clubId": 12,
+                "position": "DEF",
+                "price": 4,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 12.7,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 10,
+                    "home": true,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.15,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "277": {
+                "id": 277,
+                "webName": "Egan",
+                "photo": "images/players/277?v=tm195r",
+                "clubId": 11,
+                "position": "DEF",
+                "price": 4.1,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 7,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 9,
+                    "home": true,
+                    "kickoff": "2026-10-11T13:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.38,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "290": {
+                "id": 290,
+                "webName": "Slater",
+                "photo": "images/players/290?v=tm195r",
+                "clubId": 11,
+                "position": "MID",
+                "price": 4.5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 5.2,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 9,
+                    "home": true,
+                    "kickoff": "2026-10-11T13:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.81,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 4
+                    }
+                }
+            },
+            "346": {
+                "id": 346,
+                "webName": "Calvert-Lewin",
+                "photo": "images/players/346?v=tm195r",
+                "clubId": 13,
+                "position": "FWD",
+                "price": 6,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 24.8,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 1,
+                    "home": false,
+                    "kickoff": "2026-10-10T11:30:00.000Z",
+                    "xfdr": {
+                        "value": 4.65,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 5
+                    }
+                }
+            },
+            "368": {
+                "id": 368,
+                "webName": "Szoboszlai",
+                "photo": "images/players/368?v=tm195r",
+                "clubId": 14,
+                "position": "MID",
+                "price": 7,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 32.8,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 15,
+                    "home": true,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.08,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "391": {
+                "id": 391,
+                "webName": "Gvardiol",
+                "photo": "images/players/391?v=tm195r",
+                "clubId": 15,
+                "position": "DEF",
+                "price": 5.7,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 26.8,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 14,
+                    "home": false,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.12,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "411": {
+                "id": 411,
+                "webName": "Haaland",
+                "photo": "images/players/411?v=tm195r",
+                "clubId": 15,
+                "position": "FWD",
+                "price": 15.6,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 73.8,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 14,
+                    "home": false,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.09,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "426": {
+                "id": 426,
+                "webName": "B.Fernandes",
+                "photo": "images/players/426?v=tm195r",
+                "clubId": 16,
+                "position": "MID",
+                "price": 11.9,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 38.5,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 19,
+                    "home": true,
+                    "kickoff": "2026-10-10T16:30:00.000Z",
+                    "xfdr": {
+                        "value": 2.66,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "449": {
+                "id": 449,
+                "webName": "Hall",
+                "photo": "images/players/449?v=tm195r",
+                "clubId": 17,
+                "position": "DEF",
+                "price": 5.3,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 17.3,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 7,
+                    "home": false,
+                    "kickoff": "2026-10-12T19:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.16,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 2
+                    }
+                }
+            },
+            "454": {
+                "id": 454,
+                "webName": "Elanga",
+                "photo": "images/players/454?v=tm195r",
+                "clubId": 17,
+                "position": "MID",
+                "price": 6.1,
+                "availability": {
+                    "code": "i",
+                    "level": "out",
+                    "chanceNext": 0,
+                    "news": "Unspecified injury - Unknown return date"
+                },
+                "selectedByPct": 4.5,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 7,
+                    "home": false,
+                    "kickoff": "2026-10-12T19:00:00.000Z",
+                    "xfdr": {
+                        "value": 2.21,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 2
+                    }
+                }
+            },
+            "480": {
+                "id": 480,
+                "webName": "Gibbs-White",
+                "photo": "images/players/480?v=tm195r",
+                "clubId": 18,
+                "position": "MID",
+                "price": 8,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": 100,
+                    "news": null
+                },
+                "selectedByPct": 15.7,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 8,
+                    "home": false,
+                    "kickoff": "2026-10-11T13:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.17,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "481": {
+                "id": 481,
+                "webName": "Anderson",
+                "photo": "images/players/481?v=tm195r",
+                "clubId": 15,
+                "position": "MID",
+                "price": 6.3,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": 100,
+                    "news": null
+                },
+                "selectedByPct": 4,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 14,
+                    "home": false,
+                    "kickoff": "2026-10-11T15:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.09,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "496": {
+                "id": 496,
+                "webName": "Kinsky",
+                "photo": "images/players/496?v=tm195r",
+                "clubId": 19,
+                "position": "GK",
+                "price": 4.5,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 17.3,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 16,
+                    "home": false,
+                    "kickoff": "2026-10-10T16:30:00.000Z",
+                    "xfdr": {
+                        "value": 3.54,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 4
+                    }
+                }
+            },
+            "532": {
+                "id": 532,
+                "webName": "Ballard",
+                "photo": "images/players/532?v=tm195r",
+                "clubId": 20,
+                "position": "DEF",
+                "price": 4.9,
+                "availability": {
+                    "code": "d",
+                    "level": "doubt",
+                    "chanceNext": 75,
+                    "news": "Hamstring injury - 75% chance of playing"
+                },
+                "selectedByPct": 2.5,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 5,
+                    "home": true,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.22,
+                        "lens": "clean_sheet",
+                        "source": "market",
+                        "band": 3
+                    }
+                }
+            },
+            "565": {
+                "id": 565,
+                "webName": "M.Sangar\u00e9",
+                "photo": "images/players/565?v=tm195r",
+                "clubId": 4,
+                "position": "MID",
+                "price": 5.6,
+                "availability": {
+                    "code": "a",
+                    "level": "ok",
+                    "chanceNext": null,
+                    "news": null
+                },
+                "selectedByPct": 9.9,
+                "nextFixture": {
+                    "gw": 6,
+                    "blank": false,
+                    "opponentClubId": 2,
+                    "home": false,
+                    "kickoff": "2026-10-10T14:00:00.000Z",
+                    "xfdr": {
+                        "value": 3.54,
+                        "lens": "attack",
+                        "source": "market",
+                        "band": 4
+                    }
+                }
+            }
+        }
+    },
+    "meta": {
+        "apiVersion": "1",
+        "generatedAt": "2026-10-02T10:34:50.404Z",
+        "freshness": []
+    }
+}

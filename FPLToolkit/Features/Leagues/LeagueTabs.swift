@@ -122,9 +122,9 @@ struct LeagueRivalsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
-            LeagueCard(title: "Your current rivals") {
+            LeagueCard(title: "Closest to you") {
                 if data.rivals.isEmpty {
-                    Text("Connect your FPL team to identify your rivals.").font(.subheadline).foregroundStyle(ToolkitColor.secondaryText)
+                    Text("Connect your FPL team to see who's closest to you.").font(.subheadline).foregroundStyle(ToolkitColor.secondaryText)
                 }
                 ForEach(data.rivals) { rival in
                     Button { onManager(rival.entryId) } label: {

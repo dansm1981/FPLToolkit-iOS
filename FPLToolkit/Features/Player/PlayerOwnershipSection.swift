@@ -137,6 +137,22 @@ struct PlayerOwnershipSection: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(row.league.name): owned by \(PlayerDetailContent.percent(row.ownedPct)), started by \(PlayerDetailContent.percent(row.startedPct)), captained by \(PlayerDetailContent.percent(row.captainedPct)), effective ownership \(PlayerDetailContent.percent(row.eo)), \(row.counted) managers")
             }
+            // Your rivals who have him (happy-backend-pal#67): "Andy captains him · Paul starts him".
+            if let rivals = leagues.rivals, !rivals.isEmpty {
+                RowDivider()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your rivals")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Text(RivalText.holding(rivals))
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 10)
+                .accessibilityElement(children: .combine)
+            }
         } else if let leaguesError {
             RowDivider()
             VStack(alignment: .leading, spacing: 4) {

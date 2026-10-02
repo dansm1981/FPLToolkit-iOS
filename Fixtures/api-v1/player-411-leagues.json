@@ -1,0 +1,44 @@
+{
+    "data": {
+        "playerId": 411,
+        "leagues": [
+            {
+                "league": {
+                    "id": 783382,
+                    "name": "LEAGUE OF EXPERTS",
+                    "isElite": false,
+                    "managers": 21,
+                    "tracked": 21,
+                    "syncedGw": 5,
+                    "lastSyncedAt": "2026-10-02T10:00:02.726+00:00"
+                },
+                "counted": 21,
+                "ownedPct": 85.7,
+                "startedPct": 85.7,
+                "captainedPct": 66.7,
+                "eo": 152.4
+            }
+        ],
+        "rivals": [
+            {
+                "entryId": 1699334,
+                "name": "Andy",
+                "started": true,
+                "captain": true,
+                "gameweek": 5
+            },
+            {
+                "entryId": 7409161,
+                "name": "Big Paul",
+                "started": true,
+                "captain": true,
+                "gameweek": 5
+            }
+        ]
+    },
+    "meta": {
+        "apiVersion": "1",
+        "generatedAt": "2026-10-02T10:35:14.420Z",
+        "freshness": []
+    }
+}

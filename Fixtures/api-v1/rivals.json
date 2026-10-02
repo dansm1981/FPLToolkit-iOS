@@ -1,0 +1,63 @@
+{
+    "data": {
+        "season": "2026/27",
+        "gameweek": 5,
+        "status": "finished",
+        "max": 10,
+        "rivals": [
+            {
+                "entryId": 1699334,
+                "manager": "Andy McBride",
+                "team": "Andiletic BilBride",
+                "nickname": null,
+                "name": "Andy",
+                "featured": true,
+                "state": "ok",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 1
+                    }
+                ],
+                "gapBefore": -19,
+                "you": 45,
+                "them": 56,
+                "youBonus": 0,
+                "themBonus": 0,
+                "gap": -30,
+                "gapText": "30 pts behind Andy",
+                "swingText": "Andy has gained 11 this gameweek"
+            },
+            {
+                "entryId": 7409161,
+                "manager": "Paul Mcbride",
+                "team": "Spasmeno Paramythi",
+                "nickname": "Big Paul",
+                "name": "Big Paul",
+                "featured": false,
+                "state": "ok",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 3
+                    }
+                ],
+                "gapBefore": 44,
+                "you": 45,
+                "them": 78,
+                "youBonus": 0,
+                "themBonus": 0,
+                "gap": 11,
+                "gapText": "11 pts ahead of Big Paul",
+                "swingText": "Big Paul has gained 33 this gameweek"
+            }
+        ]
+    },
+    "meta": {
+        "apiVersion": "1",
+        "generatedAt": "2026-10-02T10:34:48.817Z",
+        "freshness": []
+    }
+}

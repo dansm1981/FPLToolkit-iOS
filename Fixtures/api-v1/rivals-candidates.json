@@ -1,0 +1,333 @@
+{
+    "data": {
+        "managers": [
+            {
+                "entryId": 1097988,
+                "manager": "Aidan Bone",
+                "team": "It's Coming Bone",
+                "nickname": null,
+                "name": "Aidan",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 12
+                    }
+                ],
+                "total": 328,
+                "isRival": false
+            },
+            {
+                "entryId": 1699334,
+                "manager": "Andy McBride",
+                "team": "Andiletic BilBride",
+                "nickname": null,
+                "name": "Andy",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 1
+                    }
+                ],
+                "total": 392,
+                "isRival": true
+            },
+            {
+                "entryId": 6619530,
+                "manager": "Chris Bone",
+                "team": "Double The Water",
+                "nickname": null,
+                "name": "Chris",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 17
+                    }
+                ],
+                "total": 311,
+                "isRival": false
+            },
+            {
+                "entryId": 2307689,
+                "manager": "Chris Logan",
+                "team": "Claudes on a roll",
+                "nickname": null,
+                "name": "Chris",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 19
+                    }
+                ],
+                "total": 294,
+                "isRival": false
+            },
+            {
+                "entryId": 6105838,
+                "manager": "Colin McBride",
+                "team": "Stamp On A Spider",
+                "nickname": null,
+                "name": "Colin",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 4
+                    }
+                ],
+                "total": 351,
+                "isRival": false
+            },
+            {
+                "entryId": 2335246,
+                "manager": "Des McBride",
+                "team": "MOTO",
+                "nickname": null,
+                "name": "Des",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 16
+                    }
+                ],
+                "total": 311,
+                "isRival": false
+            },
+            {
+                "entryId": 4612627,
+                "manager": "Dominic McBride",
+                "team": "Murphy's Law 2.0",
+                "nickname": null,
+                "name": "Dominic",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 4
+                    }
+                ],
+                "total": 351,
+                "isRival": false
+            },
+            {
+                "entryId": 3737441,
+                "manager": "HUGH MCBRIDE",
+                "team": "Eddieswayanyhowe",
+                "nickname": null,
+                "name": "HUGH",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 10
+                    }
+                ],
+                "total": 342,
+                "isRival": false
+            },
+            {
+                "entryId": 7203835,
+                "manager": "James Berryman",
+                "team": "Hew Yewerkusen",
+                "nickname": null,
+                "name": "James",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 18
+                    }
+                ],
+                "total": 308,
+                "isRival": false
+            },
+            {
+                "entryId": 4459886,
+                "manager": "Jamie McBride",
+                "team": "PoissonGoalModel Utd",
+                "nickname": null,
+                "name": "Jamie",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 9
+                    }
+                ],
+                "total": 343,
+                "isRival": false
+            },
+            {
+                "entryId": 397489,
+                "manager": "Joe Logan",
+                "team": "Shaken, Not Steur'd",
+                "nickname": null,
+                "name": "Joe",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 6
+                    }
+                ],
+                "total": 350,
+                "isRival": false
+            },
+            {
+                "entryId": 7277503,
+                "manager": "Joseph Smyth",
+                "team": "Black Cats",
+                "nickname": null,
+                "name": "Joseph",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 11
+                    }
+                ],
+                "total": 337,
+                "isRival": false
+            },
+            {
+                "entryId": 325305,
+                "manager": "Kris McBride",
+                "team": "GoodCattleBadCowboy",
+                "nickname": null,
+                "name": "Kris",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 20
+                    }
+                ],
+                "total": 282,
+                "isRival": false
+            },
+            {
+                "entryId": 1778504,
+                "manager": "Matt Logan",
+                "team": "xG Merchants",
+                "nickname": null,
+                "name": "Matt",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 7
+                    }
+                ],
+                "total": 347,
+                "isRival": false
+            },
+            {
+                "entryId": 4836394,
+                "manager": "Nick Bone",
+                "team": "Nicky Two Bags",
+                "nickname": null,
+                "name": "Nick",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 14
+                    }
+                ],
+                "total": 318,
+                "isRival": false
+            },
+            {
+                "entryId": 7409161,
+                "manager": "Paul Mcbride",
+                "team": "Spasmeno Paramythi",
+                "nickname": null,
+                "name": "Paul",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 3
+                    }
+                ],
+                "total": 351,
+                "isRival": true
+            },
+            {
+                "entryId": 6110474,
+                "manager": "Ron White",
+                "team": "Barrysangermain",
+                "nickname": null,
+                "name": "Ron",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 13
+                    }
+                ],
+                "total": 320,
+                "isRival": false
+            },
+            {
+                "entryId": 3432605,
+                "manager": "Simon Moiani",
+                "team": "moyesiahs",
+                "nickname": null,
+                "name": "Simon",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 15
+                    }
+                ],
+                "total": 317,
+                "isRival": false
+            },
+            {
+                "entryId": 6737676,
+                "manager": "Steve Smyth",
+                "team": "SKBB's",
+                "nickname": null,
+                "name": "Steve",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 8
+                    }
+                ],
+                "total": 343,
+                "isRival": false
+            },
+            {
+                "entryId": 9153429,
+                "manager": "Tom McBride",
+                "team": "s\u00e6la fc",
+                "nickname": null,
+                "name": "Tom",
+                "leagues": [
+                    {
+                        "id": 783382,
+                        "name": "LEAGUE OF EXPERTS",
+                        "rank": 21
+                    }
+                ],
+                "total": 237,
+                "isRival": false
+            }
+        ],
+        "max": 10,
+        "count": 2
+    },
+    "meta": {
+        "apiVersion": "1",
+        "generatedAt": "2026-10-02T10:34:49.346Z",
+        "freshness": []
+    }
+}

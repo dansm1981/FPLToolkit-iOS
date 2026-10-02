@@ -17,6 +17,9 @@ struct TodayView: View {
     @State private var pushedPlayer: PlayerRef?
     @State private var pushedLeague: LeagueList.League?
     @State private var showingLeagues = false
+    /// The featured rival's page, and all rivals (happy-backend-pal#67).
+    @State private var pushedRival: Int?
+    @State private var showingRivals = false
     @State private var showingSource = false
     @State private var showingSources = false
     @State private var showingHistory = false
@@ -48,6 +51,8 @@ struct TodayView: View {
                                 onPlayer: { id, context in pushedPlayer = PlayerRef(id: id, context: context) },
                                 onLeague: { pushedLeague = $0 },
                                 onLeagues: { showingLeagues = true },
+                                onRival: { pushedRival = $0 },
+                                onRivals: { showingRivals = true },
                                 onSource: { showingSource = true },
                                 onSources: { showingSources = true },
                                 onHistory: { showingHistory = true },
@@ -60,8 +65,9 @@ struct TodayView: View {
                         async let liveReload: Void = live?.load(bypassCache: true) ?? ()
                         async let teamReload: Void = team?.load(bypassCache: true) ?? ()
                         async let draftsReload: Void = drafts?.load(bypassCache: true) ?? ()
+                        async let rivalsReload: Void = appModel.rivals.load()
                         await resource.load(bypassCache: true)
-                        _ = await (liveReload, teamReload, draftsReload)
+                        _ = await (liveReload, teamReload, draftsReload, rivalsReload)
                     }
                 }
             }
@@ -74,6 +80,8 @@ struct TodayView: View {
         .navigationDestination(item: $pushedPlayer) { ref in PlayerDetailView(playerId: ref.id, context: ref.context) }
         .navigationDestination(item: $pushedLeague) { league in LeagueView(league: league) }
         .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
+        .navigationDestination(item: $pushedRival) { id in RivalView(entryId: id) }
+        .navigationDestination(isPresented: $showingRivals) { RivalsScreen() }
         .navigationDestination(isPresented: $showingSources) { DataSourcesView(entryId: entryId) }
         .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
         // Presented by the screen, so it survives the card going once the user answers.
@@ -101,8 +109,9 @@ struct TodayView: View {
                 async let teamLoad: Void = team.load()
                 async let draftsLoad: Void = drafts.load()
                 async let leaguesLoad: Void = appModel.leagues.loadIfNeeded()
+                async let rivalsLoad: Void = appModel.rivals.load()
                 await resource.load()
-                _ = await (liveLoad, teamLoad, draftsLoad, leaguesLoad)
+                _ = await (liveLoad, teamLoad, draftsLoad, leaguesLoad, rivalsLoad)
                 if let picks = team.loaded?.value.snapshot?.picks {
                     appModel.squadIds = Set(picks.map(\.playerId))
                 }
@@ -141,6 +150,8 @@ struct TodayContent: View {
     let onPlayer: (Int, String?) -> Void
     let onLeague: (LeagueList.League) -> Void
     let onLeagues: () -> Void
+    var onRival: (Int) -> Void = { _ in }
+    var onRivals: () -> Void = {}
     let onSource: () -> Void
     let onSources: () -> Void
     let onHistory: () -> Void
@@ -192,6 +203,13 @@ struct TodayContent: View {
 
             SectionHeader(title: "Your leagues", actionTitle: "View all", action: onLeagues)
             leagues
+
+            // The featured rival, once one is chosen (brief: one compact line, not a second table).
+            if let list = appModel.rivals.list, let rival = list.featured {
+                SectionHeader(title: "Your rival", actionTitle: list.rivals.count > 1 ? "All rivals" : nil,
+                              action: list.rivals.count > 1 ? onRivals : nil)
+                FeaturedRivalCard(rival: rival, gameweek: list.gameweek) { onRival(rival.entryId) }
+            }
 
             if let snapshot = today.snapshot {
                 Button(action: onSource) {

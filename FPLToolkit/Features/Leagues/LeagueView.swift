@@ -8,7 +8,8 @@ struct LeagueView: View {
     let league: LeagueList.League
 
     enum Tab: String, CaseIterable, Identifiable {
-        case overview = "Overview", standings = "Standings", rivals = "Rivals", players = "Players"
+        // "Rivals" means only managers you've added (Dan, 2 Oct): this tab is "Around you".
+        case overview = "Overview", standings = "Standings", rivals = "Around you", players = "Players"
         case captains = "Captains", chips = "Chips", transfers = "Transfers", history = "History", report = "Report"
         var id: String { rawValue }
         /// Tabs whose numbers depend on whose squad the league is compared with.
@@ -82,9 +83,11 @@ struct LeagueView: View {
         .refreshable { await load(force: true) }
         .sheet(item: $vs) { target in
             NavigationStack {
-                LeagueVsView(leagueId: league.id, entryId: target.entryId, baseline: baseline)
+                LeagueVsView(leagueId: league.id, entryId: target.entryId, baseline: baseline,
+                             canAddRival: !league.isElite)
             }
         }
+        .task { if !league.isElite { await appModel.rivals.loadIfNeeded() } }
     }
 
     private struct TaskKey: Hashable {
@@ -121,7 +124,11 @@ struct LeagueView: View {
         case .overview:
             if let overview { OverviewSection(overview: overview, onManager: open) } else { loading }
         case .standings:
-            if let standings { StandingsSection(standings: standings, onManager: open) } else { loading }
+            if let standings {
+                StandingsSection(standings: standings,
+                                 rivals: Set(appModel.rivals.list?.rivals.map(\.entryId) ?? []),
+                                 onManager: open)
+            } else { loading }
         case .rivals:
             if let rivals { LeagueRivalsSection(data: rivals, onManager: open) } else { loading }
         case .players:
@@ -244,9 +251,9 @@ private struct OverviewSection: View {
             intelList("Biggest opportunities", overview.opportunities, empty: "Connect your team or build a draft.")
 
             VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                SectionLabel(text: "Closest rivals")
+                SectionLabel(text: "Closest to you")
                 if overview.rivals.isEmpty {
-                    Text("Connect your FPL team to find your rivals.")
+                    Text("Connect your FPL team to see who's closest to you.")
                         .font(.subheadline)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
@@ -315,7 +322,8 @@ private struct OverviewSection: View {
     }
 }
 
-/// One rival: who, the gap, why they're a rival, and how your squads differ (the website's card).
+/// A manager close to you: who, the gap, why they're close, and how your squads differ (the
+/// website's rival card; "rival" in the app means only managers you add).
 private struct RivalCard: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let rival: LeagueRival
@@ -381,22 +389,47 @@ private struct RivalCard: View {
 private struct StandingsSection: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let standings: LeagueStandings
+    /// Managers you've added as rivals: marked, and a filter to show only them.
+    let rivals: Set<Int>
     let onManager: (Int) -> Void
+    @State private var onlyRivals = false
 
     var body: some View {
+        let hasRivals = standings.rows.contains { rivals.contains($0.entryId) }
+        let rows = onlyRivals && hasRivals
+            ? standings.rows.filter { rivals.contains($0.entryId) || $0.isMe }
+            : standings.rows
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
             SectionLabel(text: "Standings")
+            if hasRivals {
+                HStack(spacing: 8) {
+                    filterChip("Everyone", active: !onlyRivals) { onlyRivals = false }
+                    filterChip("Rivals only", active: onlyRivals) { onlyRivals = true }
+                }
+            }
             ToolkitCard {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(standings.rows.enumerated()), id: \.element.id) { index, row in
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                         Button { onManager(row.entryId) } label: { rowView(row) }
                             .buttonStyle(.plain)
                             .accessibilityHint("Compares their team with yours")
-                        if index < standings.rows.count - 1 { Divider().overlay(ToolkitColor.border) }
+                        if index < rows.count - 1 { Divider().overlay(ToolkitColor.border) }
                     }
                 }
             }
+            Text("Tap a manager to compare, or to add them as a rival.")
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func filterChip(_ text: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            FilterChipLabel(text: text, active: active, menu: false)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 
     private func rowView(_ row: LeagueStandings.Row) -> some View {
@@ -444,6 +477,9 @@ private struct StandingsSection: View {
 
     private func teamAndManager(_ row: LeagueStandings.Row) -> some View {
         VStack(alignment: .leading, spacing: 2) {
+            if rivals.contains(row.entryId) {
+                Tag(text: "Rival", foreground: ToolkitColor.onAccent, fill: ToolkitColor.accent)
+            }
             Text(row.teamName ?? "Team \(row.entryId)")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(row.isMe ? ToolkitColor.accent : ToolkitColor.primaryText)

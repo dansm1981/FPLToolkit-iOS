@@ -706,6 +706,18 @@ struct PlayerLeagues: Decodable, Sendable {
         var id: Int { league.id }
     }
 
+    /// Your rivals who have him in their latest synced team (happy-backend-pal#67).
+    struct Rival: Decodable, Sendable, Identifiable, Hashable {
+        let entryId: Int
+        let name: String
+        let started: Bool
+        let captain: Bool
+        let gameweek: Int
+        var id: Int { entryId }
+    }
+
     let playerId: Int
     let leagues: [Row]
+    /// Nil from servers before happy-backend-pal#67.
+    let rivals: [Rival]?
 }

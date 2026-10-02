@@ -634,7 +634,7 @@ final class ScreenAuditTests: XCTestCase {
 
         // The remaining tabs, each audited.
         let tabs: [(String, NSPredicate, String)] = [
-            ("Rivals", NSPredicate(format: "label ==[c] 'Your current rivals'"), "25-league-rivals"),
+            ("Around you", NSPredicate(format: "label ==[c] 'Closest to you'"), "25-league-around-you"),
             ("Players", NSPredicate(format: "label ==[c] 'Your biggest threats'"), "26-league-players"),
             ("Captains", NSPredicate(format: "label ==[c] 'League captaincy trend'"), "27-league-captains"),
             ("Chips", NSPredicate(format: "label ==[c] 'League chip usage'"), "28-league-chips"),
@@ -1048,6 +1048,80 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Live feed"].firstMatch.tap()
         settle()
         check(app, "83-matchday-replay-feed")
+    }
+
+    /// Rivals (happy-backend-pal#67): Watch → Rivals, adding a manager from a saved league (the
+    /// simulator's device keeps League of Experts), then their page's three tabs. Pass
+    /// `auditTeam=22615` (Dan's team, in that league). The rival stays saved on this device.
+    func test22Rivals() {
+        let app = launch(["-entryId", team])
+        // Rivals come from saved leagues; test10 removes League of Experts when it's done.
+        app.tabBars.buttons["Team"].tap()
+        let leaguesButton = app.buttons["Your leagues"].firstMatch
+        waitFor(leaguesButton, "Your leagues button", timeout: 40)
+        leaguesButton.tap()
+        let addLeague = app.buttons["Add a league"].firstMatch
+        waitFor(addLeague, "Your leagues", timeout: 40)
+        waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Elite 100'")).firstMatch, "Elite 100", timeout: 40)
+        let league = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'LEAGUE OF EXPERTS'")).firstMatch
+        if !league.exists {
+            addLeague.tap()
+            let field = app.textFields["Mini-league ID"].firstMatch
+            waitFor(field, "Add a league")
+            field.tap()
+            field.typeText("783382")
+            app.buttons["Add"].firstMatch.tap()
+            waitFor(league, "League added", timeout: 120)
+        }
+
+        app.tabBars.buttons["Watch"].tap()
+        let rivalsTab = app.segmentedControls.buttons["Rivals"].firstMatch
+        waitFor(rivalsTab, "Watch")
+        rivalsTab.tap()
+        let add = app.buttons.matching(NSPredicate(format: "label == 'Add a rival' OR label == 'Add'")).firstMatch
+        waitFor(add, "Rivals", timeout: 60)
+        add.tap()
+        let field = app.searchFields.firstMatch
+        waitFor(field, "Add a rival", timeout: 60)
+        field.tap()
+        field.typeText("McBride")
+        let addAndy = app.buttons["Add Andy McBride as a rival"].firstMatch
+        if addAndy.waitForExistence(timeout: 20) {
+            addAndy.tap()
+            let feature = app.alerts.buttons["Feature"].firstMatch
+            if feature.waitForExistence(timeout: 20) { feature.tap() }
+        }
+        settle()
+        check(app, "84-rivals-add", sizesAndLists: false)
+        // While searching, the search's close button stands in for Done.
+        let closeSearch = app.buttons.matching(NSPredicate(format: "label == 'Cancel' OR label == 'Close'")).firstMatch
+        if closeSearch.exists { closeSearch.tap() }
+        let done = app.buttons["Done"].firstMatch
+        waitFor(done, "Add a rival's Done")
+        done.tap()
+
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Andy'")).firstMatch
+        waitFor(row, "Your rivals", timeout: 60)
+        settle()
+        check(app, "85-rivals")
+        row.tap()
+        waitFor(app.segmentedControls.buttons["Overview"].firstMatch, "Rival", timeout: 60)
+        settle()
+        check(app, "86-rival-overview")
+        app.segmentedControls.buttons["Teams"].firstMatch.tap()
+        settle()
+        check(app, "87-rival-teams")
+        app.segmentedControls.buttons["Stats"].firstMatch.tap()
+        settle()
+        check(app, "88-rival-stats")
+
+        // Today: the featured rival under your leagues.
+        app.tabBars.buttons["Today"].tap()
+        let featured = app.staticTexts["Your rival"].firstMatch
+        waitFor(app.staticTexts["Your leagues"].firstMatch, "Today", timeout: 60)
+        reveal(featured, in: app)
+        settle()
+        check(app, "89-today-rival")
     }
 
     func test20Odds() {

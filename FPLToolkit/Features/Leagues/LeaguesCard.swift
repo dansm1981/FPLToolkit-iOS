@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The website's "My leagues", on the Team tab: the Elite 100 and your saved mini-leagues with
-/// your rank and gap to first, "Add a league", and rivals you face in more than one league.
+/// your rank and gap to first, "Add a league", and managers in more than one of them.
 struct LeaguesCard: View {
     @Environment(AppModel.self) private var appModel
     @State private var adding = false
@@ -122,7 +122,7 @@ struct LeaguesCard: View {
 
     private func sharedRivals(_ rivals: [LeagueList.SharedRival]) -> some View {
         VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            SectionLabel(text: "Rivals you face in more than one league")
+            SectionLabel(text: "Managers in more than one of your leagues")
             ToolkitCard {
                 VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
                     ForEach(rivals) { rival in

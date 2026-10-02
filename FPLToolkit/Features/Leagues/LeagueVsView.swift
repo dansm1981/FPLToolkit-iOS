@@ -9,6 +9,8 @@ struct LeagueVsView: View {
     let leagueId: Int
     let entryId: Int
     let baseline: LeagueBaseline
+    /// From a saved mini-league (not the Elite 100): offers "Add as a rival".
+    var canAddRival = false
 
     @State private var vs: LeagueVs?
     @State private var loadError: ErrorCopy?
@@ -34,6 +36,7 @@ struct LeagueVsView: View {
             ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
         }
         .task { await load() }
+        .task { if canAddRival { await appModel.rivals.loadIfNeeded() } }
     }
 
     @ViewBuilder
@@ -43,6 +46,10 @@ struct LeagueVsView: View {
             .compactMap { $0 }.joined(separator: " · "))
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)
+
+        if canAddRival, let me = appModel.entryId, me != entryId {
+            rivalAction(name: them.managerName ?? them.teamName ?? "them")
+        }
 
         // One a row from xxLarge ("£100.9" / "m" and "TRANS-" / "FERS" in a third of the width).
         let row = typeSize.stacksRows
@@ -117,6 +124,30 @@ struct LeagueVsView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// Add them as a rival, or open the rivalry once they are one (brief §3).
+    @ViewBuilder
+    private func rivalAction(name: String) -> some View {
+        let store = appModel.rivals
+        if let error = store.updateError { ErrorBanner(copy: error) }
+        if store.contains(entryId) {
+            NavigationLink {
+                RivalView(entryId: entryId)
+            } label: {
+                LinkRowLabel(title: "Your rival", detail: "See how you compare all season", systemImage: "person.2")
+                    .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            }
+            .buttonStyle(.plain)
+        } else if store.list != nil {
+            Button {
+                Task { await store.save(entryId) }
+            } label: {
+                if store.changing == entryId { ProgressView() } else { Text("Add \(name) as a rival") }
+            }
+            .buttonStyle(ToolkitSecondaryButtonStyle())
+            .disabled(store.changing != nil)
         }
     }
 

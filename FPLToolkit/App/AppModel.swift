@@ -36,6 +36,8 @@ final class AppModel {
     let shortlist: ShortlistStore
     /// The device's mini-leagues (Team tab).
     let leagues: LeaguesStore
+    /// Managers you've added as rivals, from those leagues (Watch → Rivals).
+    let rivals: RivalsStore
 
     private let cache: ResponseCache
     private let defaults: UserDefaults
@@ -59,6 +61,7 @@ final class AppModel {
         self.plannerRepository = planner
         self.shortlist = ShortlistStore(repository: planner)
         self.leagues = LeaguesStore(repository: LeaguesRepository(session: session))
+        self.rivals = RivalsStore(repository: RivalsRepository(session: session))
         self.cache = cache
         self.defaults = defaults
         let stored = defaults.integer(forKey: Keys.entryId)
@@ -121,6 +124,8 @@ final class AppModel {
         squadIds = []
         watch = nil
         alerts = nil
+        // Rivals belong to a team: the next team starts with its own list.
+        rivals.reset()
         Task { await deviceSession.sync(entryId: nil) }
     }
 
@@ -129,6 +134,7 @@ final class AppModel {
         try await deviceSession.reset()
         shortlist.reset()
         leagues.reset()
+        rivals.reset()
         MatchdayWatch.forget()
         disconnect()
     }
