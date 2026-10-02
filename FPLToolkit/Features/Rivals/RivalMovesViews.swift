@@ -354,7 +354,9 @@ struct RivalSideBySide: View {
     private func groupHeader(_ group: Band, lines: [Line], name: String) -> some View {
         let you = lines.compactMap(\.you).reduce(0) { $0 + $1.value }
         let them = lines.compactMap(\.them).reduce(0) { $0 + $1.value }
-        return Text("\(group.title) · you \(you) · \(name) \(them)")
+        let shared = lines.filter(\.shared).count
+        let shareText = group == .bench ? "" : " · \(shared)/\(lines.count) shared"
+        return Text("\(group.title)\(shareText) · you \(you) · \(name) \(them)")
             .font(.footnote.weight(.semibold))
             .foregroundStyle(ToolkitColor.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
@@ -366,14 +368,19 @@ struct RivalSideBySide: View {
 
     private func lineView(_ line: Line, name: String) -> some View {
         let match = line.match
+        // Your cell in blue, theirs in red; a shared row all green (Dan's rivalry design).
         return HStack(alignment: .center, spacing: 0) {
             cellView(line.you)
+                .background(line.shared || line.you == nil ? .clear : RivalColor.fill(RivalColor.you),
+                            in: RoundedRectangle(cornerRadius: 8))
             mark(match)
             cellView(line.them)
+                .background(line.shared || line.them == nil ? .clear : RivalColor.fill(RivalColor.them),
+                            in: RoundedRectangle(cornerRadius: 8))
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
-        .background(match.fill.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
+        .padding(4)
+        .background(line.shared ? match.fill.opacity(0.7) : ToolkitColor.raised.opacity(0.35),
+                    in: RoundedRectangle(cornerRadius: 10))
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: 2).fill(match.colour).frame(width: 3).padding(.vertical, 6)
         }
@@ -409,9 +416,10 @@ struct RivalSideBySide: View {
                                 .font(.subheadline.weight(.bold).monospacedDigit())
                                 .foregroundStyle(ToolkitColor.primaryText)
                         } else {
+                            // Brighter than secondary text: it sits on the blue or red tint.
                             Text(RivalSideBySide.state(cell))
                                 .font(.caption)
-                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .foregroundStyle(ToolkitColor.primaryText.opacity(0.85))
                         }
                     }
                     if !large {

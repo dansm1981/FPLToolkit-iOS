@@ -99,11 +99,17 @@ struct RivalView: View {
         }
         if let error = store.updateError { ErrorBanner(copy: error) }
         stateNotice(d)
-        RivalHero(data: d)
-        Picker("Show", selection: $tab) {
-            ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+        // Gold pills, as the rivalry design (Dan, 2 Oct).
+        FlowLayout(spacing: 8, lineSpacing: 8) {
+            ForEach(Tab.allCases) { t in
+                Button { tab = t } label: {
+                    FilterChipLabel(text: t.rawValue, active: tab == t, menu: false)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.rawValue)
+                .accessibilityAddTraits(tab == t ? .isSelected : [])
+            }
         }
-        .pickerStyle(.segmented)
         .padding(.vertical, 4)
         switch tab {
         case .overview: RivalOverview(data: d)
@@ -142,51 +148,6 @@ struct RivalView: View {
         } catch let error as APIError {
             loadError = ErrorCopy(error)
         } catch {}
-    }
-}
-
-// MARK: - Hero
-
-/// Season position first, then this gameweek, each stated once (brief §5).
-private struct RivalHero: View {
-    let data: RivalComparison
-
-    var body: some View {
-        let r = data.rival
-        HeroCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(r.gapText ?? "\(r.name)'s team isn't synced yet")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(ToolkitColor.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: ToolkitSpace.sm)
-                    Tag(text: RivalViewText.state(data.status))
-                }
-                if let start = data.startText {
-                    Text(start)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                }
-                if let week = RivalText.thisWeek(r) {
-                    Text(week)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                }
-                if let swing = r.swingText {
-                    Text(swing)
-                        .font(.headline)
-                        .foregroundStyle(ToolkitColor.primaryText)
-                }
-                if let bonus = RivalText.bonus(r) {
-                    Text(bonus)
-                        .font(.footnote)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -230,20 +191,13 @@ private struct RivalOverview: View {
 
     var body: some View {
         let name = data.rival.name
+        RivalVersusHero(rival: data.rival)
+        RivalStatusCard(data: data)
+        if data.stats.season.gapTrend.count >= 2 {
+            RivalMomentumChart(trend: data.stats.season.gapTrend, name: name)
+        }
         if let explanation = data.explanation {
-            Label {
-                Text(explanation)
-                    .foregroundStyle(ToolkitColor.primaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            } icon: {
-                Image(systemName: "lightbulb")
-                    .foregroundStyle(ToolkitColor.information)
-            }
-            .font(.subheadline)
-            .padding(ToolkitSpace.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(ToolkitColor.informationFill, in: RoundedRectangle(cornerRadius: 14))
-            .accessibilityElement(children: .combine)
+            RivalInsightCard(text: explanation)
         }
         // How you stack up for the next gameweek (Dan, 2 Oct).
         if let outlook = data.outlook {
@@ -256,7 +210,7 @@ private struct RivalOverview: View {
         SectionHeader(title: "Across the season")
         CardGroup {
             let season = data.stats.season
-            // Not repeated when it's already the explanation above.
+            // Not repeated when it's already the insight above.
             if data.explanation != data.stats.last5.summary {
                 fact("Last 5 gameweeks", data.stats.last5.summary ?? "Not enough gameweeks yet")
                 RowDivider()
@@ -305,6 +259,12 @@ private struct RivalTeams: View {
     var body: some View {
         if let teams = data.teams {
             let name = data.rival.name
+            // "3 Shared · 7 You only · 5 Andy only" (Dan's rivalry design).
+            RivalTeamTiles(summary: (
+                shared: teams.rows.filter { $0.group == .shared || $0.group == .multiplier }.count,
+                yours: teams.rows.filter { $0.group == .yours }.count,
+                theirs: teams.rows.filter { $0.group == .theirs }.count
+            ), name: name)
             HStack(spacing: 8) {
                 chip("Side by side", active: sideBySide) { sideBySide = true }
                 chip("Differences", active: !sideBySide) { sideBySide = false }
@@ -434,41 +394,46 @@ private struct RivalStats: View {
             chip("Last 5", .last5)
             chip("Season", .season)
         }
-        if let summary = s.summary {
-            Text(summary)
-                .font(.headline)
-                .foregroundStyle(ToolkitColor.primaryText)
-        }
-        if s.gapTrend.count >= 2 {
-            gapChart(s, name: name)
-        }
+        // Season totals, the leader crowned (Dan's rivalry design).
+        RivalTotalsTiles(you: data.stats.season.you.points, them: data.stats.season.them.points,
+                         name: name, label: "Season points")
         CardGroup {
-            factRow("Points", s.you.points, s.them.points, name: name)
             if s.outscored.of > 0 {
+                RivalTugRow(title: "Gameweeks outscored", you: s.outscored.won, them: s.outscored.lost, name: name)
                 RowDivider()
-                line("Gameweeks outscored", RivalStatsText.outscored(s.outscored, name: name))
             }
+            RivalTugRow(title: "Points", you: s.you.points, them: s.them.points, name: name)
             if let you = s.you.captainPoints, let them = s.them.captainPoints {
                 RowDivider()
-                factRow("Captain points (×2 or ×3 included)", you, them, name: name)
+                RivalTugRow(title: "Captain points (×2 or ×3 in)", you: you, them: them, name: name)
             }
             RowDivider()
-            factRow("Transfers", s.you.transfers, s.them.transfers, name: name)
+            RivalTugRow(title: "Transfers", you: s.you.transfers, them: s.them.transfers, name: name)
             RowDivider()
-            factRow("Points spent on hits", s.you.hits, s.them.hits, name: name)
+            RivalTugRow(title: "Points on hits", you: s.you.hits, them: s.them.hits, name: name)
             RowDivider()
-            factRow("Bench points not counted", s.you.bench, s.them.bench, name: name)
+            RivalTugRow(title: "Bench points (not counted)", you: s.you.bench, them: s.them.bench, name: name)
             if let you = s.you.byPosition, let them = s.them.byPosition {
                 RowDivider()
-                factRow("Goalkeepers", you.gk, them.gk, name: name)
+                RivalTugRow(title: "Goalkeepers", you: you.gk, them: them.gk, name: name)
                 RowDivider()
-                factRow("Defenders", you.def, them.def, name: name)
+                RivalTugRow(title: "Defenders", you: you.def, them: them.def, name: name)
                 RowDivider()
-                factRow("Midfielders", you.mid, them.mid, name: name)
+                RivalTugRow(title: "Midfielders", you: you.mid, them: them.mid, name: name)
                 RowDivider()
-                factRow("Forwards", you.fwd, them.fwd, name: name)
+                RivalTugRow(title: "Forwards", you: you.fwd, them: them.fwd, name: name)
             }
-            RowDivider()
+        }
+        if let weekly = s.weekly, weekly.count >= 2 {
+            RivalWeeklyChart(weekly: weekly, name: name)
+        } else if s.gapTrend.count >= 2 {
+            gapChart(s, name: name)
+        }
+        if let summary = s.summary {
+            RivalInsightCard(text: summary, title: s.outscored.of > 0 ? "\(s.outscored.won) OF \(s.outscored.of) GAMEWEEKS WON" : "SO FAR",
+                             systemImage: "trophy")
+        }
+        CardGroup {
             line("Your chips", s.you.chips.isEmpty ? "None" : s.you.chips.map { "\($0.label) GW\($0.gw)" }.joined(separator: ", "))
             RowDivider()
             line("\(name)'s chips", s.them.chips.isEmpty ? "None" : s.them.chips.map { "\($0.label) GW\($0.gw)" }.joined(separator: ", "))

@@ -193,6 +193,13 @@ struct RivalComparison: Decodable, Sendable {
         let them: SideStats
         let gapStart: Int?
         let gapTrend: [GapPoint]
+        struct Week: Decodable, Sendable, Hashable {
+            let gw: Int
+            let you: Int
+            let them: Int
+        }
+        /// Each side's net points per gameweek (happy-backend-pal#72); nil from older servers.
+        let weekly: [Week]?
         let gapChange: Int?
         let outscored: Outscored
         /// Nil for the season: picks are kept for the last 6 gameweeks.
