@@ -160,6 +160,7 @@ enum MatchdayText {
         }
         parts.append(item.text)
         if let reason = item.watching { parts.append("Watching: \(reason)") }
+        for effect in item.rivals ?? [] { parts.append(effect.text) }
         if let detail = item.detail { parts.append(detail) }
         if let points = item.points, points != 0 {
             let n = abs(points)
@@ -182,6 +183,9 @@ enum MatchdayMemory {
         let at: Date
         /// The live feed's items (nil when saved by a build before the feed).
         var feedIds: [String]?
+        /// The featured rival and the gap then (positive: you were ahead).
+        var rivalId: Int?
+        var rivalGap: Int?
     }
 
     private nonisolated static func key(_ entryId: Int, _ gameweek: Int) -> String {
@@ -194,19 +198,31 @@ enum MatchdayMemory {
     }
 
     static func save(_ live: LiveTeam, entryId: Int, now: Date = .now) {
+        let rival = featuredRow(live)
         let seen = Seen(total: live.total.estimated, momentIds: live.moments.map(\.id), at: now,
-                        feedIds: live.feed?.map(\.id))
+                        feedIds: live.feed?.map(\.id), rivalId: rival?.entryId, rivalGap: rival?.gap)
         if let data = try? JSONEncoder().encode(seen) {
             UserDefaults.standard.set(data, forKey: key(entryId, live.gameweek))
         }
     }
 
-    /// One line on what's new since `since`, or nil when nothing changed.
+    /// The featured rival's row, when the live data has one.
+    nonisolated static func featuredRow(_ live: LiveTeam) -> RivalSummary? {
+        guard let rivals = live.rivals, let id = rivals.featured?.entryId else { return nil }
+        return rivals.rows.first { $0.entryId == id }
+    }
+
+    /// One line on what's new since `since`, or nil when nothing changed; with how the featured
+    /// rivalry moved.
     nonisolated static func catchUp(_ live: LiveTeam, since: Seen) -> String? {
         let seen = Set(since.momentIds)
         let new = live.moments.filter { !seen.contains($0.id) && $0.state != .withdrawn }
         let delta = live.total.estimated - since.total
-        guard !new.isEmpty || delta != 0 else { return nil }
+        var rivalText: String?
+        if let row = featuredRow(live), row.entryId == since.rivalId, let was = since.rivalGap, let now = row.gap {
+            rivalText = rivalLine(name: row.name, was: was, now: now)
+        }
+        guard !new.isEmpty || delta != 0 || rivalText != nil else { return nil }
         var text = "Since you last checked"
         if !new.isEmpty {
             let shown = new.prefix(3).map { MatchdayText.moment($0, live: live) }
@@ -214,6 +230,7 @@ enum MatchdayMemory {
             text += ": " + shown.joined(separator: ", ") + (more > 0 ? " and \(more) more" : "")
         }
         text += delta > 0 ? ". Up \(delta)." : delta < 0 ? ". Down \(-delta)." : ". No change to your score."
+        if let rivalText { text += " \(rivalText)." }
         return text
     }
 }

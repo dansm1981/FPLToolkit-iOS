@@ -25,7 +25,7 @@ struct CachedEndpoint<T: Decodable & Sendable>: LoadableEndpoint {
     /// Saved separately for each set of options.
     var query: [URLQueryItem] = []
 
-    private var cacheKey: String {
+    var cacheKey: String {
         query.isEmpty ? path : path + "?" + query.map { "\($0.name)=\($0.value ?? "")" }.joined(separator: "&")
     }
 
@@ -301,10 +301,14 @@ struct LiveRepository: Sendable {
     let cache: ResponseCache
 
     /// The gameweek whose deadline has most recently passed, unless `gw` is given. `watch` adds
-    /// Matchday's players to watch (contract §34).
-    func team(entryId: Int, gw: Int? = nil, watch: DevicePrefs.MatchdayPrefs? = nil) -> LiveEndpoint<LiveTeam> {
-        let query = (gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []) + (watch?.queryItems ?? [])
-        return LiveEndpoint(base: .init(client: client, cache: cache, path: "live/team/\(entryId)", query: query))
+    /// Matchday's players to watch (contract §34). `rivalsVia` adds your saved rivals: the request
+    /// then carries this device's identity (happy-backend-pal#68), on its own `rivals=1` address.
+    func team(entryId: Int, gw: Int? = nil, watch: DevicePrefs.MatchdayPrefs? = nil,
+              rivalsVia session: DeviceSession? = nil) -> LiveEndpoint<LiveTeam> {
+        var query = (gw.map { [URLQueryItem(name: "gw", value: String($0))] } ?? []) + (watch?.queryItems ?? [])
+        if session != nil { query.append(URLQueryItem(name: "rivals", value: "1")) }
+        return LiveEndpoint(base: .init(client: client, cache: cache, path: "live/team/\(entryId)", query: query),
+                            session: session)
     }
 
     /// One match's FPL stats (goals, cards, saves, bonus, BPS, every DEFCON count).
@@ -329,8 +333,16 @@ struct LiveRepository: Sendable {
 /// the replay's moment, and nothing is saved offline or shown from the saved copy.
 struct LiveEndpoint<T: Decodable & Sendable>: LoadableEndpoint {
     let base: CachedEndpoint<T>
+    /// Sends the device's identity (for your saved rivals); nil for the public live data.
+    var session: DeviceSession?
 
     func fetch(bypassCache: Bool) async throws -> Loaded<T> {
+        if let session {
+            let replay = LiveReplay.current
+            let fetched = try await session.send("GET", base.path, query: base.query + (replay?.queryItems ?? []), as: T.self)
+            if replay == nil { base.cache.write(fetched.raw, for: base.cacheKey) }
+            return Loaded(value: fetched.envelope.data, meta: fetched.envelope.meta, savedAt: nil)
+        }
         guard let replay = LiveReplay.current else { return try await base.fetch(bypassCache: bypassCache) }
         let fetched = try await base.client.get(base.path, query: base.query + replay.queryItems, as: T.self,
                                                 bypassCache: true)

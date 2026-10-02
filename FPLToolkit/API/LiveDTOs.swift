@@ -178,9 +178,10 @@ struct LiveTeam: Decodable, Sendable {
             case unknown
             static let fallback = Self.unknown
         }
-        /// The app's filters; `match` items show under All only; `watching` is players to watch.
+        /// The app's filters; `match` items show under All only; `watching` is players to watch;
+        /// `rivals` is a player only your rivals count.
         enum Group: String, FallbackDecodable {
-            case goals, defence, bonus, lineups, match, watching
+            case goals, defence, bonus, lineups, match, watching, rivals
             case unknown
             static let fallback = Self.unknown
         }
@@ -201,6 +202,56 @@ struct LiveTeam: Decodable, Sendable {
         let lineup: Player.Lineup?
         /// A watched player's item (group `watching`): why they're watched, e.g. "54% owned".
         var watching: String?
+        /// What it did to each saved rival, featured first (happy-backend-pal#68).
+        var rivals: [RivalEffect]?
+    }
+
+    /// One event's effect on one rivalry: its points × (your multiplier − theirs).
+    struct RivalEffect: Decodable, Sendable, Hashable {
+        let entryId: Int
+        let name: String
+        /// Positive helps you.
+        let effect: Int
+        /// "Gains Andy 12 on you: Andy's captain".
+        let text: String
+    }
+
+    /// Your saved rivals on the live matchday (`?rivals=1` with this device; happy-backend-pal#68).
+    struct Rivals: Decodable, Sendable, Hashable {
+        struct Situation: Decodable, Sendable, Hashable, Identifiable {
+            enum Kind: String, FallbackDecodable {
+                case defcon, saves, bonus
+                case unknown
+                static let fallback = Self.unknown
+            }
+            let kind: Kind
+            let playerId: Int
+            /// Positive helps you, if it happens.
+            let effect: Int
+            /// "One more defensive action for Hall would gain you 2 on Andy, putting you ahead".
+            let text: String
+            var id: String { "\(kind.rawValue)-\(playerId)" }
+        }
+        struct ComingUp: Decodable, Sendable, Hashable, Identifiable {
+            let fixtureId: Int
+            let kickoff: Date?
+            let yours: [Int]
+            let theirs: [Int]
+            /// "ARS v CHE · you have Saka; Andy has Palmer ×2".
+            let text: String
+            var id: Int { fixtureId }
+        }
+        struct Featured: Decodable, Sendable, Hashable {
+            let entryId: Int
+            let name: String
+            /// "You've overtaken Andy", or the latest event that moved it.
+            let changed: String?
+            let now: [Situation]
+            let next: [ComingUp]
+        }
+        /// Every saved rival, featured first.
+        let rows: [RivalSummary]
+        let featured: Featured?
     }
 
     /// Matchday's players to watch (happy-backend-pal#66; contract §34): the groups switched on in
@@ -284,6 +335,8 @@ struct LiveTeam: Decodable, Sendable {
     let feed: [FeedItem]?
     /// Only when the request asked for players to watch.
     var watching: Watching?
+    /// Only with `?rivals=1` from this team's own device.
+    var rivals: Rivals?
     let players: [String: PlayerSummary]
     /// Only on a live matchday replay: what's being replayed and how far through it is.
     var replay: Replay?

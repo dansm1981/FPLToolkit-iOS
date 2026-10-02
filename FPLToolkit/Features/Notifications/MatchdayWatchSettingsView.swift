@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// Live matchday (Dan, 2 Oct 2026): who Matchday watches beside your team. Highly owned players
-/// are on to begin with; Elite differentials and mini-league rivals are switched on here, with how
-/// many rivals above and below you and whether to add the leader. Saved on the server with the
-/// device's prefs (matchday alerts will follow them once push is live) and kept on the phone for
-/// the live requests. Changes save straight away.
+/// are on to begin with; Elite differentials are switched on here. Rivals are the ones you add in
+/// Watch → Rivals (they replaced the league-position rivals, Stage B). Saved on the server with
+/// the device's prefs (matchday alerts will follow them once push is live) and kept on the phone
+/// for the live requests. Changes save straight away.
 struct MatchdayWatchSettingsView: View {
     @Environment(AppModel.self) private var appModel
     @State private var prefs = MatchdayWatch.current
@@ -24,13 +24,15 @@ struct MatchdayWatchSettingsView: View {
             .listRowBackground(ToolkitColor.surface)
 
             Section {
-                toggle("Mini-league rivals", "Their live score, captain and the players they have that you don't", \.rivals) { next in
-                    if next.rivals, !leagues.contains(where: { $0.id == next.rivalsLeague }) {
-                        next.rivalsLeague = leagues.first?.id
+                NavigationLink {
+                    RivalsScreen()
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Your rivals")
+                        Text("Managers you add from your mini-leagues show on Matchday with your contest against them")
+                            .font(.footnote)
+                            .foregroundStyle(ToolkitColor.secondaryText)
                     }
-                }
-                if prefs.rivals {
-                    rivalsSettings
                 }
             } header: {
                 Text("Rivals")
@@ -50,74 +52,15 @@ struct MatchdayWatchSettingsView: View {
         .scrollContentBackground(.hidden)
         .background(ToolkitColor.canvas.ignoresSafeArea())
         .navigationTitle("Live matchday")
-        .task {
-            async let leagues: Void = appModel.leagues.loadIfNeeded()
-            await refresh()
-            await leagues
-        }
+        .task { await refresh() }
     }
 
-    /// The device's saved mini-leagues (the Elite 100 has its own group).
-    private var leagues: [LeagueList.League] {
-        appModel.leagues.list?.leagues.filter { !$0.isElite } ?? []
-    }
-
-    @ViewBuilder
-    private var rivalsSettings: some View {
-        if leagues.isEmpty {
-            Text(appModel.leagues.list == nil ? "Loading your leagues…" : "Add a mini-league from Team → Your leagues to follow its rivals here.")
-                .font(.subheadline)
-                .foregroundStyle(ToolkitColor.secondaryText)
-        } else {
-            Picker("League", selection: Binding<Int?>(
-                get: { prefs.rivalsLeague },
-                set: { id in
-                    var next = prefs
-                    next.rivalsLeague = id
-                    save(next)
-                }
-            )) {
-                if !leagues.contains(where: { $0.id == prefs.rivalsLeague }) {
-                    Text("Choose a league").tag(Int?.none)
-                }
-                ForEach(leagues) { league in
-                    Text(league.name).tag(Int?.some(league.id))
-                }
-            }
-            .disabled(saving)
-        }
-        stepper("Managers above you", \.rivalsAbove)
-        stepper("Managers below you", \.rivalsBelow)
-        toggle("Include the league leader", "Wherever you are in the table", \.rivalsLeader)
-    }
-
-    private func stepper(_ title: String, _ path: WritableKeyPath<Prefs, Int>) -> some View {
-        let value = prefs[keyPath: path]
-        return Stepper(value: Binding(
-            get: { value },
-            set: { n in
-                var next = prefs
-                next[keyPath: path] = n
-                save(next)
-            }
-        ), in: 0...Prefs.maxEachSide) {
-            Text("\(title): \(value)")
-                .monospacedDigit()
-        }
-        .accessibilityLabel(title)
-        .accessibilityValue("\(value)")
-        .disabled(saving)
-    }
-
-    /// `adjust` makes any follow-on change before saving (a league for the rivals).
-    private func toggle(_ title: String, _ detail: String, _ path: WritableKeyPath<Prefs, Bool>,
-                        adjust: ((inout Prefs) -> Void)? = nil) -> some View {
+    private func toggle(_ title: String, _ detail: String, _ path: WritableKeyPath<Prefs, Bool>) -> some View {
         Toggle(isOn: Binding(
             get: { prefs[keyPath: path] },
             set: { on in
                 var next = prefs
                 next[keyPath: path] = on
-                adjust?(&next)
                 save(next)
             }
         )) {
@@ -140,8 +83,9 @@ struct MatchdayWatchSettingsView: View {
     /// Optimistic: shows the change, saves it, and puts it back if saving fails.
     private func save(_ proposed: Prefs) {
         var next = proposed
-        // A league no longer saved on the device would be refused.
-        if appModel.leagues.list != nil, let league = next.rivalsLeague, !leagues.contains(where: { $0.id == league }) {
+        // The league-position rivals are retired: a league no longer saved would be refused.
+        if next.rivalsLeague != nil {
+            next.rivals = false
             next.rivalsLeague = nil
         }
         let previous = prefs

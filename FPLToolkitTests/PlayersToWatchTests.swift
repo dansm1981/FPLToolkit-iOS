@@ -14,28 +14,23 @@ struct PlayersToWatchTests {
         #expect(Prefs.standard.watchesAnyone)
     }
 
-    @Test func asksForEveryGroupAndTheRivalSettings() {
-        let prefs = Prefs(highlyOwned: true, eliteDifferentials: true, rivals: true, rivalsLeague: 783382,
-                          rivalsAbove: 1, rivalsBelow: 3, rivalsLeader: false, inFeed: false)
+    @Test func asksForEveryGroup() {
+        let prefs = Prefs(highlyOwned: true, eliteDifferentials: true, rivals: false, rivalsLeague: nil,
+                          rivalsAbove: 2, rivalsBelow: 2, rivalsLeader: true, inFeed: false)
         #expect(prefs.queryItems == [
-            URLQueryItem(name: "watch", value: "owned,elite,rivals"),
-            URLQueryItem(name: "league", value: "783382"),
-            URLQueryItem(name: "above", value: "1"),
-            URLQueryItem(name: "below", value: "3"),
-            URLQueryItem(name: "leader", value: "0"),
+            URLQueryItem(name: "watch", value: "owned,elite"),
             URLQueryItem(name: "feed", value: "0"),
         ])
     }
 
-    @Test func rivalsNeedALeagueAndNothingOnAsksForNothing() {
+    @Test func leaguePositionRivalsAreRetiredAndNothingOnAsksForNothing() {
+        // Rivals are your saved ones now (happy-backend-pal#68): old settings ask for nothing extra.
         var prefs = Prefs.standard
         prefs.rivals = true
+        prefs.rivalsLeague = 41119
         #expect(prefs.queryItems == [URLQueryItem(name: "watch", value: "owned")])
         prefs.highlyOwned = false
         #expect(prefs.queryItems.isEmpty && !prefs.watchesAnyone)
-        // The leader and feed defaults aren't sent.
-        prefs.rivalsLeague = 41119
-        #expect(prefs.queryItems.map(\.name) == ["watch", "league", "above", "below"])
     }
 
     @Test func liveRequestCarriesThem() {
@@ -115,11 +110,6 @@ struct PlayersToWatchTests {
         let owned = try #require(groups[0].players.first)
         #expect(WatchText.state(owned) == "Playing · 60 min")
         #expect(WatchText.spoken(owned) == "51% owned, Playing · 60 min, 6 FPL-recorded points, plus 2 estimated bonus, not included")
-        let leader = groups[1].rivals[0], late = groups[1].rivals[1]
-        #expect(WatchText.rivalDetail(leader, live: live) == "Andy's XI · Captain Haaland · +3 est. bonus")
-        #expect(WatchText.rivalDetail(late, live: live) == "Team not synced yet")
-        #expect(WatchText.spoken(leader, live: live)
-            == "Andy Smith, 1st · leader · 12 pts ahead of you, 51 points this gameweek, you have 45, Andy's XI · Captain Haaland · +3 est. bonus")
         #expect(WatchText.state(.init(playerId: 1, reason: "", points: 0, minutes: 0, state: .done, provisionalBonus: 0)) == "Didn't play")
     }
 

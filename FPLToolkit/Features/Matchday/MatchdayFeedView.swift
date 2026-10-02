@@ -10,6 +10,8 @@ enum MatchdayFeedFilter: String, CaseIterable, Identifiable {
     case lineups = "Line-ups & subs"
     /// Players to watch (happy-backend-pal#66); offered only when the feed has some.
     case watching = "Watching"
+    /// What moved your rivalries (happy-backend-pal#68); offered only when the feed has some.
+    case rivals = "Rivals"
 
     var id: String { rawValue }
 
@@ -21,6 +23,7 @@ enum MatchdayFeedFilter: String, CaseIterable, Identifiable {
         case .bonus: item.group == .bonus
         case .lineups: item.group == .lineups
         case .watching: item.group == .watching
+        case .rivals: item.group == .rivals || !(item.rivals?.isEmpty ?? true)
         }
     }
 }
@@ -85,7 +88,10 @@ struct MatchdayFeed: View {
 
     private var filters: [MatchdayFeedFilter] {
         let watching = feed.contains { $0.group == .watching }
-        return MatchdayFeedFilter.allCases.filter { $0 != .watching || watching }
+        let rivals = feed.contains(where: MatchdayFeedFilter.rivals.includes)
+        return MatchdayFeedFilter.allCases.filter {
+            ($0 != .watching || watching) && ($0 != .rivals || rivals)
+        }
     }
 
     private var emptyText: String {
@@ -143,6 +149,24 @@ struct MatchdayFeedRow: View {
                         .strikethrough(item.state == .withdrawn)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                // What it did to your rivalries: the featured rival first, at most two lines.
+                if let effects = item.rivals, !effects.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(effects.prefix(2), id: \.entryId) { effect in
+                            Label {
+                                Text(typeSize.stacksRows ? Format.unbroken(effect.text) : effect.text)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            } icon: {
+                                Image(systemName: "person.2")
+                            }
+                        }
+                        if effects.count > 2 {
+                            Text("and \(effects.count - 2) more rival\(effects.count == 3 ? "" : "s")")
+                        }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.accent)
+                }
                 if let reason = item.watching {
                     Label {
                         Text(typeSize.stacksRows ? Format.unbroken(reason) : reason)
@@ -194,11 +218,12 @@ struct MatchdayFeedRow: View {
         return nil
     }
 
-    /// A watched player's points aren't yours: they're shown plainly.
+    /// A watched player's or a rival's player's points aren't yours: they're shown plainly.
     private func pointsTag(_ points: Int) -> some View {
-        Tag(text: MatchdayText.signedPoints(points),
-            foreground: item.watching != nil ? ToolkitColor.secondaryText : points > 0 ? ToolkitColor.positive : ToolkitColor.error,
-            fill: item.watching != nil ? ToolkitColor.raised : points > 0 ? ToolkitColor.positiveFill : ToolkitColor.errorFill)
+        let notYours = item.watching != nil || item.group == .rivals
+        return Tag(text: MatchdayText.signedPoints(points),
+                   foreground: notYours ? ToolkitColor.secondaryText : points > 0 ? ToolkitColor.positive : ToolkitColor.error,
+                   fill: notYours ? ToolkitColor.raised : points > 0 ? ToolkitColor.positiveFill : ToolkitColor.errorFill)
             .monospacedDigit()
     }
 }

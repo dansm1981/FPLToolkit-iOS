@@ -364,24 +364,13 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.staticTexts["Quiet hours"].firstMatch, "Notification settings")
         check(app, "08-notifications", sizesAndLists: false)
 
-        // Live matchday (Dan, 2 Oct): who Matchday watches. Rivals open the league, how many
-        // above and below, and the leader; the switch is put back as it was.
+        // Live matchday (Dan, 2 Oct): who Matchday watches; rivals are the saved ones (Stage B).
         app.buttons["Live matchday"].firstMatch.tap()
-        let rivals = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Mini-league rivals'")).firstMatch
-        waitFor(rivals, "Live matchday")
+        let owned = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Highly owned'")).firstMatch
+        waitFor(owned, "Live matchday")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your rivals'")).firstMatch.exists)
         settle()
         check(app, "08c-live-matchday", sizesAndLists: false)
-        let wasOn = rivals.value as? String == "1"
-        let flip = { rivals.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
-        if !wasOn { flip() }
-        waitFor(app.steppers.firstMatch, "Rivals settings")
-        settle()
-        check(app, "08d-live-matchday-rivals", sizesAndLists: false)
-        if !wasOn {
-            flip()
-            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.steppers.firstMatch)
-            waitForExpectations(timeout: 20)
-        }
     }
 
     /// Imports the team into a draft the first time (kept on the simulator's device for later runs).
@@ -1012,9 +1001,10 @@ final class ScreenAuditTests: XCTestCase {
             throw XCTSkip("No matchday recorded in the last 30 days")
         }
 
-        // Players to watch (happy-backend-pal#66): every group, rivals from League of Experts.
+        // Players to watch (happy-backend-pal#66), and the device's saved rivals (#68: test22
+        // features Andy for team 22615).
         var arguments = ["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600",
-                         "-matchdayWatch", "owned,elite,rivals", "-matchdayWatchLeague", "783382"]
+                         "-matchdayWatch", "owned,elite"]
         if base != "https://www.fpltoolkit.co.uk/api/mobile/v1/" { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
         let end = app.buttons["End replay"].firstMatch
@@ -1029,16 +1019,17 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(end, "Replay on Matchday", timeout: 30)
         settle()
         check(app, "81-matchday-replay")
-        // Players to watch under the bench, then one rival opened to their players.
+        // Your rivals under the bench (the featured contest), then players to watch.
+        let rivals = app.staticTexts["Your rivals"].firstMatch
+        if rivals.waitForExistence(timeout: 10) {
+            reveal(rivals, in: app)
+            settle()
+            check(app, "81b-matchday-rivals")
+        }
         let watching = app.staticTexts["Players to watch"].firstMatch
         reveal(watching, in: app)
         settle()
-        check(app, "81b-matchday-watching")
-        let rival = app.buttons.matching(NSPredicate(format: "label CONTAINS ', you have '")).firstMatch
-        reveal(rival, in: app)
-        rival.tap()
-        settle()
-        check(app, "81c-matchday-rival-open")
+        check(app, "81c-matchday-watching")
         for _ in 0..<4 { app.swipeDown() }
         settle()
         app.buttons["Matches"].firstMatch.tap()

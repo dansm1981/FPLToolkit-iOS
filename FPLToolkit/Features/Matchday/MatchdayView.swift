@@ -29,6 +29,8 @@ struct MatchdayView: View {
     @State private var pushedPlayer: PlayerRef?
     @State private var showingWatchSettings = false
     @State private var watched: DevicePrefs.MatchdayPrefs?
+    /// A rival opened from Your rivals.
+    @State private var pushedRival: Int?
 
     static let refreshSeconds: UInt64 = 30
     /// A replay moves several match minutes a second: refresh more often.
@@ -82,6 +84,7 @@ struct MatchdayView: View {
         .navigationDestination(isPresented: $showingHistory) { SeasonHistoryView(entryId: entryId) }
         .navigationDestination(item: $pushedPlayer) { ref in PlayerDetailView(playerId: ref.id, context: ref.context) }
         .navigationDestination(isPresented: $showingWatchSettings) { MatchdayWatchSettingsView() }
+        .navigationDestination(item: $pushedRival) { id in RivalView(entryId: id) }
         .onChange(of: showingWatchSettings) { _, showing in
             // Back from the settings: load again if who's watched changed.
             if !showing, watched != MatchdayWatch.current { reload() }
@@ -109,7 +112,11 @@ struct MatchdayView: View {
     private func load() async {
         let watch = MatchdayWatch.current
         watched = watch
-        await table.load(appModel.liveRepository.team(entryId: entryId, watch: watch))
+        // Your saved rivals come with your own team's live data, from this device (Stage B).
+        await appModel.rivals.loadIfNeeded()
+        let withRivals = entryId == appModel.entryId && !(appModel.rivals.list?.rivals.isEmpty ?? true)
+        await table.load(appModel.liveRepository.team(entryId: entryId, watch: watch,
+                                                      rivalsVia: withRivals ? appModel.deviceSession : nil))
         remember()
     }
 
@@ -185,6 +192,9 @@ struct MatchdayView: View {
             SectionHeader(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
             CardGroup {
                 LinkRow(title: benchTitle(live), detail: benchDetail(live), systemImage: "tshirt") { sheet = .bench }
+            }
+            if let rivals = live.rivals {
+                MatchdayRivalsSection(live: live, rivals: rivals) { pushedRival = $0 }
             }
             MatchdayWatchingSection(live: live,
                                     onPlayer: { id, reason in pushedPlayer = PlayerRef(id: id, context: reason) },
