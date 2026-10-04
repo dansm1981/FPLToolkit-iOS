@@ -10,6 +10,17 @@ struct ResearchView: View {
 
     var body: some View {
         List {
+            // Until Dan settles the menu (4 Oct): the projections open from the top of Research.
+            Section {
+                row("Projections", systemImage: "chart.bar.xaxis",
+                    detail: "Every player's points for the coming gameweeks as a range: median, most likely score, haul and blank chances. Beta.") {
+                    ProjectionsView()
+                }
+            } header: {
+                Text("Projections")
+            }
+            .listRowBackground(ToolkitColor.surface)
+
             Section {
                 row("Fixture ticker", systemImage: "list.number",
                     detail: "Every club's run of fixtures, easiest first, over the next 1\u{00A0}to\u{00A0}24 gameweeks.") {

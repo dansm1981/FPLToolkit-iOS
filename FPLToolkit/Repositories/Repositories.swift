@@ -139,6 +139,29 @@ struct ResearchRepository: Sendable {
         return .init(client: client, cache: cache, path: "research/expected-players", query: query)
     }
 
+    /// The projections table (the website's /projections). `minutes` are your 60+ forecasts,
+    /// player id → whole percent; the server rescales the rows from them, as the site does.
+    func projections(horizon: Int, position: Position?, search: String, startersOnly: Bool, allNailed: Bool,
+                     minutes: [Int: Int], sort: ProjectionSort, ascending: Bool) -> CachedEndpoint<Projections> {
+        var query = [URLQueryItem(name: "horizon", value: String(horizon)), URLQueryItem(name: "sort", value: sort.rawValue)]
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if !startersOnly { query.append(URLQueryItem(name: "starters", value: "0")) }
+        if allNailed { query.append(URLQueryItem(name: "nailed", value: "1")) }
+        if !minutes.isEmpty {
+            let pairs = minutes.keys.sorted().compactMap { id in minutes[id].map { "\(id):\($0)" } }
+            query.append(URLQueryItem(name: "minutes", value: pairs.joined(separator: ",")))
+        }
+        if ascending { query.append(URLQueryItem(name: "dir", value: "asc")) }
+        let text = search.trimmingCharacters(in: .whitespaces)
+        if !text.isEmpty { query.append(URLQueryItem(name: "q", value: text)) }
+        return .init(client: client, cache: cache, path: "projections", query: query)
+    }
+
+    /// How one player's projection is built (the website's breakdown drawer).
+    func projectionPlayer(_ id: Int) -> CachedEndpoint<ProjectionPlayer> {
+        .init(client: client, cache: cache, path: "projections/players/\(id)", query: [])
+    }
+
     func ticker(horizon: Int, fuzzy: Bool, sort: ResearchTicker.SortKey, hardestFirst: Bool,
                 clubs: [Int]?, view: FixtureView) -> CachedEndpoint<ResearchTicker> {
         var query = view.queryItems + [

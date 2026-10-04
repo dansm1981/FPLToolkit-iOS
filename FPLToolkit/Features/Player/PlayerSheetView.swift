@@ -273,6 +273,17 @@ struct PlayerDetailContent: View {
         }
         FixtureRunStrip(cells: Array(fixtureCells.prefix(5)))
 
+        // The projection breakdown (Dan, 4 Oct): his points as a range, not one number.
+        CardGroup {
+            NavigationLink {
+                ProjectionPlayerView(playerId: player.id, knownName: player.webName, showsPlayerLink: false)
+            } label: {
+                LinkRowLabel(title: "Projected points", detail: "The coming gameweeks as a range: median, most likely, haul chance",
+                             systemImage: "chart.bar.xaxis")
+            }
+            .buttonStyle(.plain)
+        }
+
         if let prediction = sheet.pricePrediction {
             priceWatch(prediction)
         }

@@ -754,6 +754,52 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "91-expected-players", clippingCheckedLarge: true)
     }
 
+    func test24Projections() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        openResearch(app)
+        openHubRow(app, "Projections")
+        // A row reads "Saka, …, Mean 6.8 points, median 6, most likely 2, 80% range 1 to 15, …".
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '80% range'")).firstMatch
+        waitFor(row, "Projections list", timeout: 60)
+        settle()
+        check(app, "92-projections", clippingCheckedLarge: true)
+        // The rows themselves (below the run card and filters at the large sizes).
+        reveal(row, in: app)
+        settle()
+        check(app, "92b-projections-rows", clippingCheckedLarge: true)
+
+        // Your minutes forecast, from the row's menu.
+        row.press(forDuration: 1.2)
+        let menuItem = app.buttons["Your minutes forecast…"].firstMatch
+        waitFor(menuItem, "Minutes forecast menu item")
+        menuItem.tap()
+        let setFull = app.buttons["Set 100%"].firstMatch
+        waitFor(setFull, "Minutes forecast sheet")
+        settle()
+        // A sheet: the audit can't change the text size inside it (see check()); checked by eye at
+        // xxxLarge bold, where it wraps and the buttons stack.
+        check(app, "93-projection-minutes", sizesAndLists: false)
+        setFull.tap()
+        app.buttons["Done"].firstMatch.tap()
+        let tweaked = app.buttons.matching(NSPredicate(format: "label CONTAINS 'your forecast'")).firstMatch
+        waitFor(tweaked, "A row with your forecast", timeout: 60)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Reset 1 minutes tweak'")).firstMatch.exists)
+
+        // The breakdown.
+        tweaked.tap()
+        let minutes = app.staticTexts["1. Minutes"].firstMatch
+        waitFor(minutes, "Projection breakdown", timeout: 60)
+        settle()
+        check(app, "94-projection-player", clippingCheckedLarge: true)
+        let horizon = app.staticTexts["Over the horizon"].firstMatch
+        reveal(horizon, in: app)
+        settle()
+        check(app, "95-projection-player-more", clippingCheckedLarge: true)
+    }
+
     func test13Players() {
         var arguments = ["-entryId", team]
         let base = setting("auditApiBaseURL", default: "")
