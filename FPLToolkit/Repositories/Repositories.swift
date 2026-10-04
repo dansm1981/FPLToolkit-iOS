@@ -119,6 +119,26 @@ struct ResearchRepository: Sendable {
               query: [URLQueryItem(name: "players", value: playerIds.prefix(30).map(String.init).joined(separator: ","))])
     }
 
+    /// The xG league table (happy-backend-pal#73).
+    func expectedTeams(window: ExpectedWindow, venue: ExpectedVenue) -> CachedEndpoint<ExpectedTeams> {
+        .init(client: client, cache: cache, path: "research/expected-teams",
+              query: [URLQueryItem(name: "window", value: window.rawValue), URLQueryItem(name: "venue", value: venue.rawValue)])
+    }
+
+    /// Players by xG and xA; `sort` is one of the server's keys (xg, xa, xgi, goalsVsXg, …).
+    func expectedPlayers(window: ExpectedWindow, position: Position?, club: Int?, maxPrice: Double?,
+                         minMinutes: Int, sort: String, ascending: Bool, search: String) -> CachedEndpoint<ExpectedPlayers> {
+        var query = [URLQueryItem(name: "window", value: window.rawValue), URLQueryItem(name: "sort", value: sort)]
+        if let position { query.append(URLQueryItem(name: "position", value: position.rawValue)) }
+        if let club { query.append(URLQueryItem(name: "club", value: String(club))) }
+        if let maxPrice { query.append(URLQueryItem(name: "maxPrice", value: String(maxPrice))) }
+        if minMinutes > 0 { query.append(URLQueryItem(name: "minMinutes", value: String(minMinutes))) }
+        if ascending { query.append(URLQueryItem(name: "dir", value: "asc")) }
+        let text = search.trimmingCharacters(in: .whitespaces)
+        if !text.isEmpty { query.append(URLQueryItem(name: "q", value: text)) }
+        return .init(client: client, cache: cache, path: "research/expected-players", query: query)
+    }
+
     func ticker(horizon: Int, fuzzy: Bool, sort: ResearchTicker.SortKey, hardestFirst: Bool,
                 clubs: [Int]?, view: FixtureView) -> CachedEndpoint<ResearchTicker> {
         var query = view.queryItems + [

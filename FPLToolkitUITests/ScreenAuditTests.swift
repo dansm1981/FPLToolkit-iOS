@@ -733,6 +733,27 @@ final class ScreenAuditTests: XCTestCase {
     }
 
     /// The Research tab's Players group. `auditApiBaseURL` as for test11.
+    /// Expected stats (happy-backend-pal#73): the xG table, then players by xG. `auditApiBaseURL`
+    /// as for test11.
+    func test23ExpectedStats() {
+        var arguments = ["-entryId", team]
+        let base = setting("auditApiBaseURL", default: "")
+        if !base.isEmpty { arguments += ["-apiBaseURL", base] }
+        let app = launch(arguments)
+        openResearch(app)
+        openHubRow(app, "Expected stats")
+        // A team row reads "1, Man City, 15 points from 5 matches, …".
+        let teamRow = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ' points from '")).firstMatch
+        waitFor(teamRow, "Expected stats teams", timeout: 60)
+        settle()
+        check(app, "90-expected-teams")
+        app.buttons["Players"].firstMatch.tap()
+        let playerRow = app.buttons.matching(NSPredicate(format: "label CONTAINS ' xG, '")).firstMatch
+        waitFor(playerRow, "Expected stats players", timeout: 60)
+        settle()
+        check(app, "91-expected-players", clippingCheckedLarge: true)
+    }
+
     func test13Players() {
         var arguments = ["-entryId", team]
         let base = setting("auditApiBaseURL", default: "")

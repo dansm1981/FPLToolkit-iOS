@@ -33,6 +33,10 @@ struct ResearchView: View {
                     detail: "Every player, filtered by club, position, price and availability, sorted by any stat.") {
                     PlayerInsightsView()
                 }
+                row("Expected stats", systemImage: "scope",
+                    detail: "The xG table, and players by xG and xA, over the season or the last 5 or 10.") {
+                    ExpectedStatsView()
+                }
                 row("Template team", systemImage: "person.3",
                     detail: "The most-owned XI, and everyone owned by 20% or more.") {
                     TemplateTeamView()
