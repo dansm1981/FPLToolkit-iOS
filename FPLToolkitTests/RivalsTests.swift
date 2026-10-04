@@ -103,6 +103,26 @@ struct RivalsTests {
         let o = RivalComparison.Outlook(gameweek: 6, theirGameweek: 5, yourGameweek: 5, threats: [captain], opportunities: [])
         #expect(RivalMovesText.outlookNote(o, name: "Andy")
             == "xP is FPL's expected points for GW6, doubled for a captain. Compares Andy's GW5 team with your GW5 team: transfers before the deadline may change it.")
+        // Without the model's simulations there's no head-to-head.
+        #expect(o.headToHead == nil)
+    }
+
+    /// The head-to-head on the projection model's simulations (Dan's other session, 4 Oct). The
+    /// database time comes back with "+00:00"; it must decode, or the whole rival page fails.
+    @Test func headToHead() throws {
+        let json = #"{"gameweek":6,"theirGameweek":5,"yourGameweek":5,"threats":[],"opportunities":[],"headToHead":{"win":0.541,"draw":0.043,"loss":0.416,"you":{"mean":52.3,"median":52,"p10":38,"p90":67},"them":{"mean":49.1,"median":49,"p10":35,"p90":64},"gap":{"median":3,"p10":-14,"p90":19},"sims":2000,"stage":"Odds in","modelRunAt":"2026-10-04T18:24:42.771+00:00"}}"#
+        let o = try APIClient.decode(RivalComparison.Outlook.self, from: Data(json.utf8))
+        let h = try #require(o.headToHead)
+        #expect(h.win == 0.541 && h.you.median == 52 && h.gap.p10 == -14 && h.modelRunAt != nil)
+        #expect(RivalHeadToHeadText.pct(h.win) == "54%" && RivalHeadToHeadText.pct(h.loss) == "42%")
+        #expect(RivalHeadToHeadText.range(h.you) == "Median 52 (38–67)")
+        #expect(RivalHeadToHeadText.gap(h.gap) == "+3 (−14 to +19)")
+        #expect(RivalHeadToHeadText.spokenOdds(h, name: "Andy") == "You win 54%, draw 4%, Andy wins 42%")
+        #expect(RivalHeadToHeadText.note(h, gameweek: 6).hasPrefix("From 2,000 simulations of GW6 by the projection model (Odds in), run "))
+        // Older answers have no headToHead (or null): still fine.
+        let null = try APIClient.decode(RivalComparison.Outlook.self, from: Data(json.replacingOccurrences(
+            of: #""headToHead":{"#, with: #""headToHead":null,"x":{"#).utf8))
+        #expect(null.headToHead == nil)
     }
 
     @Test func transferWording() {

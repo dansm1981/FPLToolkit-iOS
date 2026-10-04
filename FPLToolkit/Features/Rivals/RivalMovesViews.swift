@@ -489,6 +489,9 @@ struct RivalOutlookCard: View {
     var body: some View {
         let name = data.rival.name
         SectionHeader(title: "How you stack up for GW\(outlook.gameweek)")
+        if let h2h = outlook.headToHead {
+            RivalHeadToHeadCard(h2h: h2h, name: name, gameweek: outlook.gameweek)
+        }
         CardGroup {
             group("Threats", detail: "In \(name)'s team, not yours", systemImage: "exclamationmark.triangle",
                   colour: ToolkitColor.error, players: outlook.threats)
@@ -544,6 +547,121 @@ struct RivalOutlookCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 15)
         .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Head to head
+
+/// Who wins next gameweek on the projection model (the server's head-to-head): both squads scored
+/// on the same simulated gameweeks, so a shared player never decides it.
+struct RivalHeadToHeadCard: View {
+    let h2h: RivalComparison.Outlook.HeadToHead
+    let name: String
+    let gameweek: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+            Text("Head to head")
+                .font(.headline)
+                .foregroundStyle(ToolkitColor.primaryText)
+                .accessibilityAddTraits(.isHeader)
+            RivalOddsBar(win: h2h.win, draw: h2h.draw, loss: h2h.loss)
+            FlowLayout(spacing: ToolkitSpace.md, lineSpacing: 4) {
+                outcome("You win", h2h.win, ToolkitColor.positive)
+                outcome("Draw", h2h.draw, ToolkitColor.secondaryText)
+                outcome("\(name) wins", h2h.loss, ToolkitColor.error)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(RivalHeadToHeadText.spokenOdds(h2h, name: name))
+            VStack(alignment: .leading, spacing: 6) {
+                line("You", RivalHeadToHeadText.range(h2h.you))
+                line(name, RivalHeadToHeadText.range(h2h.them))
+                line("Your margin", RivalHeadToHeadText.gap(h2h.gap))
+            }
+            Text(RivalHeadToHeadText.note(h2h, gameweek: gameweek))
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(ToolkitSpace.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .toolkitCard()
+    }
+
+    private func outcome(_ label: String, _ chance: Double, _ colour: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(RivalHeadToHeadText.pct(chance))
+                .font(.title3.weight(.bold).monospacedDigit())
+                .foregroundStyle(colour)
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(ToolkitColor.primaryText)
+        }
+    }
+
+    private func line(_ title: String, _ value: String) -> some View {
+        NameFigureRow {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.primaryText)
+        } details: {
+            EmptyView()
+        } figure: {
+            Text(value)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(ToolkitColor.primaryText)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Win, draw and loss as one bar, green to red. Decorative: the figures beside it are read out.
+struct RivalOddsBar: View {
+    let win: Double
+    let draw: Double
+    let loss: Double
+
+    var body: some View {
+        let parts = [(win, ToolkitColor.positive), (draw, ToolkitColor.secondaryText), (loss, ToolkitColor.error)]
+            .filter { $0.0 > 0.004 }
+        GeometryReader { geo in
+            let room = max(0, geo.size.width - CGFloat(parts.count - 1) * 2)
+            HStack(spacing: 2) {
+                ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
+                    Rectangle().fill(part.1).frame(width: max(2, room * part.0))
+                }
+            }
+        }
+        .frame(height: 10)
+        .clipShape(Capsule())
+        .accessibilityHidden(true)
+    }
+}
+
+enum RivalHeadToHeadText {
+    nonisolated static func pct(_ v: Double) -> String { "\(Int((v * 100).rounded()))%" }
+
+    /// "Median 52 (38–67)".
+    nonisolated static func range(_ r: RivalComparison.Outlook.HeadToHead.Range) -> String {
+        "Median \(r.median) (\(r.p10)–\(r.p90))"
+    }
+
+    /// "+3 (−14 to +19)".
+    nonisolated static func gap(_ g: RivalComparison.Outlook.HeadToHead.Gap) -> String {
+        "\(signed(g.median)) (\(signed(g.p10)) to \(signed(g.p90)))"
+    }
+
+    nonisolated static func signed(_ v: Int) -> String { v > 0 ? "+\(v)" : v < 0 ? "−\(-v)" : "0" }
+
+    nonisolated static func spokenOdds(_ h: RivalComparison.Outlook.HeadToHead, name: String) -> String {
+        "You win \(pct(h.win)), draw \(pct(h.draw)), \(name) wins \(pct(h.loss))"
+    }
+
+    /// Where the chances come from.
+    nonisolated static func note(_ h: RivalComparison.Outlook.HeadToHead, gameweek: Int) -> String {
+        var text = "From \(h.sims.formatted()) simulations of GW\(gameweek) by the projection model (\(h.stage))"
+        if let at = h.modelRunAt { text += ", run \(Format.deadline(at))" }
+        return text + ". Both teams play the same simulated matches, with automatic substitutions, captaincy and chips, so players you both own never decide it. Ranges are P10 to P90."
     }
 }
 

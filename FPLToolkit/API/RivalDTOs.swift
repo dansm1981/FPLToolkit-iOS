@@ -266,11 +266,39 @@ struct RivalComparison: Decodable, Sendable {
             let multiplier: Int
             var id: Int { playerId }
         }
+        /// Both squads on the projection model's same simulated gameweeks (automatic substitutions,
+        /// captaincy and chips applied), so a shared player never decides it. Nil until the model has
+        /// simulations for the gameweek.
+        struct HeadToHead: Decodable, Sendable, Hashable {
+            struct Range: Decodable, Sendable, Hashable {
+                let mean: Double
+                let median: Int
+                let p10: Int
+                let p90: Int
+            }
+            struct Gap: Decodable, Sendable, Hashable {
+                /// Your points minus theirs.
+                let median: Int
+                let p10: Int
+                let p90: Int
+            }
+            /// Chances you outscore them, tie, and they outscore you (0–1; they sum to 1).
+            let win: Double
+            let draw: Double
+            let loss: Double
+            let you: Range
+            let them: Range
+            let gap: Gap
+            let sims: Int
+            let stage: String
+            let modelRunAt: Date?
+        }
         let gameweek: Int
         let theirGameweek: Int
         let yourGameweek: Int
         let threats: [Player]
         let opportunities: [Player]
+        var headToHead: HeadToHead? = nil
     }
     let players: [String: PlayerSummary]
 
