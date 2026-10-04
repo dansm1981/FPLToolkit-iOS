@@ -115,8 +115,11 @@ final class ScreenAuditTests: XCTestCase {
                     self.add(note)
                     return true
                 }
-                // Say which element failed: the audit's own message doesn't.
-                let note = XCTAttachment(string: "\(issue.compactDescription) | type \(element.elementType.rawValue) '\(element.label)' \(frame)")
+                // Say which element failed: the audit's own message doesn't. Printed too, so the log
+                // has it when the result bundle can't be read (it stalled finalising on 4 Oct).
+                let text = "\(issue.compactDescription) | type \(element.elementType.rawValue) '\(element.label)' \(frame)"
+                print("AUDIT \(name): \(text)")
+                let note = XCTAttachment(string: text)
                 note.name = "AUDIT \(name)"
                 note.lifetime = .keepAlways
                 self.add(note)
