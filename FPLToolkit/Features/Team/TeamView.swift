@@ -13,19 +13,21 @@ enum SquadMetric: String, CaseIterable, Identifiable {
 }
 
 /// S07–S09, S19 (design pack pp.9–12): the published squad, read-only. The team itself is the
-/// screen; its source context is one line, and the exact times open on tap.
-struct TeamView: View {
+/// content; its source context is one line, and the exact times open on tap. Since 4 Oct (Dan) it's
+/// the lower part of the Planner tab, below your plans, with its news and info as before; the
+/// Planner screen owns the loading and the pull to refresh.
+struct TeamSection: View {
     @Environment(AppModel.self) private var appModel
-    @Environment(\.scenePhase) private var scenePhase
     let entryId: Int
-    @State private var resource: Resource<Team>?
+    let resource: Resource<Team>?
     /// Chances from bookmaker odds (P3-5), for the Odds layer.
-    @State private var odds: Resource<Odds>?
+    let odds: Resource<Odds>?
+    /// "Plan changes": up to your plans on the same screen.
+    let onPlan: () -> Void
     @AppStorage("team.layout") private var layout: TeamLayout = .pitch
     @AppStorage("team.metric") private var metric: SquadMetric = .fixtures
     @State private var sheet: TeamSheet?
     @State private var pushedPlayer: PlayerRef?
-    @State private var showingLeagues = false
     @State private var showingSources = false
 
     enum TeamSheet: String, Identifiable {
@@ -37,85 +39,33 @@ struct TeamView: View {
         Group {
             switch resource?.phase {
             case .loading?, nil:
-                ScrollView {
-                    SkeletonCards(caption: "Loading your squad…", count: 4)
-                        .padding(.horizontal, ToolkitSpace.page)
-                }
+                SkeletonCards(caption: "Loading your squad…", count: 3)
             case .failed(let copy)?:
-                ErrorStateView(copy: copy) {
+                ResearchErrorView(copy: copy) {
                     Task { await resource?.retry() }
                 }
             case .loaded(let loaded)?:
                 if let resource {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                            SavedDataBanner(resource: resource)
-                            TeamOverview(
-                                team: loaded.value,
-                                odds: odds?.loaded?.value,
-                                layout: $layout,
-                                metric: $metric,
-                                onPlayer: { id in
-                                    pushedPlayer = PlayerRef(id: id, context: loaded.value.snapshot.map { "In your GW\($0.gw) squad" })
-                                },
-                                onSheet: { sheet = $0 },
-                                onPlan: { appModel.router.selectedTab = .planner })
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, ToolkitSpace.section)
+                    VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                        SavedDataBanner(resource: resource)
+                        TeamOverview(
+                            team: loaded.value,
+                            odds: odds?.loaded?.value,
+                            layout: $layout,
+                            metric: $metric,
+                            onPlayer: { id in
+                                pushedPlayer = PlayerRef(id: id, context: loaded.value.snapshot.map { "In your GW\($0.gw) squad" })
+                            },
+                            onSheet: { sheet = $0 },
+                            onPlan: onPlan)
                     }
-                    .refreshable { await resource.load(bypassCache: true) }
                 }
             }
         }
-        .toolkitScreen()
-        .navigationTitle("My Team")
-        // In the top bar, as on Today (Dan, 30 Sep).
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { showingLeagues = true } label: {
-                    Label("Your leagues", systemImage: "trophy")
-                }
-                .tint(ToolkitColor.accent)
-            }
-        }
-        .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
         .navigationDestination(isPresented: $showingSources) { DataSourcesView(entryId: entryId) }
         .navigationDestination(item: $pushedPlayer) { ref in PlayerDetailView(playerId: ref.id, context: ref.context) }
         .sheet(item: $sheet) { which in
             sheetView(which)
-        }
-        .task {
-            if odds == nil {
-                let odds = Resource(appModel.liveRepository.odds())
-                self.odds = odds
-                Task { await odds.load() }
-            }
-            if resource == nil {
-                let resource = Resource(appModel.teamRepository.team(entryId: entryId))
-                self.resource = resource
-                await resource.load()
-                if let picks = resource.loaded?.value.snapshot?.picks {
-                    appModel.squadIds = Set(picks.map(\.playerId))
-                }
-            } else {
-                await refreshIfStale()
-            }
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await refreshIfStale() } }
-        }
-    }
-
-    /// Back on My Team from another tab or the app: reload the squad after a minute (odds after
-    /// 5), keeping the current copy on screen meanwhile.
-    private func refreshIfStale() async {
-        async let oddsLoad: Void = odds?.refreshIfStale(maxAge: 300) ?? ()
-        await resource?.refreshIfStale()
-        await oddsLoad
-        if let picks = resource?.loaded?.value.snapshot?.picks {
-            appModel.squadIds = Set(picks.map(\.playerId))
         }
     }
 
@@ -129,7 +79,7 @@ struct TeamView: View {
                                                     squadValue: TeamText.squadValue(team)),
                     links: [
                         InfoSheetLink(title: "Data & sources", detail: "Published and fetched times", systemImage: "icloud") { showingSources = true },
-                        InfoSheetLink(title: "Plan changes", detail: "Keep a separate draft", systemImage: "calendar") { appModel.router.selectedTab = .planner },
+                        InfoSheetLink(title: "Plan changes", detail: "Keep a separate draft", systemImage: "calendar") { onPlan() },
                     ])
             }
         case .fdr:
@@ -167,7 +117,7 @@ struct TeamOverview: View {
     @Binding var layout: TeamLayout
     @Binding var metric: SquadMetric
     let onPlayer: (Int) -> Void
-    let onSheet: (TeamView.TeamSheet) -> Void
+    let onSheet: (TeamSection.TeamSheet) -> Void
     let onPlan: () -> Void
     /// The fixture choice is the app's one (shared with the Planner).
     @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr

@@ -36,7 +36,7 @@ final class ReviewCaptureTests: XCTestCase {
         app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")
         capture(app, "r03-explore-today")
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         waitFor(app.staticTexts["Add your FPL team"].firstMatch, "Explore Team")
         capture(app, "r04-explore-team")
     }
@@ -65,7 +65,7 @@ final class ReviewCaptureTests: XCTestCase {
     func testR03TeamAndPlayer() {
         func openTeam(_ layout: String = "Pitch") -> XCUIApplication {
             let app = launch(["-entryId", team])
-            app.tabBars.buttons["Team"].tap()
+            openMyTeam(app)
             waitFor(app.buttons[layout].firstMatch, "Team")
             app.buttons[layout].firstMatch.tap()
             settle(2)
@@ -125,7 +125,7 @@ final class ReviewCaptureTests: XCTestCase {
     /// The player sheet's "More" pages, for a defender (DEFCON applies).
     func testR04PlayerMore() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         let player = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Defender'")).firstMatch
         waitFor(player, "a defender", timeout: 30)
         player.tap()
@@ -154,7 +154,7 @@ final class ReviewCaptureTests: XCTestCase {
 
     func testR05Leagues() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         let leaguesButton = app.buttons["Your leagues"].firstMatch
         waitFor(leaguesButton, "Your leagues button", timeout: 40)
         leaguesButton.tap()
@@ -242,7 +242,7 @@ final class ReviewCaptureTests: XCTestCase {
 
     func testR07Planner() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Planner"].tap()
+        openPlanner(app)
         let firstDraft = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'From your FPL team'")).firstMatch
         waitFor(firstDraft, "Planner drafts", timeout: 45)
         settle()
@@ -362,6 +362,23 @@ final class ReviewCaptureTests: XCTestCase {
         app.launchArguments = arguments
         app.launch()
         return app
+    }
+
+    /// Your current team: below your plans on the Planner tab (Dan, 4 Oct).
+    private func openMyTeam(_ app: XCUIApplication) {
+        app.tabBars.buttons["Planner"].tap()
+        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your current team'")).firstMatch
+        waitFor(jump, "Your current team on the page card")
+        jump.tap()
+        settle(1)
+    }
+
+    /// Your plans: the top of the Planner tab.
+    private func openPlanner(_ app: XCUIApplication) {
+        app.tabBars.buttons["Planner"].tap()
+        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your plans'")).firstMatch
+        if jump.waitForExistence(timeout: 10) { jump.tap() }
+        settle(1)
     }
 
     private func settle(_ seconds: TimeInterval = 1.5) {

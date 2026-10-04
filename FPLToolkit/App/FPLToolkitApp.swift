@@ -69,21 +69,19 @@ struct MainView: View {
             .tabItem { Label("Today", systemImage: "rectangle.stack") }
             .tag(AppTab.today)
 
-            NavigationStack {
-                if let entryId {
-                    TeamView(entryId: entryId)
-                } else {
-                    NoTeamView(title: "My Team", message: "Add your FPL team to see your published squad here, with each player's next fixture, price and availability.")
-                }
-            }
-            .tabItem { Label("Team", systemImage: "tshirt") }
-            .tag(AppTab.team)
-
+            // Team and Planner together (Dan, 4 Oct): your plans on top, your current team below.
             NavigationStack {
                 PlannerView(entryId: entryId, repository: appModel.plannerRepository)
             }
             .tabItem { Label("Planner", systemImage: "calendar") }
             .tag(AppTab.planner)
+
+            NavigationStack {
+                ProjectionsView()
+                    .settingsButton(entryId: entryId)
+            }
+            .tabItem { Label("Projections", systemImage: "chart.bar.xaxis.ascending") }
+            .tag(AppTab.projections)
 
             NavigationStack {
                 ResearchView(entryId: entryId)

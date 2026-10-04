@@ -222,6 +222,26 @@ final class ScreenAuditTests: XCTestCase {
     }
 
     /// The Research tab's hub.
+    /// Your current team: the lower part of the Planner tab since 4 Oct (Dan), reached from the
+    /// page card at the top.
+    private func openMyTeam(_ app: XCUIApplication) {
+        app.tabBars.buttons["Planner"].tap()
+        waitFor(app.navigationBars["Planner"].firstMatch, "Planner tab")
+        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your current team'")).firstMatch
+        waitFor(jump, "Your current team on the page card")
+        jump.tap()
+        settle(1)
+    }
+
+    /// Your plans: the top of the Planner tab.
+    private func openPlanner(_ app: XCUIApplication) {
+        app.tabBars.buttons["Planner"].tap()
+        waitFor(app.navigationBars["Planner"].firstMatch, "Planner tab")
+        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your plans'")).firstMatch
+        if jump.waitForExistence(timeout: 10) { jump.tap() }
+        settle(1)
+    }
+
     private func openResearch(_ app: XCUIApplication) {
         app.tabBars.buttons["Research"].tap()
         waitFor(app.navigationBars["Research"].firstMatch, "Research hub")
@@ -260,7 +280,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         showPitch(app)
         waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch, "Squad", timeout: 30)
         settle()
@@ -315,7 +335,7 @@ final class ScreenAuditTests: XCTestCase {
 
     func test04PlayerSheet() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         showPitch(app)
         let firstPlayer = app.buttons.matching(NSPredicate(format: "label CONTAINS ', Goalkeeper'")).firstMatch
         waitFor(firstPlayer, "a goalkeeper on the pitch", timeout: 30)
@@ -376,7 +396,7 @@ final class ScreenAuditTests: XCTestCase {
     /// Imports the team into a draft the first time (kept on the simulator's device for later runs).
     func test08Planner() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Planner"].tap()
+        openPlanner(app)
         let importButton = app.buttons["Import my FPL team"].firstMatch
         let firstDraft = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'From your FPL team'")).firstMatch
         // Either the empty state or the saved draft, whichever the network brings first.
@@ -451,8 +471,10 @@ final class ScreenAuditTests: XCTestCase {
     /// removes him. Blank drafts are deleted afterwards (the imported one is kept for test08).
     func test09PlannerEditing() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Planner"].tap()
-        let newDraft = app.buttons["New draft"].firstMatch
+        openPlanner(app)
+        // The "New draft" row in Your plans (Dan, 4 Oct: plans and drafts obvious on the Planner tab).
+        let newDraft = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'New draft'")).firstMatch
+        reveal(newDraft, in: app)
         waitFor(newDraft, "New draft button", timeout: 30)
         newDraft.tap()
         // The sheet opens on import, with the connected Team ID filled in.
@@ -583,7 +605,7 @@ final class ScreenAuditTests: XCTestCase {
     /// (each audited), then remove it again. The Elite 100 is always listed.
     func test10Leagues() {
         let app = launch(["-entryId", team])
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         let leaguesButton = app.buttons["Your leagues"].firstMatch
         waitFor(leaguesButton, "Your leagues button", timeout: 40)
         leaguesButton.tap()
@@ -759,8 +781,8 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        openResearch(app)
-        openHubRow(app, "Projections")
+        // Its own tab since 4 Oct (Dan).
+        app.tabBars.buttons["Projections"].tap()
         // A row reads "Saka, …, Mean 6.8 points, median 6, most likely 2, 80% range 1 to 15, …".
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '80% range'")).firstMatch
         waitFor(row, "Projections list", timeout: 60)
@@ -834,7 +856,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         // The position as a player row writes it: a looser match also finds "Odds check: captain,
         // defence, bench" while the odds overlay is on (test20 leaves it on).
         showPitch(app)
@@ -1114,7 +1136,7 @@ final class ScreenAuditTests: XCTestCase {
     func test22Rivals() {
         let app = launch(["-entryId", team])
         // Rivals come from saved leagues; test10 removes League of Experts when it's done.
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         let leaguesButton = app.buttons["Your leagues"].firstMatch
         waitFor(leaguesButton, "Your leagues button", timeout: 40)
         leaguesButton.tap()
@@ -1191,7 +1213,7 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
         app.buttons["Pitch"].firstMatch.tap()
         let menu = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Show on tiles'")).firstMatch
         waitFor(menu, "Show on tiles", timeout: 60)
@@ -1217,7 +1239,8 @@ final class ScreenAuditTests: XCTestCase {
         let app = launch(["-entryId", "0", "-exploring", "YES"])
         waitFor(app.buttons["Add my FPL team"].firstMatch, "Explore Today")
         check(app, "09-explore-today")
-        app.tabBars.buttons["Team"].tap()
+        openMyTeam(app)
+        reveal(app.staticTexts["Add your FPL team"].firstMatch, in: app)
         waitFor(app.staticTexts["Add your FPL team"].firstMatch, "Explore Team")
         check(app, "10-explore-team")
     }

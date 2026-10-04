@@ -295,11 +295,11 @@ struct TodayContent: View {
                          title: latestDraft == nil ? "Start a plan" : "Plan transfers",
                          detail: planDetail(next), asRow: rows) {
                 if let draft = latestDraft { appModel.router.pendingDraftId = draft.id }
-                appModel.router.selectedTab = .planner
+                appModel.router.openPlans()
             }
             NextMoveTile(systemImage: "tshirt", title: "View fixtures", detail: "Your squad, next 10 GWs", asRow: rows) {
                 UserDefaults.standard.set(TeamLayout.fixtures.rawValue, forKey: "team.layout")
-                appModel.router.selectedTab = .team
+                appModel.router.openTeam()
             }
             NextMoveTile(systemImage: "chart.bar.fill", title: "Check research", detail: "Form, stats & more", asRow: rows) {
                 appModel.router.selectedTab = .research

@@ -114,6 +114,8 @@ struct DeepLinkTests {
     @Test(arguments: [
         ("fpltoolkit://today", DeepLink.today),
         ("fpltoolkit://team", DeepLink.team),
+        ("fpltoolkit://planner", DeepLink.planner),
+        ("fpltoolkit://projections", DeepLink.projections),
         ("fpltoolkit://research", DeepLink.research),
         ("fpltoolkit://watch", DeepLink.watch),
         ("fpltoolkit://watch/alerts", DeepLink.alerts),
@@ -129,6 +131,18 @@ struct DeepLinkTests {
 
     @Test func ignoresOtherSchemes() throws {
         #expect(DeepLink(url: try #require(URL(string: "https://www.fpltoolkit.co.uk/players/cole-palmer"))) == nil)
+    }
+
+    /// Team and Planner are one tab (Dan, 4 Oct): a team link lands on your current team, a planner
+    /// link on your plans, both on the Planner tab.
+    @MainActor @Test func teamAndPlannerLinksOpenThePlannerTab() {
+        let router = Router()
+        router.open(.team)
+        #expect(router.selectedTab == .planner && router.pendingPlannerSection == .team)
+        router.open(.planner)
+        #expect(router.selectedTab == .planner && router.pendingPlannerSection == .plans)
+        router.open(.projections)
+        #expect(router.selectedTab == .projections)
     }
 }
 

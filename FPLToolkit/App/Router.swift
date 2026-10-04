@@ -1,8 +1,15 @@
 import Foundation
 import Observation
 
+/// The tabs (Dan, 4 Oct): Team and Planner are one Planner tab, plans on top and your current team
+/// below; Projections has the freed place.
 enum AppTab: Hashable {
-    case today, team, planner, research, watch
+    case today, planner, projections, research, watch
+}
+
+/// The Planner tab's two parts, for links that land on one of them.
+enum PlannerSection: Hashable {
+    case plans, team
 }
 
 /// `fpltoolkit://` links (§5). Unknown links open Today.
@@ -10,6 +17,7 @@ enum DeepLink: Equatable {
     case today
     case team
     case planner
+    case projections
     case research
     case watch
     case alerts
@@ -25,6 +33,7 @@ enum DeepLink: Equatable {
         switch host {
         case "team": self = .team
         case "planner": self = .planner
+        case "projections": self = .projections
         case "research": self = .research
         case "watch": self = parts.first?.lowercased() == "alerts" ? .alerts : .watch
         case "matchday": self = .matchday
@@ -50,12 +59,27 @@ final class Router {
     var showingMatchday = false
     /// A draft to open on the Planner tab (Today's "Continue your plan"); the Planner clears it.
     var pendingDraftId: String?
+    /// The part of the Planner tab to scroll to when it next shows; the Planner clears it.
+    var pendingPlannerSection: PlannerSection?
+
+    /// Your current team, on the Planner tab below your plans.
+    func openTeam() {
+        selectedTab = .planner
+        pendingPlannerSection = .team
+    }
+
+    /// Your plans, at the top of the Planner tab.
+    func openPlans() {
+        selectedTab = .planner
+        pendingPlannerSection = .plans
+    }
 
     func open(_ link: DeepLink) {
         switch link {
         case .today: selectedTab = .today
-        case .team: selectedTab = .team
-        case .planner: selectedTab = .planner
+        case .team: openTeam()
+        case .planner: openPlans()
+        case .projections: selectedTab = .projections
         case .research: selectedTab = .research
         case .watch: selectedTab = .watch
         case .alerts:
