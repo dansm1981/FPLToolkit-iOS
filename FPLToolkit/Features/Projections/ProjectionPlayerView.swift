@@ -1,12 +1,13 @@
 import Charts
 import SwiftUI
 
-/// How one player's projection is built (the website's breakdown drawer, happy-backend-pal#74):
-/// per gameweek the seven figures, the points distribution, minutes, match context, rates per 90
-/// and points by source, then the horizon totals.
+/// A player's forecast (happy-backend-pal#74; redesigned 5 Oct 2026 from Dan's concept "a focused
+/// forecast, detailed assumptions stay accessible"): projected points, the range and the 10+
+/// chance first, then the possible outcomes, playing time (with your forecast), the next gameweeks,
+/// and the website's breakdown in sections that open on demand.
 struct ProjectionPlayerView: View {
     @Environment(AppModel.self) private var appModel
-    /// Present when opened from the projections list, where minutes forecasts apply.
+    /// Present when opened from the projections list, where playing-time forecasts apply.
     @Environment(ProjectionTweaks.self) private var tweaks: ProjectionTweaks?
     let playerId: Int
     var knownName: String?
@@ -17,13 +18,15 @@ struct ProjectionPlayerView: View {
     @State private var resource: Resource<ProjectionPlayer>?
     @State private var gameweek: Int?
     @State private var editing: ProjectionMinutesTarget?
+    @State private var showingReading = false
+    @State private var showingOutcomesInfo = false
 
     var body: some View {
         Group {
             switch resource?.phase {
             case .loading?, nil:
                 ScrollView {
-                    SkeletonCards(caption: "Loading projection…")
+                    SkeletonCards(caption: "Loading the forecast…")
                         .padding(.horizontal, ToolkitSpace.page)
                 }
             case .failed(let copy)?:
@@ -33,7 +36,7 @@ struct ProjectionPlayerView: View {
             case .loaded(let loaded)?:
                 if let resource {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                        VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
                             SavedDataBanner(resource: resource)
                             content(loaded.value)
                         }
@@ -45,10 +48,45 @@ struct ProjectionPlayerView: View {
             }
         }
         .toolkitScreen()
-        .navigationTitle(resource?.loaded?.value.player.webName ?? knownName ?? "Projection")
+        .navigationTitle("Player forecast")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showingReading = true } label: {
+                    Image(systemName: "info.circle")
+                }
+                .accessibilityLabel("Reading the numbers")
+            }
+        }
         .sheet(item: $editing) { target in
             if let tweaks { ProjectionMinutesSheet(target: target, tweaks: tweaks) }
+        }
+        .sheet(isPresented: $showingReading) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                        if let run = resource?.loaded?.value.run {
+                            Text(ProjectionText.status(run))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(ToolkitColor.primaryText)
+                        }
+                        ProjectionReadingContent()
+                    }
+                    .padding(ToolkitSpace.page)
+                }
+                .toolkitScreen()
+                .navigationTitle("Reading the numbers")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showingReading = false }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingOutcomesInfo) {
+            InfoSheet(title: "Possible outcomes",
+                      message: "Each bar is the chance of that many points in the gameweek, from about 2,000 simulated games. The dashed line is the projected points (the mean). The last bar adds up every outcome of 15 points or more.")
         }
         .task {
             if resource == nil {
@@ -68,20 +106,36 @@ struct ProjectionPlayerView: View {
             RivalNote(text: "No gameweeks in this run.")
         } else {
             let gw = data.gameweeks.first { $0.gameweek == gameweek } ?? data.gameweeks[0]
-            gameweekChips(data.gameweeks, selected: gw.gameweek)
-            ProjectionFigures(gw: gw)
-            ProjectionDistributionChart(gw: gw)
-            minutes(gw, data: data)
-            matchContext(gw)
-            if let rates = gw.rates {
-                section("3. Rates per 90")
-                explained(rates)
-            }
-            section("4. Expected points by source")
-            ProjectionSources(components: gw.components)
-            if !data.horizons.isEmpty {
-                section("Over the horizon")
-                horizons(data.horizons)
+            gameweekMenu(data.gameweeks, selected: gw)
+            ProjectionSummaryCard(gw: gw)
+            outcomes(gw)
+            playingTime(gw, data: data)
+            nextGameweeks(data.gameweeks, after: gw)
+            VStack(spacing: 0) {
+                ProjectionDisclosure(title: "Points by source") {
+                    ProjectionSources(components: gw.components)
+                }
+                ProjectionDisclosure(title: "Playing-time assumptions") {
+                    explained(gw.minutes)
+                }
+                ProjectionDisclosure(title: "Match context and rates") {
+                    matchContext(gw)
+                    if let rates = gw.rates {
+                        Text("Rates per 90")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .padding(.top, ToolkitSpace.sm)
+                        explained(rates)
+                    }
+                }
+                ProjectionDisclosure(title: "More figures") {
+                    ProjectionFigures(gw: gw)
+                }
+                if !data.horizons.isEmpty {
+                    ProjectionDisclosure(title: "Over the horizon") {
+                        horizons(data.horizons)
+                    }
+                }
             }
         }
         if showsPlayerLink {
@@ -93,7 +147,6 @@ struct ProjectionPlayerView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.top, ToolkitSpace.sm)
         }
     }
 
@@ -101,53 +154,145 @@ struct ProjectionPlayerView: View {
 
     private func header(_ data: ProjectionPlayer) -> some View {
         let p = data.player
-        return HStack(alignment: .top, spacing: ToolkitSpace.md) {
+        return HStack(alignment: .center, spacing: ToolkitSpace.md) {
             PlayerPhoto(path: p.photo, clubLogo: appModel.club(p.clubId)?.logo, size: 56)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(p.webName)
-                    .font(.title3.weight(.bold))
+                    .font(.title2.weight(.bold))
                     .foregroundStyle(ToolkitColor.primaryText)
-                ClubLabel(clubId: p.clubId,
-                          text: Format.unbroken([appModel.club(p.clubId)?.shortName, p.position.rawValue, Format.price(p.price)]
-                            .compactMap { $0 }.joined(separator: " · ")),
-                          logoSize: 15)
+                Text(Format.unbroken([appModel.club(p.clubId)?.shortName, p.position.rawValue, Format.price(p.price)]
+                    .compactMap { $0 }.joined(separator: " · ")))
                     .font(.subheadline)
                     .foregroundStyle(ToolkitColor.secondaryText)
-                if let run = data.run {
-                    ProjectionStagePill(stage: run.stage, tone: .breakdown)
+                // Only when there's something to say.
+                if data.availabilityText != "No availability flag" {
+                    Label(data.availabilityText, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.warning)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(data.availabilityText)
-                    .font(.footnote)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
     }
 
-    private func gameweekChips(_ gws: [ProjectionPlayer.Gameweek], selected: Int) -> some View {
-        FlowLayout(spacing: 8, lineSpacing: 8) {
-            ForEach(gws) { g in
-                let note = g.fixtureCount == 0 ? " blank" : g.fixtureCount > 1 ? " ×\(g.fixtureCount)" : ""
-                Button { gameweek = g.gameweek } label: {
-                    FilterChipLabel(text: "GW\(g.gameweek)\(note)", active: g.gameweek == selected, menu: false)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Gameweek \(g.gameweek)\(g.fixtureCount == 0 ? ", blank" : g.fixtureCount > 1 ? ", \(g.fixtureCount) fixtures" : "")")
-                .accessibilityAddTraits(g.gameweek == selected ? .isSelected : [])
+    private func gameweekMenu(_ gws: [ProjectionPlayer.Gameweek], selected: ProjectionPlayer.Gameweek) -> some View {
+        Menu {
+            Picker("Gameweek", selection: Binding(get: { selected.gameweek }, set: { gameweek = $0 })) {
+                ForEach(gws) { g in Text(Self.gwLabel(g)).tag(g.gameweek) }
             }
+        } label: {
+            FilterChipLabel(text: Self.gwLabel(selected), active: false, menu: true)
         }
+        .accessibilityLabel("Gameweek: \(Self.gwLabel(selected))")
+    }
+
+    /// "GW6", "GW7 · blank", "GW8 · 2 fixtures".
+    nonisolated static func gwLabel(_ g: ProjectionPlayer.Gameweek) -> String {
+        g.fixtureCount == 0 ? "GW\(g.gameweek) · blank" : g.fixtureCount > 1 ? "GW\(g.gameweek) · \(g.fixtureCount) fixtures" : "GW\(g.gameweek)"
     }
 
     // MARK: Sections
 
-    private func section(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(ToolkitColor.primaryText)
-            .accessibilityAddTraits(.isHeader)
-            .padding(.top, ToolkitSpace.sm)
+    @ViewBuilder
+    private func outcomes(_ gw: ProjectionPlayer.Gameweek) -> some View {
+        Button { showingOutcomesInfo = true } label: {
+            HStack(spacing: 6) {
+                Text("Possible outcomes")
+                    .font(.headline)
+                    .foregroundStyle(ToolkitColor.primaryText)
+                Image(systemName: "info.circle")
+                    .foregroundStyle(ToolkitColor.link)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityHint("What the chart shows")
+        ProjectionDistributionChart(gw: gw)
+    }
+
+    @ViewBuilder
+    private func playingTime(_ gw: ProjectionPlayer.Gameweek, data: ProjectionPlayer) -> some View {
+        let model = gw.minutes.figures.first { $0.label == "60+ min" }?.value ?? "—"
+        let canAdjust = tweaks != nil && data.run.map { gw.gameweek == $0.fromGw } == true
+        let yours = canAdjust ? (tweaks?.allNailed == true ? 100 : tweaks?.minutes[playerId]) : nil
+        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+            NameFigureRow {
+                Text("60+ minutes")
+                    .font(.headline)
+                    .foregroundStyle(ToolkitColor.primaryText)
+            } details: {
+                if yours != nil {
+                    Text("Your forecast. The model says \(model).")
+                        .font(.footnote)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+            } figure: {
+                Text(yours.map { "\($0)%" } ?? model)
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(yours != nil ? ToolkitColor.accent : ToolkitColor.primaryText)
+            }
+            .accessibilityElement(children: .combine)
+            if canAdjust, let run = data.run {
+                Button {
+                    editing = ProjectionMinutesTarget(playerId: playerId, name: data.player.webName,
+                                                      gameweek: run.fromGw, modelPct: modelSixtyPct)
+                } label: {
+                    HStack(spacing: ToolkitSpace.md) {
+                        Image(systemName: "slider.horizontal.3").accessibilityHidden(true)
+                        Text("Adjust playing time")
+                            .font(.body.weight(.semibold))
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").accessibilityHidden(true)
+                    }
+                    .foregroundStyle(ToolkitColor.accent)
+                    .padding(.horizontal, ToolkitSpace.lg)
+                    .frame(minHeight: 52)
+                    .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Set your own chance of him playing 60 minutes; the list's figures rescale")
+            }
+        }
+    }
+
+    /// The next three gameweeks' projected points; a tap switches to one (concept 04).
+    @ViewBuilder
+    private func nextGameweeks(_ gws: [ProjectionPlayer.Gameweek], after gw: ProjectionPlayer.Gameweek) -> some View {
+        let next = Array(gws.filter { $0.gameweek > gw.gameweek }.prefix(3))
+        if !next.isEmpty {
+            Text("Next gameweeks")
+                .font(.headline)
+                .foregroundStyle(ToolkitColor.primaryText)
+                .accessibilityAddTraits(.isHeader)
+            FlowLayout(spacing: 10, lineSpacing: 10) {
+                ForEach(next) { g in
+                    Button { gameweek = g.gameweek } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(Self.gwLabel(g))
+                                .font(.subheadline)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                            Text(ProjectionText.one(g.mean))
+                                .font(.title2.weight(.bold).monospacedDigit())
+                                .foregroundStyle(ToolkitColor.primaryText)
+                        }
+                        .padding(.horizontal, ToolkitSpace.lg)
+                        .padding(.vertical, ToolkitSpace.md)
+                        .frame(minWidth: 96, minHeight: 64, alignment: .leading)
+                        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Gameweek \(g.gameweek): \(ProjectionText.one(g.mean)) projected points")
+                    .accessibilityHint("Shows that gameweek's forecast")
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -157,27 +302,7 @@ struct ProjectionPlayerView: View {
     }
 
     @ViewBuilder
-    private func minutes(_ gw: ProjectionPlayer.Gameweek, data: ProjectionPlayer) -> some View {
-        section("1. Minutes")
-        explained(gw.minutes)
-        // Your forecast applies to the list's first gameweek, as the website's 60+ slider does.
-        if let tweaks, let run = data.run, gw.gameweek == run.fromGw {
-            let yours = tweaks.allNailed ? 100 : tweaks.minutes[playerId]
-            CardGroup {
-                LinkRow(title: "Your minutes forecast",
-                        detail: yours.map { "\($0)% to play 60+ (the model says \(ProjectionText.pct(modelSixtyPct))). Applies to the projections list." }
-                            ?? "Set your own chance of 60+ minutes for the projections list.",
-                        systemImage: "slider.horizontal.3") {
-                    editing = ProjectionMinutesTarget(playerId: playerId, name: data.player.webName,
-                                                      gameweek: run.fromGw, modelPct: modelSixtyPct)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
     private func matchContext(_ gw: ProjectionPlayer.Gameweek) -> some View {
-        section("2. Match context")
         if gw.fixtures.isEmpty {
             RivalNote(text: "Blank gameweek: no fixture, no points.")
         } else {
@@ -227,27 +352,107 @@ struct ProjectionPlayerView: View {
                 } figure: {
                     VStack(alignment: .trailing, spacing: 0) {
                         Text(ProjectionText.one(h.mean)).font(.headline.monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
-                        Text("mean").font(.caption).foregroundStyle(ToolkitColor.secondaryText)
+                        Text("projected").font(.caption).foregroundStyle(ToolkitColor.secondaryText)
                     }
                 }
                 .padding(.horizontal, 15)
                 .padding(.vertical, 10)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Gameweeks \(h.label.replacingOccurrences(of: "GW", with: "")), \(h.horizon) gameweeks. Mean \(ProjectionText.one(h.mean)), median \(h.median), most likely \(h.mode), 80% range \(h.p10) to \(h.p90). Chance of at least one haul \(ProjectionText.pct(h.anyHaulPct)), of blanking every week \(ProjectionText.pct(h.allBlankPct)).")
+                .accessibilityLabel("Gameweeks \(h.label.replacingOccurrences(of: "GW", with: "")), \(h.horizon) gameweeks. Projected \(ProjectionText.one(h.mean)), median \(h.median), most likely \(h.mode), 80% range \(h.p10) to \(h.p90). Chance of at least one haul \(ProjectionText.pct(h.anyHaulPct)), of blanking every week \(ProjectionText.pct(h.allBlankPct)).")
             }
+        }
+    }
+}
+
+// MARK: - Summary
+
+/// The headline (concept 04): projected points large, with the range and the 10+ chance beside it.
+struct ProjectionSummaryCard: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let gw: ProjectionPlayer.Gameweek
+
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: ToolkitSpace.md))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: ToolkitSpace.lg))
+        layout {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Projected points")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                Text(ProjectionText.one(gw.mean))
+                    .font(.largeTitle.weight(.bold).monospacedDigit())
+                    .foregroundStyle(ToolkitColor.primaryText)
+            }
+            if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
+            Grid(alignment: .leading, horizontalSpacing: ToolkitSpace.lg, verticalSpacing: 6) {
+                GridRow {
+                    Text("Range").foregroundStyle(ToolkitColor.secondaryText)
+                    Text("\(gw.p10)–\(gw.p90)").font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
+                        .gridColumnAlignment(.trailing)
+                }
+                GridRow {
+                    Text("10+ points").foregroundStyle(ToolkitColor.secondaryText)
+                    Text(ProjectionText.pct(gw.haulPct)).font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
+                }
+            }
+            .font(.subheadline)
+        }
+        .padding(ToolkitSpace.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .toolkitCard()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Projected \(ProjectionText.one(gw.mean)) points. 80% range \(gw.p10) to \(gw.p90). Chance of 10 or more \(ProjectionText.pct(gw.haulPct)).")
+    }
+}
+
+/// A section of the breakdown that opens on demand (concept 04: "detailed assumptions stay
+/// accessible").
+struct ProjectionDisclosure<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                HStack(spacing: ToolkitSpace.sm) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: ToolkitSpace.sm)
+                    Image(systemName: "chevron.down")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .rotationEffect(.degrees(expanded ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: 52)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+            .accessibilityHint(expanded ? "Hides the details" : "Shows the details")
+            if expanded {
+                content()
+            }
+            Divider().overlay(ToolkitColor.border)
         }
     }
 }
 
 // MARK: - Figures
 
-/// The website's seven tiles for a gameweek.
+/// The rest of the website's tiles for a gameweek ("More figures").
 struct ProjectionFigures: View {
     let gw: ProjectionPlayer.Gameweek
 
     var body: some View {
         FigureGrid(items: [
-            .init(label: "Mean (average)", value: ProjectionText.one(gw.mean)),
+            .init(label: "Mean (projected)", value: ProjectionText.one(gw.mean)),
             .init(label: "Median", value: "\(gw.median)"),
             .init(label: "Mode (most likely)", value: "\(gw.mode)"),
             .init(label: "P10 (bad week)", value: "\(gw.p10)"),
@@ -258,9 +463,8 @@ struct ProjectionFigures: View {
     }
 }
 
-/// The chance of each points total as bars, the P10–P90 band behind them and the mean as a
-/// dashed line; the mode at full strength, the rest at 60% (the website's chart). VoiceOver reads
-/// it as one summary.
+/// The chance of each points total as bars, everything from 15 up in one bar, and the projected
+/// points as a dashed line (concept 04). VoiceOver reads it as one summary.
 struct ProjectionDistributionChart: View {
     let gw: ProjectionPlayer.Gameweek
 
@@ -271,60 +475,48 @@ struct ProjectionDistributionChart: View {
     }
 
     var body: some View {
-        let bars = gw.chart.bars.enumerated().map { Bar(points: gw.chart.first + $0.offset, chance: $0.element) }
+        let bars = ProjectionText.bucketed(gw.chart).map { Bar(points: $0.points, chance: $0.chance) }
+        let first = bars.first?.points ?? 0
+        let last = max(bars.last?.points ?? 15, first + 1)
         let maxP = max(0.05, bars.map(\.chance).max() ?? 0)
-        let last = gw.chart.first + max(0, bars.count - 1)
-        let step = bars.count > 40 ? 5 : bars.count > 20 ? 2 : 1
-        let meanX = min(Double(last), max(Double(gw.chart.first), gw.mean))
+        let meanX = min(Double(last), max(Double(first), gw.mean))
+        let ticks = Array(stride(from: 0, through: last, by: 5)).filter { $0 >= first }
         VStack(alignment: .leading, spacing: 6) {
             Chart {
-                RectangleMark(xStart: .value("P10", Double(gw.p10) - 0.5), xEnd: .value("P90", Double(gw.p90) + 0.5),
-                              yStart: .value("Base", 0), yEnd: .value("Top", maxP))
-                    .foregroundStyle(ToolkitColor.accent.opacity(0.12))
                 // Rectangles, not BarMarks: on a numeric axis a BarMark's width came out as nothing.
                 ForEach(bars) { bar in
-                    RectangleMark(xStart: .value("From", Double(bar.points) - 0.4), xEnd: .value("To", Double(bar.points) + 0.4),
+                    RectangleMark(xStart: .value("From", Double(bar.points) - 0.38), xEnd: .value("To", Double(bar.points) + 0.38),
                                   yStart: .value("Base", 0), yEnd: .value("Chance", bar.chance))
-                        .foregroundStyle(ToolkitColor.accent.opacity(bar.points == gw.mode ? 1 : 0.6))
+                        .foregroundStyle(ToolkitColor.accent.opacity(bar.points >= 15 ? 0.7 : 1))
                 }
-                RuleMark(x: .value("Mean", meanX))
-                    .foregroundStyle(ToolkitColor.primaryText)
+                RuleMark(x: .value("Projected", meanX))
+                    .foregroundStyle(ToolkitColor.information)
                     .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
                     .annotation(position: .top, alignment: .leading, spacing: 2) {
-                        Text("mean \(ProjectionText.one(gw.mean))")
+                        Text(ProjectionText.one(gw.mean))
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(ToolkitColor.primaryText)
+                            .foregroundStyle(ToolkitColor.information)
                     }
             }
-            // Padding at the ends so the first and last labels aren't cut off.
-            .chartXScale(domain: Double(gw.chart.first) - 0.5 ... Double(last) + 0.5, range: .plotDimension(padding: 10))
+            .chartXScale(domain: Double(first) - 0.5 ... Double(last) + 0.5, range: .plotDimension(padding: 10))
             .chartYScale(domain: 0 ... maxP)
+            .chartYAxis(.hidden)
             .chartXAxis {
-                AxisMarks(values: Array(stride(from: gw.chart.first, through: last, by: step)).map(Double.init)) { value in
+                AxisMarks(values: ticks.map(Double.init)) { value in
+                    let v = Int(value.as(Double.self) ?? 0)
                     // Anchored at the top so the last label isn't dropped to "…".
-                    AxisValueLabel(anchor: .top) { Text("\(Int(value.as(Double.self) ?? 0))") }
+                    AxisValueLabel(anchor: .top) { Text(v >= 15 ? "15+" : "\(v)") }
                 }
             }
-            .chartYAxis {
-                AxisMarks(position: .leading, values: [0, maxP / 2, maxP]) { value in
-                    AxisGridLine()
-                    AxisValueLabel { Text("\(Int(((value.as(Double.self) ?? 0) * 100).rounded()))%") }
-                }
-            }
-            .frame(height: 180)
-            // The marks stay out of the accessibility tree (each would be an element); the card
-            // below reads the chart as one summary.
+            .frame(height: 160)
+            // The marks stay out of the accessibility tree; the card reads as one summary.
             .accessibilityHidden(true)
-            Text("Shaded: P10 \(gw.p10) to P90 \(gw.p90). Dashed: the mean.")
-                .font(.footnote)
-                .foregroundStyle(ToolkitColor.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(ToolkitSpace.lg)
         .toolkitCard()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Chance of each points total")
-        .accessibilityValue("Most likely \(gw.mode) points, at \(Int(((bars.first { $0.points == gw.mode }?.chance ?? 0) * 100).rounded()))%. Median \(gw.median), mean \(ProjectionText.one(gw.mean)). 80% of outcomes between \(gw.p10) and \(gw.p90).")
+        .accessibilityLabel("Possible outcomes")
+        .accessibilityValue("Most likely \(gw.mode) points. Projected \(ProjectionText.one(gw.mean)). 80% of outcomes between \(gw.p10) and \(gw.p90). \(ProjectionText.pct(gw.haulPct)) chance of 10 or more.")
     }
 }
 

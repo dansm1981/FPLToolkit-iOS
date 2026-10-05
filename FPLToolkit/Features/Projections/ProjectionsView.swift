@@ -26,9 +26,10 @@ struct ProjectionMinutesTarget: Identifiable {
     var id: Int { playerId }
 }
 
-/// Projections (Dan, 4 Oct 2026; happy-backend-pal#74): the website's /projections. Every
-/// player's points for the coming gameweeks as a distribution, with the site's filters, your own
-/// minutes forecasts, and a breakdown per player. Built to stand alone, so it can become a tab.
+/// Projections (happy-backend-pal#74; redesigned 5 Oct 2026 from Dan's concept "Results first,
+/// depth on demand"): a readable ranking list, with the run's details behind ⓘ, three controls,
+/// removable filter chips, and each player's projected points, range and 10+ chance. A player opens
+/// the forecast, where your playing-time forecast is set.
 struct ProjectionsView: View {
     @Environment(AppModel.self) private var appModel
     @State private var tweaks = ProjectionTweaks()
@@ -39,7 +40,8 @@ struct ProjectionsView: View {
     @State private var sort: ProjectionSort = .mean
     @State private var ascending = false
     @State private var table = ResearchTable<Projections>()
-    @State private var editing: ProjectionMinutesTarget?
+    @State private var showingInfo = false
+    @State private var showingFilters = false
 
     private struct Key: Hashable {
         let horizon: Int, position: Position?, search: String, startersOnly: Bool, allNailed: Bool
@@ -49,29 +51,10 @@ struct ProjectionsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                if let latest {
-                    if let run = latest.run {
-                        ProjectionRunCard(run: run)
-                        CardGroup {
-                            NavigationLink {
-                                ProjectionKnewView(run: run, knew: latest.knew)
-                            } label: {
-                                LinkRowLabel(title: "What this run knew", detail: run.stage.note ?? "The inputs behind these numbers",
-                                             systemImage: "checklist")
-                            }
-                            .buttonStyle(.plain)
-                            RowDivider()
-                            NavigationLink {
-                                ProjectionReadingView()
-                            } label: {
-                                LinkRowLabel(title: "Reading the numbers", detail: "Mean, median, mode, the range, hauls and blanks",
-                                             systemImage: "book")
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        filters(latest)
-                    }
+                if let run = latest?.run {
+                    statusLine(run)
                 }
+                controls
                 ResearchTableView(table: table, caption: "Loading projections…", retry: reload) { data in
                     if data.run == nil {
                         RivalNote(text: "No projection run yet. Once the projection sync has run, the latest one shows here.")
@@ -85,10 +68,16 @@ struct ProjectionsView: View {
         }
         .toolkitScreen()
         .navigationTitle("Projections")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .environment(tweaks)
-        .sheet(item: $editing) { target in
-            ProjectionMinutesSheet(target: target, tweaks: tweaks)
+        .sheet(isPresented: $showingInfo) {
+            if let latest, let run = latest.run {
+                ProjectionRunInfoSheet(run: run, knew: latest.knew)
+            }
+        }
+        .sheet(isPresented: $showingFilters) {
+            ProjectionFiltersSheet(sort: $sort, ascending: $ascending, startersOnly: $startersOnly,
+                                   tweaks: tweaks, horizon: horizon)
         }
         .onChange(of: horizon) {
             // Blank and FPL ep are one-gameweek columns, as on the website.
@@ -112,26 +101,142 @@ struct ProjectionsView: View {
         table.current?.loaded?.value ?? table.previous?.value
     }
 
-    // MARK: Filters
+    // MARK: Header and controls
+
+    /// "Odds in · updated 12:13 ⓘ": the run in one line; the rest is behind ⓘ.
+    private func statusLine(_ run: ProjectionRun) -> some View {
+        Button { showingInfo = true } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(ProjectionText.status(run))
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Image(systemName: "info.circle")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.link)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(ProjectionText.status(run))
+        .accessibilityHint("Shows what this run is based on and how to read the numbers")
+    }
+
+    @ViewBuilder private var controls: some View {
+        HStack(spacing: ToolkitSpace.sm) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .accessibilityHidden(true)
+            TextField("Search players", text: $search)
+                .textFieldStyle(.plain)
+                .submitLabel(.search)
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: 48)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 12))
+        if let data = latest, data.run != nil {
+            FlowLayout(spacing: 8, lineSpacing: 8) {
+                Menu {
+                    Picker("Gameweeks", selection: $horizon) {
+                        ForEach(data.horizons) { Text($0.label).tag($0.value) }
+                    }
+                } label: {
+                    FilterChipLabel(text: horizonLabel(data), active: false, menu: true)
+                }
+                .accessibilityLabel("Gameweeks: \(horizonLabel(data))")
+                Menu {
+                    Picker("Players", selection: $position) {
+                        Text("All players").tag(Position?.none)
+                        ForEach([Position.gk, .def, .mid, .fwd], id: \.self) { Text(Self.plural($0)).tag(Position?.some($0)) }
+                    }
+                } label: {
+                    FilterChipLabel(text: position.map(Self.plural) ?? "All players", active: false, menu: true)
+                }
+                .accessibilityLabel("Players: \(position.map(Self.plural) ?? "all")")
+                Button { showingFilters = true } label: {
+                    Label("Filters", systemImage: "slider.horizontal.3")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 44)
+                        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Sort, likely starters, all nailed and your minutes")
+            }
+            activeChips
+        }
+    }
+
+    /// The filters in force, each removable.
+    @ViewBuilder private var activeChips: some View {
+        let sorted = sort != .mean || ascending
+        let tweakCount = tweaks.allNailed ? 0 : tweaks.minutes.count
+        if startersOnly || tweaks.allNailed || sorted || tweakCount > 0 {
+            FlowLayout(spacing: 8, lineSpacing: 8) {
+                if startersOnly { removable("Likely starters") { startersOnly = false } }
+                if tweaks.allNailed { removable("All nailed") { tweaks.allNailed = false } }
+                if sorted {
+                    removable("By \(sortLabel(sort).lowercased())\(ascending ? ", lowest first" : "")") {
+                        sort = .mean
+                        ascending = false
+                    }
+                }
+                if tweakCount > 0 {
+                    removable("Your minutes · \(tweakCount)") { tweaks.reset() }
+                }
+            }
+        }
+    }
+
+    private func removable(_ text: String, remove: @escaping () -> Void) -> some View {
+        Button(action: remove) {
+            HStack(spacing: 6) {
+                Text(text)
+                Image(systemName: "xmark").font(.caption.weight(.bold)).accessibilityHidden(true)
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(ToolkitColor.accent)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 36)
+            .background(ToolkitColor.goldTag, in: Capsule())
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove filter: \(text)")
+    }
+
+    private func horizonLabel(_ data: Projections) -> String {
+        if horizon == 1 { return data.horizons.first?.label ?? "GW\(data.run?.fromGw ?? 0)" }
+        guard let run = data.run else { return "Next \(horizon)" }
+        return "GW\(run.fromGw)–\(run.fromGw + horizon - 1)"
+    }
+
+    private func sortLabel(_ s: ProjectionSort) -> String {
+        s == .haul ? (horizon > 1 ? "≥1 haul" : "10+ pts") : s == .mean ? "Projected pts" : s.label
+    }
+
+    nonisolated static func plural(_ p: Position) -> String {
+        switch p {
+        case .gk: "Goalkeepers"
+        case .def: "Defenders"
+        case .mid: "Midfielders"
+        case .fwd: "Forwards"
+        case .unknown: "Other players"
+        }
+    }
+
+    // MARK: List
 
     @ViewBuilder
-    private func filters(_ data: Projections) -> some View {
-        PositionPicker(position: $position)
-        TextField("Search players", text: $search)
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 12)
-            .frame(minHeight: 44)
-            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: 10))
-            .submitLabel(.search)
-        FlowLayout(spacing: 8, lineSpacing: 8) {
-            Menu {
-                Picker("Gameweeks", selection: $horizon) {
-                    ForEach(data.horizons) { Text($0.label).tag($0.value) }
-                }
-            } label: {
-                FilterChipLabel(text: horizonLabel(data), active: horizon > 1, menu: true)
-            }
-            .accessibilityLabel("Gameweeks: \(horizonLabel(data))")
+    private func list(_ data: Projections) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("PLAYER / RANGE")
+            Spacer(minLength: ToolkitSpace.sm)
             Menu {
                 Picker("Sort", selection: $sort) {
                     ForEach(ProjectionSort.allCases.filter { horizon == 1 || !$0.gameweekOnly }) {
@@ -143,61 +248,26 @@ struct ProjectionsView: View {
                     Text("Lowest first").tag(true)
                 }
             } label: {
-                FilterChipLabel(text: "Sort: \(sortLabel(sort))\(ascending ? " ↑" : "")", active: false, menu: true)
+                Text("\(sortLabel(sort).uppercased()) \(ascending ? "↑" : "↓")")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .accessibilityLabel("Sort by \(sortLabel(sort)), \(ascending ? "lowest" : "highest") first")
-            toggleChip("Likely starters", active: startersOnly,
-                       spoken: "Likely starters only, 60% or more to play an hour") { startersOnly.toggle() }
-            toggleChip("All nailed", active: tweaks.allNailed,
-                       spoken: "All players nailed, 100% to play 60 minutes or more") { tweaks.allNailed.toggle() }
-            if !tweaks.allNailed && !tweaks.minutes.isEmpty {
-                Button { tweaks.reset() } label: {
-                    Text("Reset \(tweaks.minutes.count) minutes tweak\(tweaks.minutes.count == 1 ? "" : "s")")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ToolkitColor.link)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
+            .accessibilityLabel("Sorted by \(sortLabel(sort)), \(ascending ? "lowest" : "highest") first")
         }
-    }
-
-    private func horizonLabel(_ data: Projections) -> String {
-        data.horizons.first { $0.value == horizon }?.label ?? "GW\(data.run?.fromGw ?? 0)"
-    }
-
-    private func sortLabel(_ s: ProjectionSort) -> String {
-        s == .haul && horizon > 1 ? "≥1 haul" : s.label
-    }
-
-    private func toggleChip(_ text: String, active: Bool, spoken: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            FilterChipLabel(text: text, active: active, menu: false)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(spoken)
-        .accessibilityAddTraits(active ? [.isSelected, .isToggle] : .isToggle)
-    }
-
-    // MARK: List
-
-    @ViewBuilder
-    private func list(_ data: Projections) -> some View {
-        Text("\(data.total) player\(data.total == 1 ? "" : "s")\(data.total > data.rows.count ? ", showing the top \(data.rows.count)" : "")")
-            .font(.footnote)
-            .foregroundStyle(ToolkitColor.secondaryText)
+        .font(.caption.weight(.semibold))
+        .tracking(0.6)
+        .foregroundStyle(ToolkitColor.secondaryText)
         if data.rows.isEmpty {
             RivalNote(text: "No players match.")
         } else {
-            CardGroup {
+            VStack(spacing: 0) {
                 ForEach(Array(data.rows.enumerated()), id: \.element.id) { index, row in
-                    if index > 0 { RowDivider() }
+                    if index > 0 { Divider().overlay(ToolkitColor.border) }
                     playerRow(row, data: data)
                 }
             }
         }
-        Text("Open a player for how the number is built. Press and hold a player to set your own minutes forecast: mean, range, haul and blank rescale with the chance he plays (an estimate on top of the model, kept while this screen is open). Over a longer horizon, haul becomes the chance of at least one 10+ gameweek.")
+        Text("\(data.total) player\(data.total == 1 ? "" : "s")\(data.total > data.rows.count ? ", showing the top \(data.rows.count)" : ""). Open a player for the forecast and to adjust his playing time.")
             .font(.footnote)
             .foregroundStyle(ToolkitColor.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
@@ -206,90 +276,43 @@ struct ProjectionsView: View {
     @ViewBuilder
     private func playerRow(_ r: Projections.Row, data: Projections) -> some View {
         if let summary = data.player(r.playerId) {
-            let target = ProjectionMinutesTarget(playerId: r.playerId, name: summary.webName,
-                                                 gameweek: data.run?.fromGw ?? 0, modelPct: r.modelSixtyPct)
             NavigationLink {
                 ProjectionPlayerView(playerId: r.playerId, knownName: summary.webName, modelSixtyPct: r.modelSixtyPct)
                     .environment(tweaks)
             } label: {
-                VStack(alignment: .leading, spacing: 0) {
-                    PlayerListRow(player: summary,
-                                  detail: Format.unbroken(detail(r, horizon: data.horizon)),
-                                  value: value(r),
-                                  valueDetail: valueLabel(data.horizon),
-                                  spokenDetail: spoken(r, horizon: data.horizon),
-                                  wrapsDetail: true)
-                    ProjectionRangeBar(p10: r.p10, p90: r.p90, mean: r.mean, span: 20 * data.horizon)
-                        .padding(.leading, 44)
-                        .padding(.top, -4)
-                        .padding(.bottom, ToolkitSpace.md)
-                }
-                .padding(.horizontal, 15)
+                ProjectionRow(row: r, player: summary, horizon: data.horizon, extra: extra(r, horizon: data.horizon))
             }
             .buttonStyle(.plain)
-            .accessibilityHint("Opens how this projection is built")
-            .contextMenu {
-                Button { editing = target } label: { Label("Your minutes forecast…", systemImage: "slider.horizontal.3") }
-                if r.adjusted && !tweaks.allNailed {
-                    Button { tweaks.set(r.playerId, to: nil) } label: { Label("Back to the model's", systemImage: "arrow.uturn.backward") }
-                }
-            }
-            .accessibilityAction(named: "Your minutes forecast") { editing = target }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(spoken(r, name: summary.webName, horizon: data.horizon))
+            // One element for the row, still a button (ignoring the children drops the trait).
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("Opens the forecast")
         }
     }
 
-    /// Everything but the figure on the right: "£9.5m · Mean 6.8 · Med 6 · Mode 2 · Range 1–15 · …".
-    private func detail(_ r: Projections.Row, horizon: Int) -> String {
-        var parts: [String] = []
-        if sort != .price { parts.append(Format.price(r.price)) }
-        if sort != .mean { parts.append("Mean \(ProjectionText.one(r.mean))") }
-        if sort != .median { parts.append("Med \(r.median)") }
-        if sort != .mode { parts.append("Mode \(r.mode)") }
-        parts.append("Range \(r.p10)–\(r.p90)")
-        if sort != .haul { parts.append("\(horizon > 1 ? "≥1 haul" : "Haul") \(ProjectionText.pct(r.haulPct))") }
-        if horizon == 1 && sort != .blank { parts.append("Blank \(ProjectionText.pct(r.blankPct))") }
-        if sort != .sixty { parts.append("60+ \(ProjectionText.pct(r.sixtyPct))\(r.adjusted ? " yours" : "")") }
-        if horizon == 1 && sort != .fplEp { parts.append("FPL ep \(r.fplEp.map(ProjectionText.one) ?? "—")") }
-        return parts.joined(separator: " · ")
-    }
-
-    private func value(_ r: Projections.Row) -> String {
+    /// The bottom-right figure: the 10+ chance, or what the list is sorted by when that's not
+    /// already on the row.
+    private func extra(_ r: Projections.Row, horizon: Int) -> String {
         switch sort {
-        case .mean: ProjectionText.one(r.mean)
-        case .median: "\(r.median)"
-        case .mode: "\(r.mode)"
-        case .p90: "\(r.p90)"
-        case .haul: ProjectionText.pct(r.haulPct)
-        case .blank: ProjectionText.pct(r.blankPct)
-        case .sixty: ProjectionText.pct(r.sixtyPct)
-        case .price: Format.price(r.price)
-        case .fplEp: r.fplEp.map(ProjectionText.one) ?? "—"
+        case .mean, .haul, .price: "\(horizon > 1 ? "≥1 haul" : "10+ pts") \(ProjectionText.pct(r.haulPct))"
+        case .median: "Median \(r.median)"
+        case .mode: "Mode \(r.mode)"
+        case .p90: "P90 \(r.p90)"
+        case .blank: "Blank \(ProjectionText.pct(r.blankPct))"
+        case .sixty: "60+ \(ProjectionText.pct(r.sixtyPct))"
+        case .fplEp: "FPL ep \(r.fplEp.map(ProjectionText.one) ?? "—")"
         }
     }
 
-    private func valueLabel(_ horizon: Int) -> String {
-        switch sort {
-        case .mean: "mean"
-        case .median: "median"
-        case .mode: "mode"
-        case .p90: "P90"
-        case .haul: horizon > 1 ? "≥1 haul" : "haul"
-        case .blank: "blank"
-        case .sixty: "60+ min"
-        case .price: "price"
-        case .fplEp: "FPL ep"
-        }
-    }
-
-    private func spoken(_ r: Projections.Row, horizon: Int) -> String {
+    private func spoken(_ r: Projections.Row, name: String, horizon: Int) -> String {
         var parts = [
-            "\(sortLabel(sort)) \(value(r))",
-            "Mean \(ProjectionText.one(r.mean)) points, median \(r.median), most likely \(r.mode), 80% range \(r.p10) to \(r.p90)",
-            horizon > 1 ? "Chance of at least one 10 point gameweek \(ProjectionText.pct(r.haulPct))" : "Haul chance \(ProjectionText.pct(r.haulPct))",
+            name,
+            "Projected \(ProjectionText.one(r.mean)) points, 80% range \(r.p10) to \(r.p90)",
+            horizon > 1 ? "Chance of at least one 10 point gameweek \(ProjectionText.pct(r.haulPct))" : "Chance of 10 or more \(ProjectionText.pct(r.haulPct))",
         ]
-        if horizon == 1 { parts.append("Blank chance \(ProjectionText.pct(r.blankPct))") }
-        parts.append("\(ProjectionText.pct(r.sixtyPct)) chance of 60 minutes\(r.adjusted ? ", your forecast" : "")")
-        if horizon == 1, let ep = r.fplEp { parts.append("FPL's expected points \(ProjectionText.one(ep))") }
+        if r.adjusted { parts.append("\(ProjectionText.pct(r.sixtyPct)) chance of 60 minutes, your forecast") }
+        if ![.mean, .haul, .price].contains(sort) { parts.append(extra(r, horizon: horizon)) }
         parts.append("Price \(Format.price(r.price))")
         return parts.joined(separator: ". ")
     }
@@ -300,6 +323,69 @@ struct ProjectionsView: View {
         await table.load(appModel.researchRepository.projections(
             horizon: horizon, position: position, search: search, startersOnly: startersOnly,
             allNailed: tweaks.allNailed, minutes: tweaks.minutes, sort: sort, ascending: ascending))
+    }
+}
+
+/// One ranked player (concept 03): name and price, the range bar with its ends, projected points
+/// large, and one more figure.
+struct ProjectionRow: View {
+    @Environment(AppModel.self) private var appModel
+    let row: Projections.Row
+    let player: PlayerSummary
+    let horizon: Int
+    let extra: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: ToolkitSpace.md) {
+            PlayerPhoto(path: player.photo, clubLogo: appModel.club(player.clubId)?.logo, size: 44)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(player.webName)
+                                .font(.headline)
+                                .foregroundStyle(ToolkitColor.primaryText)
+                            AvailabilityBadge(availability: player.availability)
+                        }
+                        Text(Format.unbroken(meta))
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: ToolkitSpace.sm)
+                    Text(ProjectionText.one(row.mean))
+                        .font(.title2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+                ProjectionRangeBar(p10: row.p10, p90: row.p90, mean: row.mean, horizon: horizon)
+                HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.sm) {
+                    Text(rangeLine)
+                        .foregroundStyle(row.adjusted ? ToolkitColor.accent : ToolkitColor.secondaryText)
+                    Spacer(minLength: ToolkitSpace.sm)
+                    Text(extra)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                }
+                .font(.footnote.monospacedDigit())
+            }
+        }
+        .padding(.vertical, ToolkitSpace.md)
+        .contentShape(Rectangle())
+    }
+
+    /// "MUN · MID · £11.9m".
+    private var meta: String {
+        [appModel.club(player.clubId)?.shortName, player.position.rawValue, Format.price(player.price)]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// "1–12 pts", and your minutes when you've set them.
+    private var rangeLine: String {
+        let range = "\(row.p10)–\(row.p90) pts"
+        return row.adjusted ? "\(range) · your 60+ \(ProjectionText.pct(row.sixtyPct))" : range
     }
 }
 
@@ -363,38 +449,62 @@ struct ProjectionStagePill: View {
     }
 }
 
-/// "What this run knew": each input's status, when it was observed, and the run's notes.
-struct ProjectionKnewView: View {
+/// ⓘ on the list: the run card, what the run knew and how to read the numbers, in one sheet.
+struct ProjectionRunInfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
     let run: ProjectionRun
     let knew: Projections.Knew?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                if let note = run.stage.note {
-                    Text(note)
-                        .font(.subheadline)
-                        .foregroundStyle(ToolkitColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                    ProjectionRunCard(run: run)
+                    SectionHeader(title: "What this run knew")
+                    ProjectionKnewContent(run: run, knew: knew)
+                    SectionHeader(title: "Reading the numbers")
+                    ProjectionReadingContent()
                 }
-                if let knew, !knew.inputs.isEmpty {
-                    CardGroup {
-                        ForEach(Array(knew.inputs.enumerated()), id: \.element.id) { index, input in
-                            if index > 0 { RowDivider() }
-                            inputRow(input)
-                        }
-                    }
-                }
-                if let knew, !knew.notes.isEmpty {
-                    BulletList(items: knew.notes)
+                .padding(.horizontal, ToolkitSpace.page)
+                .padding(.bottom, ToolkitSpace.section)
+            }
+            .toolkitScreen()
+            .navigationTitle("About these projections")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
             }
-            .padding(.horizontal, ToolkitSpace.page)
-            .padding(.bottom, ToolkitSpace.section)
         }
-        .toolkitScreen()
-        .navigationTitle("What this run knew")
-        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Each input's status, when it was observed, and the run's notes.
+struct ProjectionKnewContent: View {
+    let run: ProjectionRun
+    let knew: Projections.Knew?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+            if let note = run.stage.note {
+                Text(note)
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let knew, !knew.inputs.isEmpty {
+                CardGroup {
+                    ForEach(Array(knew.inputs.enumerated()), id: \.element.id) { index, input in
+                        if index > 0 { RowDivider() }
+                        inputRow(input)
+                    }
+                }
+            }
+            if let knew, !knew.notes.isEmpty {
+                BulletList(items: knew.notes)
+            }
+        }
     }
 
     private func inputRow(_ input: Projections.Knew.Input) -> some View {
@@ -429,24 +539,17 @@ struct ProjectionKnewView: View {
 }
 
 /// The website's "Reading the numbers".
-struct ProjectionReadingView: View {
+struct ProjectionReadingContent: View {
     var body: some View {
-        ScrollView {
-            BulletList(items: [
-                "Mean is the long-run average and the number most tools show. A keeper's mean of 3.2 is a score he rarely gets.",
-                "Median splits outcomes in half; mode is the single most likely score.",
-                "P10 to P90 is the range that holds about 80% of outcomes; the tick is the mean.",
-                "Haul is the chance of 10 points or more in the gameweek; over a longer horizon it becomes the chance of at least one 10+ gameweek. Blank is 2 or fewer.",
-                "A wide range means an explosive player, not a poorly informed model. What the run knew is listed with the run, and each player's breakdown shows the minutes certainty separately.",
-                "The stage says what the run knew: an early look has form and fixtures only, odds arrive 48 hours before the deadline, press conferences the day before.",
-                "Every run is scored once its gameweek finishes; the website's accuracy page shows how accurate the projections have been.",
-            ])
-            .padding(.horizontal, ToolkitSpace.page)
-            .padding(.bottom, ToolkitSpace.section)
-        }
-        .toolkitScreen()
-        .navigationTitle("Reading the numbers")
-        .navigationBarTitleDisplayMode(.inline)
+        BulletList(items: [
+            "Projected points is the mean: the long-run average and the number most tools show. A keeper's mean of 3.2 is a score he rarely gets.",
+            "Median splits outcomes in half; mode is the single most likely score.",
+            "The range is P10 to P90: it holds about 80% of outcomes. On the bar, the tick is the mean and the gold part is 10 points or more.",
+            "10+ pts is the chance of 10 points or more in the gameweek; over a longer horizon it becomes the chance of at least one 10+ gameweek. Blank is 2 or fewer.",
+            "A wide range means an explosive player, not a poorly informed model. Each forecast shows the playing-time assumptions separately.",
+            "The stage says what the run knew: an early look has form and fixtures only, odds arrive 48 hours before the deadline, press conferences the day before.",
+            "Every run is scored once its gameweek finishes; the website's accuracy page shows how accurate the projections have been.",
+        ])
     }
 }
 
@@ -470,32 +573,98 @@ struct BulletList: View {
     }
 }
 
-/// The website's P10–P90 bar: the band on a track of 20 points a gameweek, with the mean as a tick.
-/// A fixed width, measured once (no GeometryReader in each of up to 200 rows: the accessibility
-/// audit re-lays the list out at every text size it tries). Decorative: the row reads the figures.
+/// The range as a bar (concept 03): P10 to P90 in blue on a track of 20 points a gameweek, the part
+/// at 10 points or more in gold (one gameweek only), and the mean as a tick. One Canvas, so a list
+/// of 200 stays cheap to lay out. Decorative: the row reads the figures.
 struct ProjectionRangeBar: View {
     let p10: Int
     let p90: Int
     let mean: Double
-    let span: Int
-    private let width: CGFloat = 160
+    var horizon = 1
 
     var body: some View {
-        let total = Double(max(1, span))
-        let start = min(1, Double(max(0, p10)) / total)
-        let band = min(1 - start, max(0.02, Double(p90 - max(0, p10)) / total))
-        let tick = min(1, max(0, mean) / total)
-        ZStack(alignment: .leading) {
-            Capsule().fill(ToolkitColor.raised).frame(width: width, height: 6)
-            Capsule().fill(ToolkitColor.accent.opacity(0.55))
-                .frame(width: width * band, height: 6)
-                .offset(x: width * start)
-            Rectangle().fill(ToolkitColor.primaryText)
-                .frame(width: 2, height: 11)
-                .offset(x: max(0, width * tick - 1))
+        let blue = ToolkitColor.information
+        let gold = ToolkitColor.accent
+        let track = ToolkitColor.raised
+        let tickColor = ToolkitColor.primaryText
+        Canvas { context, size in
+            let total = Double(max(1, 20 * horizon))
+            func x(_ v: Double) -> CGFloat { size.width * CGFloat(min(1, max(0, v / total))) }
+            let mid = size.height / 2
+            let bar = CGFloat(6)
+            context.fill(Path(roundedRect: CGRect(x: 0, y: mid - bar / 2, width: size.width, height: bar), cornerRadius: bar / 2),
+                         with: .color(track))
+            let lo = x(Double(max(0, p10))), hi = max(x(Double(p90)), lo + 3)
+            context.fill(Path(roundedRect: CGRect(x: lo, y: mid - bar / 2, width: hi - lo, height: bar), cornerRadius: bar / 2),
+                         with: .color(blue))
+            // Only when the range goes past 10 (a range ending at 10 would show a sliver).
+            if horizon == 1 && p90 > 10 {
+                let from = max(lo, x(10))
+                context.fill(Path(roundedRect: CGRect(x: from, y: mid - bar / 2, width: max(3, hi - from), height: bar),
+                                  cornerRadius: bar / 2), with: .color(gold))
+            }
+            let t = x(mean)
+            context.fill(Path(CGRect(x: max(0, t - 1), y: 0, width: 2, height: size.height)), with: .color(tickColor))
         }
-        .frame(width: width, height: 11, alignment: .leading)
+        .frame(height: 12)
+        .frame(maxWidth: 280)
         .accessibilityHidden(true)
+    }
+}
+
+/// The list's Filters (concept 03): sort and order, likely starters, all nailed, and your minutes.
+struct ProjectionFiltersSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var sort: ProjectionSort
+    @Binding var ascending: Bool
+    @Binding var startersOnly: Bool
+    let tweaks: ProjectionTweaks
+    let horizon: Int
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Sort by") {
+                    Picker("Sort by", selection: $sort) {
+                        ForEach(ProjectionSort.allCases.filter { horizon == 1 || !$0.gameweekOnly }) { s in
+                            Text(s == .mean ? "Projected points" : s == .haul ? (horizon > 1 ? "≥1 haul" : "10+ points") : s.label).tag(s)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                    Picker("Order", selection: $ascending) {
+                        Text("Highest first").tag(false)
+                        Text("Lowest first").tag(true)
+                    }
+                }
+                Section {
+                    Toggle("Likely starters only", isOn: $startersOnly)
+                    Toggle("All players nailed", isOn: Binding(get: { tweaks.allNailed }, set: { tweaks.allNailed = $0 }))
+                } footer: {
+                    Text("Likely starters have a 60% or better chance of playing an hour. All nailed treats every player as certain to play 60 minutes or more.")
+                }
+                if !tweaks.minutes.isEmpty {
+                    Section {
+                        Button("Reset \(tweaks.minutes.count) minutes forecast\(tweaks.minutes.count == 1 ? "" : "s")", role: .destructive) {
+                            tweaks.reset()
+                        }
+                    } footer: {
+                        Text("Your playing-time forecasts are set from each player's forecast and last while this screen is open.")
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .toolkitScreen()
+            .navigationTitle("Filters")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
     }
 }
 

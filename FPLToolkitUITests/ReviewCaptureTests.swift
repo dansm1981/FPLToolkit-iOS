@@ -264,8 +264,9 @@ final class ReviewCaptureTests: XCTestCase {
         capture(app, "r61-planner-draft")
     }
 
-    /// Projections (its own tab since 4 Oct): the list, its menus, run notes, a minutes forecast,
-    /// the breakdown from top to bottom, and the player page's way in.
+    /// Projections ("results first, depth on demand", 5 Oct): the list, its menus, the run's
+    /// details and filters, then a forecast with playing time adjusted and every section open, and
+    /// the player page's way in.
     func testR10Projections() {
         func open() -> (XCUIApplication, XCUIElement) {
             let app = launch(["-entryId", team])
@@ -278,70 +279,84 @@ final class ReviewCaptureTests: XCTestCase {
         var (app, row) = open()
         capture(app, "r80-projections", pages: 4)
 
+        // The run's details (ⓘ) and the filters.
         (app, row) = open()
-        for (title, name) in [("What this run knew", "r81-projections-knew"), ("Reading the numbers", "r82-projections-reading")] {
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
-            reveal(link, in: app)
-            link.tap()
-            waitFor(app.navigationBars[title].firstMatch, title)
-            settle()
-            capture(app, name, pages: 3)
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            waitFor(app.navigationBars["Projections"].firstMatch, "Back on Projections")
-            settle(1)
-        }
+        app.buttons.matching(NSPredicate(format: "label CONTAINS ' · updated '")).firstMatch.tap()
+        waitFor(app.navigationBars["About these projections"].firstMatch, "Run details")
+        settle()
+        capture(app, "r81-projections-about", pages: 6)
+        app.buttons["Done"].firstMatch.tap()
+        settle(2)
+        app.buttons["Filters"].firstMatch.tap()
+        waitFor(app.navigationBars["Filters"].firstMatch, "Filters")
+        settle()
+        capture(app, "r82-projections-filters", pages: 2)
+        app.buttons["Done"].firstMatch.tap()
+        settle(2)
 
-        // The gameweeks and sort menus, open.
-        (app, row) = open()
-        for (prefix, name) in [("Gameweeks", "r83-projections-gameweeks-menu"), ("Sort by", "r84-projections-sort-menu")] {
+        // The gameweeks and players menus, open.
+        for (prefix, name) in [("Gameweeks", "r83-projections-gameweeks-menu"), ("Players", "r84-projections-players-menu")] {
             let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
-            reveal(chip, in: app)
             chip.tap()
             settle()
             capture(app, name, pages: 1)
-            // Close the menu without choosing.
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
             settle(1)
         }
         // Next 3 gameweeks, defenders.
-        let horizon = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gameweeks'")).firstMatch
-        reveal(horizon, in: app)
-        horizon.tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gameweeks'")).firstMatch.tap()
         let next3 = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Next 3'")).firstMatch
         waitFor(next3, "Next 3 in the menu")
         next3.tap()
-        app.buttons["DEF"].firstMatch.tap()
+        settle(1)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Players'")).firstMatch.tap()
+        let defenders = app.buttons["Defenders"].firstMatch
+        waitFor(defenders, "Defenders in the menu")
+        defenders.tap()
         waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS 'at least one 10 point'")).firstMatch, "Next 3 rows", timeout: 60)
         settle(2)
-        reveal(app.buttons.matching(NSPredicate(format: "label CONTAINS '80% range'")).firstMatch, in: app)
         capture(app, "r85-projections-next3-def", pages: 2)
 
-        // Your minutes forecast.
+        // A forecast: adjust playing time, then every section open.
         (app, row) = open()
         reveal(row, in: app)
-        row.press(forDuration: 1.2)
-        settle(1)
-        capture(app, "r86-projections-row-menu", pages: 1)
-        app.buttons["Your minutes forecast…"].firstMatch.tap()
+        row.tap()
+        let outcomes = app.buttons["Possible outcomes"].firstMatch
+        waitFor(outcomes, "Player forecast", timeout: 60)
+        settle(2)
+        capture(app, "r86-projection-forecast", pages: 3)
+        let adjust = app.buttons["Adjust playing time"].firstMatch
+        reveal(adjust, in: app)
+        adjust.tap()
         let setFull = app.buttons["Set 100%"].firstMatch
         waitFor(setFull, "Minutes sheet")
         settle()
         capture(app, "r87-projections-minutes", pages: 1)
         setFull.tap()
         app.buttons["Done"].firstMatch.tap()
-        let tweaked = app.buttons.matching(NSPredicate(format: "label CONTAINS 'your forecast'")).firstMatch
-        waitFor(tweaked, "A row with your forecast", timeout: 60)
         settle(2)
-        let filters = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Reset 1 minutes tweak'")).firstMatch
-        reveal(filters, in: app)
-        capture(app, "r88-projections-tweaked", pages: 2)
+        for title in ["Points by source", "Playing-time assumptions", "Match context and rates", "More figures", "Over the horizon"] {
+            let section = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            reveal(section, in: app)
+            section.tap()
+            settle(1)
+        }
+        // From the top, with your forecast and every section open.
+        for _ in 0..<6 { app.swipeDown() }
+        settle(1)
+        capture(app, "r89-projection-forecast-open", pages: 12)
 
-        // The breakdown, top to bottom, then the player page it links to.
-        reveal(tweaked, in: app)
-        tweaked.tap()
-        waitFor(app.staticTexts["1. Minutes"].firstMatch, "Breakdown", timeout: 60)
+        // Back on the list, the row says it's yours.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS 'your forecast'")).firstMatch, "A row with your forecast", timeout: 60)
         settle(2)
-        capture(app, "r89-projection-breakdown", pages: 10)
+        capture(app, "r88-projections-tweaked", pages: 1)
+
+        // The player page's way in.
+        (app, row) = open()
+        reveal(row, in: app)
+        row.tap()
+        waitFor(app.buttons["Possible outcomes"].firstMatch, "Player forecast", timeout: 60)
         let playerPage = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Open ' AND label CONTAINS 'player page'")).firstMatch
         reveal(playerPage, in: app)
         playerPage.tap()

@@ -27,10 +27,20 @@ final class ScreenAuditTests: XCTestCase {
     }
 
     private func screenshot(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let shot = app.screenshot()
+        let attachment = XCTAttachment(screenshot: shot)
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+        // With TEST_RUNNER_auditOut=<name>, also saved in the runner's temporary folder under
+        // audit/<name>/, to copy out with `simctl get_app_container … data` (the result bundle
+        // stalled finalising on 4 Oct).
+        let out = setting("auditOut", default: "")
+        if !out.isEmpty {
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent("audit").appendingPathComponent(out)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try? shot.pngRepresentation.write(to: dir.appendingPathComponent(name + ".png"))
+        }
     }
 
     /// Screenshot, then audit. Any issue not listed below as a known false alarm fails the test.
@@ -784,23 +794,50 @@ final class ScreenAuditTests: XCTestCase {
         let base = setting("auditApiBaseURL", default: "")
         if !base.isEmpty { arguments += ["-apiBaseURL", base] }
         let app = launch(arguments)
-        // Its own tab since 4 Oct (Dan).
+        // Its own tab since 4 Oct (Dan); "results first, depth on demand" since 5 Oct.
         app.tabBars.buttons["Projections"].tap()
-        // A row reads "Saka, …, Mean 6.8 points, median 6, most likely 2, 80% range 1 to 15, …".
+        // A row reads "Saka. Projected 5.1 points, 80% range 2 to 10. …".
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '80% range'")).firstMatch
         waitFor(row, "Projections list", timeout: 60)
         settle()
         check(app, "92-projections", clippingCheckedLarge: true)
-        // The rows themselves (below the run card and filters at the large sizes).
         reveal(row, in: app)
         settle()
         check(app, "92b-projections-rows", clippingCheckedLarge: true)
 
-        // Your minutes forecast, from the row's menu.
-        row.press(forDuration: 1.2)
-        let menuItem = app.buttons["Your minutes forecast…"].firstMatch
-        waitFor(menuItem, "Minutes forecast menu item")
-        menuItem.tap()
+        // The run's details behind ⓘ, and the filters: sheets (see check()).
+        let info = app.buttons.matching(NSPredicate(format: "label CONTAINS ' · updated '")).firstMatch
+        reveal(info, in: app)
+        info.tap()
+        waitFor(app.navigationBars["About these projections"].firstMatch, "Run details")
+        settle()
+        check(app, "92c-projections-info", sizesAndLists: false)
+        app.buttons["Done"].firstMatch.tap()
+        // Let the sheet go before reading the screen again (its bar vanishes mid-read otherwise).
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.navigationBars["About these projections"].firstMatch)
+        waitForExpectations(timeout: 10)
+        settle()
+        let filters = app.buttons["Filters"].firstMatch
+        reveal(filters, in: app)
+        filters.tap()
+        waitFor(app.navigationBars["Filters"].firstMatch, "Filters")
+        settle()
+        check(app, "92d-projections-filters", sizesAndLists: false)
+        app.buttons["Done"].firstMatch.tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.navigationBars["Filters"].firstMatch)
+        waitForExpectations(timeout: 10)
+        settle()
+
+        // The forecast, and your playing time from it.
+        reveal(row, in: app)
+        row.tap()
+        let outcomes = app.buttons["Possible outcomes"].firstMatch
+        waitFor(outcomes, "Player forecast", timeout: 60)
+        settle()
+        check(app, "94-projection-player", clippingCheckedLarge: true)
+        let adjust = app.buttons["Adjust playing time"].firstMatch
+        reveal(adjust, in: app)
+        adjust.tap()
         let setFull = app.buttons["Set 100%"].firstMatch
         waitFor(setFull, "Minutes forecast sheet")
         settle()
@@ -809,20 +846,26 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "93-projection-minutes", sizesAndLists: false)
         setFull.tap()
         app.buttons["Done"].firstMatch.tap()
-        let tweaked = app.buttons.matching(NSPredicate(format: "label CONTAINS 'your forecast'")).firstMatch
-        waitFor(tweaked, "A row with your forecast", timeout: 60)
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Reset 1 minutes tweak'")).firstMatch.exists)
-
-        // The breakdown.
-        tweaked.tap()
-        let minutes = app.staticTexts["1. Minutes"].firstMatch
-        waitFor(minutes, "Projection breakdown", timeout: 60)
+        waitFor(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Your forecast.'")).firstMatch, "Your forecast on the forecast")
         settle()
-        check(app, "94-projection-player", clippingCheckedLarge: true)
-        let horizon = app.staticTexts["Over the horizon"].firstMatch
+
+        // Depth on demand: open the sections.
+        for title in ["Points by source", "Playing-time assumptions", "Over the horizon"] {
+            let section = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            reveal(section, in: app)
+            section.tap()
+            settle(1)
+        }
+        let horizon = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Over the horizon'")).firstMatch
         reveal(horizon, in: app)
         settle()
         check(app, "95-projection-player-more", clippingCheckedLarge: true)
+
+        // Back on the list: the row and the chip say it's yours.
+        back(app, leaving: outcomes)
+        let tweaked = app.buttons.matching(NSPredicate(format: "label CONTAINS 'your forecast'")).firstMatch
+        waitFor(tweaked, "A row with your forecast", timeout: 60)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Remove filter: Your minutes'")).firstMatch.exists)
     }
 
     func test13Players() {

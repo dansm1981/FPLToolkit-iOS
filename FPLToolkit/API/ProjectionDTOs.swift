@@ -193,6 +193,27 @@ enum ProjectionText {
         let text = two(abs(v))
         return v < 0 ? "−\(text)" : "+\(text)"
     }
+    /// The list's one-line status: "Odds in · updated 12:13" (or "updated Sun 12:13" on another day).
+    nonisolated static func status(_ run: ProjectionRun, now: Date = .now) -> String {
+        guard let at = run.finishedAt else { return run.stage.label }
+        let time = Calendar.current.isDate(at, inSameDayAs: now)
+            ? at.formatted(.dateTime.hour().minute())
+            : at.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        return "\(run.stage.label) · updated \(time)"
+    }
+
+    /// The chart's bars with everything from 15 points up in one "15+" bucket (concept 04).
+    nonisolated static func bucketed(_ chart: ProjectionPlayer.Gameweek.Chart, cap: Int = 15) -> [(points: Int, chance: Double)] {
+        var out: [(points: Int, chance: Double)] = []
+        var top = 0.0
+        for (i, chance) in chart.bars.enumerated() {
+            let points = chart.first + i
+            if points >= cap { top += chance } else { out.append((points, chance)) }
+        }
+        if top > 0 { out.append((cap, top)) }
+        return out
+    }
+
     /// The stage line under the run card's pill: "142h to the GW6 deadline".
     nonisolated static func deadline(_ run: ProjectionRun) -> String? {
         run.hoursToDeadline.map { "\($0)h to the GW\(run.fromGw) deadline" }
