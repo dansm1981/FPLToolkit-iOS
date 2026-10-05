@@ -14,6 +14,17 @@ final class ReviewCaptureTests: XCTestCase {
     }
     private var team: String { setting("reviewTeam", default: setting("auditTeam", default: "71191")) }
     private var attentionTeam: String { setting("auditAttentionTeam", default: "3612045") }
+    /// A folder name: each screenshot is also written to the test runner's own temporary folder
+    /// under review/<name>/, to copy out with `simctl get_app_container … data`, for when the
+    /// result bundle can't be read (it stalled finalising on 4 Oct). The runner can't write to the
+    /// Mac's folders directly.
+    private var reviewOut: URL? {
+        let name = setting("reviewOut", default: "")
+        guard !name.isEmpty else { return nil }
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("review").appendingPathComponent(name)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
 
     override func setUpWithError() throws {
         let requested = setting("reviewCapture", default: "0") == "1"
@@ -253,6 +264,112 @@ final class ReviewCaptureTests: XCTestCase {
         capture(app, "r61-planner-draft")
     }
 
+    /// Projections (its own tab since 4 Oct): the list, its menus, run notes, a minutes forecast,
+    /// the breakdown from top to bottom, and the player page's way in.
+    func testR10Projections() {
+        func open() -> (XCUIApplication, XCUIElement) {
+            let app = launch(["-entryId", team])
+            app.tabBars.buttons["Projections"].tap()
+            let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '80% range'")).firstMatch
+            waitFor(row, "Projections list", timeout: 60)
+            settle(2)
+            return (app, row)
+        }
+        var (app, row) = open()
+        capture(app, "r80-projections", pages: 4)
+
+        (app, row) = open()
+        for (title, name) in [("What this run knew", "r81-projections-knew"), ("Reading the numbers", "r82-projections-reading")] {
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            reveal(link, in: app)
+            link.tap()
+            waitFor(app.navigationBars[title].firstMatch, title)
+            settle()
+            capture(app, name, pages: 3)
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            waitFor(app.navigationBars["Projections"].firstMatch, "Back on Projections")
+            settle(1)
+        }
+
+        // The gameweeks and sort menus, open.
+        (app, row) = open()
+        for (prefix, name) in [("Gameweeks", "r83-projections-gameweeks-menu"), ("Sort by", "r84-projections-sort-menu")] {
+            let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+            reveal(chip, in: app)
+            chip.tap()
+            settle()
+            capture(app, name, pages: 1)
+            // Close the menu without choosing.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+            settle(1)
+        }
+        // Next 3 gameweeks, defenders.
+        let horizon = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Gameweeks'")).firstMatch
+        reveal(horizon, in: app)
+        horizon.tap()
+        let next3 = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Next 3'")).firstMatch
+        waitFor(next3, "Next 3 in the menu")
+        next3.tap()
+        app.buttons["DEF"].firstMatch.tap()
+        waitFor(app.buttons.matching(NSPredicate(format: "label CONTAINS 'at least one 10 point'")).firstMatch, "Next 3 rows", timeout: 60)
+        settle(2)
+        reveal(app.buttons.matching(NSPredicate(format: "label CONTAINS '80% range'")).firstMatch, in: app)
+        capture(app, "r85-projections-next3-def", pages: 2)
+
+        // Your minutes forecast.
+        (app, row) = open()
+        reveal(row, in: app)
+        row.press(forDuration: 1.2)
+        settle(1)
+        capture(app, "r86-projections-row-menu", pages: 1)
+        app.buttons["Your minutes forecast…"].firstMatch.tap()
+        let setFull = app.buttons["Set 100%"].firstMatch
+        waitFor(setFull, "Minutes sheet")
+        settle()
+        capture(app, "r87-projections-minutes", pages: 1)
+        setFull.tap()
+        app.buttons["Done"].firstMatch.tap()
+        let tweaked = app.buttons.matching(NSPredicate(format: "label CONTAINS 'your forecast'")).firstMatch
+        waitFor(tweaked, "A row with your forecast", timeout: 60)
+        settle(2)
+        let filters = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Reset 1 minutes tweak'")).firstMatch
+        reveal(filters, in: app)
+        capture(app, "r88-projections-tweaked", pages: 2)
+
+        // The breakdown, top to bottom, then the player page it links to.
+        reveal(tweaked, in: app)
+        tweaked.tap()
+        waitFor(app.staticTexts["1. Minutes"].firstMatch, "Breakdown", timeout: 60)
+        settle(2)
+        capture(app, "r89-projection-breakdown", pages: 10)
+        let playerPage = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Open ' AND label CONTAINS 'player page'")).firstMatch
+        reveal(playerPage, in: app)
+        playerPage.tap()
+        waitFor(app.buttons["Overview"].firstMatch, "Player page", timeout: 40)
+        settle(3)
+        capture(app, "r90-player-projected-points", pages: 2)
+    }
+
+    /// The Planner tab as it opens, with no jump: what you see first.
+    func testR07bPlannerLanding() {
+        let app = launch(["-entryId", team])
+        app.tabBars.buttons["Planner"].tap()
+        waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your current team'")).firstMatch, "Planner page card", timeout: 40)
+        settle(3)
+        capture(app, "r59-planner-landing", pages: 12)
+        // Team news and squad rotation, from the current team.
+        for (button, marker, name) in [("Team news", "Team news", "r62-team-news"), ("Squad rotation", "Squad rotation", "r63-squad-rotation")] {
+            let app = launch(["-entryId", team])
+            openMyTeam(app)
+            let b = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", button)).firstMatch
+            reveal(b, in: app)
+            b.tap()
+            waitFor(app.navigationBars[marker].firstMatch, marker, timeout: 40)
+            settle(3)
+            capture(app, name, pages: 3)
+        }
+    }
+
     /// Every row of the Research hub, in the hub's order.
     func testR08Research() {
         let app = launch(["-entryId", team])
@@ -337,6 +454,9 @@ final class ReviewCaptureTests: XCTestCase {
             attachment.name = String(format: "%@~%02d", name, page)
             attachment.lifetime = .keepAlways
             add(attachment)
+            if let reviewOut {
+                try? shot.pngRepresentation.write(to: reviewOut.appendingPathComponent(attachment.name! + ".png"))
+            }
             guard page < pages else { return }
             let height = app.frame.height
             let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 8, dy: height * 0.72))
