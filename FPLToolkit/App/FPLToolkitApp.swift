@@ -66,27 +66,28 @@ struct MainView: View {
                     ExploreTodayView()
                 }
             }
-            .tabItem { Label("Today", systemImage: "rectangle.stack") }
+            .tabItem { Label("Today", systemImage: "house") }
             .tag(AppTab.today)
 
             // Team and Planner together (Dan, 4 Oct): your plans on top, your current team below.
             NavigationStack {
                 PlannerView(entryId: entryId, repository: appModel.plannerRepository)
             }
-            .tabItem { Label("Planner", systemImage: "calendar") }
+            .tabItem { Label("Planner", systemImage: "doc.text") }
             .tag(AppTab.planner)
 
             NavigationStack {
                 ProjectionsView()
                     .settingsButton(entryId: entryId)
             }
-            .tabItem { Label("Projections", systemImage: "chart.bar.xaxis.ascending") }
+            // A bell curve (concept board, 5 Oct): no SF Symbol draws one.
+            .tabItem { Label { Text("Projections") } icon: { Image("TabProjections") } }
             .tag(AppTab.projections)
 
             NavigationStack {
                 ResearchView(entryId: entryId)
             }
-            .tabItem { Label("Research", systemImage: "chart.bar.xaxis") }
+            .tabItem { Label("Research", systemImage: "chart.bar") }
             .tag(AppTab.research)
 
             NavigationStack {

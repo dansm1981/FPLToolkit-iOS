@@ -235,24 +235,46 @@ final class ScreenAuditTests: XCTestCase {
     }
 
     /// The Research tab's hub.
-    /// Your current team: the lower part of the Planner tab since 4 Oct (Dan), reached from the
-    /// page card at the top.
+    /// Your FPL team: read-only, from the plan switcher on the Planner tab since 5 Oct (Dan's
+    /// concept), or straight from the start card when there's no plan yet.
     private func openMyTeam(_ app: XCUIApplication) {
         app.tabBars.buttons["Planner"].tap()
-        waitFor(app.navigationBars["Planner"].firstMatch, "Planner tab")
-        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your current team'")).firstMatch
-        waitFor(jump, "Your current team on the page card")
-        jump.tap()
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        let teamRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'FPL team'")).firstMatch
+        let addTeam = app.staticTexts["Add your FPL team"].firstMatch
+        let either = NSPredicate { _, _ in plan.exists || teamRow.exists || addTeam.exists }
+        expectation(for: either, evaluatedWith: nil)
+        waitForExpectations(timeout: 45)
+        // Exploring without a team: the Planner says so, with the add-team card.
+        if addTeam.exists && !plan.exists { return }
+        if !teamRow.exists {
+            plan.tap()
+            waitFor(app.navigationBars["Switch plan"].firstMatch, "Switch plan")
+            // Exploring without a team: the switcher offers to add one instead.
+            if addTeam.waitForExistence(timeout: 3) && !teamRow.exists { return }
+        }
+        teamRow.tap()
+        waitFor(app.navigationBars["FPL team"].firstMatch, "FPL team")
         settle(1)
     }
 
-    /// Your plans: the top of the Planner tab.
+    /// The Planner tab: your plan, or the start card when there's none.
     private func openPlanner(_ app: XCUIApplication) {
         app.tabBars.buttons["Planner"].tap()
-        waitFor(app.navigationBars["Planner"].firstMatch, "Planner tab")
-        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your plans'")).firstMatch
-        if jump.waitForExistence(timeout: 10) { jump.tap() }
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        let importButton = app.buttons["Import my FPL team"].firstMatch
+        let either = NSPredicate { _, _ in plan.exists || importButton.exists }
+        expectation(for: either, evaluatedWith: nil)
+        waitForExpectations(timeout: 45)
         settle(1)
+    }
+
+    /// Opens the plan's ⋯ menu and taps an item in it.
+    private func planMenu(_ app: XCUIApplication, _ item: String) {
+        app.buttons["Plan options"].firstMatch.tap()
+        let button = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", item)).firstMatch
+        waitFor(button, "\(item) in the plan menu")
+        button.tap()
     }
 
     private func openResearch(_ app: XCUIApplication) {
@@ -320,7 +342,7 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'squad' AND label CONTAINS 'attention'")).firstMatch,
                 "Team news", timeout: 30)
         settle()
-        check(app, "04d-team-news")
+        check(app, "04d-team-news", sizesAndLists: false)
         app.buttons["Done"].firstMatch.tap()
 
         app.buttons["Squad rotation"].firstMatch.tap()
@@ -410,25 +432,29 @@ final class ScreenAuditTests: XCTestCase {
     func test08Planner() {
         let app = launch(["-entryId", team])
         openPlanner(app)
-        let importButton = app.buttons["Import my FPL team"].firstMatch
-        let firstDraft = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'From your FPL team'")).firstMatch
-        // Either the empty state or the saved draft, whichever the network brings first.
-        let either = NSPredicate { _, _ in importButton.exists || firstDraft.exists }
-        expectation(for: either, evaluatedWith: nil)
-        waitForExpectations(timeout: 45)
-        if firstDraft.exists {
-            firstDraft.tap()
-        } else {
-            importButton.tap()
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        if !plan.exists {
+            app.buttons["Import my FPL team"].firstMatch.tap()
+            waitFor(plan, "The imported plan", timeout: 40)
         }
-        waitFor(app.staticTexts["This week's fixtures · xFDR"].firstMatch, "Draft pitch", timeout: 40)
+        // The plan switcher (audited); the imported plan on screen.
+        plan.tap()
+        waitFor(app.navigationBars["Switch plan"].firstMatch, "Switch plan")
+        settle()
+        check(app, "12-planner-switch", sizesAndLists: false)
+        let imported = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'From your FPL team'")).firstMatch
+        if imported.exists { imported.tap() } else { app.buttons["Done"].firstMatch.tap() }
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.navigationBars["Switch plan"].firstMatch)
+        waitForExpectations(timeout: 10)
+
+        app.buttons["Pitch"].firstMatch.tap()
+        waitFor(app.staticTexts["This week's fixtures · xFDR"].firstMatch, "Plan pitch", timeout: 40)
         settle()
         // Text sizes and clipping are audited below, with the bench in full: here the bench is cut
         // by the screen's edge, which the audit reports as clipping it can't place (checked by eye
         // at the largest sizes: nothing is cut off).
         check(app, "11-planner-draft", sizesAndLists: false, combinedTiles: true)
-        // And with the bench and chips in view: the Bench heading just under the bar, so no card is
-        // cut by the screen's edge (whatever sits above the pitch).
+        // And with the bench, chip and transfers in view: the Bench heading just under the bar.
         let benchHeading = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'bench'")).firstMatch
         let dy = benchHeading.frame.minY - (app.navigationBars.firstMatch.frame.maxY + 16)
         if dy > 0 {
@@ -439,57 +465,77 @@ final class ScreenAuditTests: XCTestCase {
         settle()
         check(app, "11b-planner-draft-bench", combinedTiles: true, clippingCheckedLarge: true)
 
-        // Team news for the draft's squad (audited), then FPL's own difficulty and back.
+        // List and Fixtures views of the plan.
         app.scrollViews.firstMatch.swipeDown(velocity: .fast)
         app.scrollViews.firstMatch.swipeDown(velocity: .fast)
-        let news = app.buttons["Team news"].firstMatch
-        waitFor(news, "Team news button")
-        news.tap()
+        app.buttons["List"].firstMatch.tap()
+        settle()
+        check(app, "11c-planner-list", clippingCheckedLarge: true)
+        app.buttons["Fixtures"].firstMatch.tap()
+        waitFor(app.staticTexts["Player"].firstMatch, "Plan fixture grid", timeout: 40)
+        settle()
+        // A table of cells sized with the text, one line each: text sizes checked by eye (as Team's).
+        check(app, "11d-planner-fixtures", sizesAndLists: false)
+        app.buttons["Pitch"].firstMatch.tap()
+
+        // Team news for the plan's squad (audited), from the plan's menu.
+        planMenu(app, "Team news")
         let headline = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'GW' OR label BEGINSWITH 'No news'")).firstMatch
         waitFor(headline, "Team news loaded", timeout: 40)
         settle()
-        check(app, "16-draft-news")
+        // A sheet: the audit can't resize text inside it (see check()); checked by eye at xxxLarge bold.
+        check(app, "16-draft-news", sizesAndLists: false)
         app.buttons["Done"].firstMatch.tap()
-        let fixtures = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Fixture difficulty'")).firstMatch
-        waitFor(fixtures, "Fixture switch")
-        fixtures.tap()
-        app.buttons["Official FDR"].firstMatch.tap()
-        waitFor(app.buttons["Fixture difficulty: Official FDR"].firstMatch, "Official FDR chosen")
-        fixtures.tap()
-        app.buttons["xFDR"].firstMatch.tap()
-        waitFor(app.buttons["Fixture difficulty: xFDR · Auto"].firstMatch, "Back to xFDR")
+        settle()
 
-        // Squad rotation and the transfer timeline (both audited).
-        app.buttons["Squad rotation"].firstMatch.tap()
+        // FPL's own difficulty and back, from the menu.
+        planMenu(app, "Fixture difficulty")
+        app.buttons["Official FDR"].firstMatch.tap()
+        settle()
+        app.buttons["Plan options"].firstMatch.tap()
+        waitFor(app.buttons["Fixture difficulty: Official FDR"].firstMatch, "Official FDR chosen")
+        app.buttons["Fixture difficulty: Official FDR"].firstMatch.tap()
+        app.buttons["xFDR"].firstMatch.tap()
+        settle()
+        app.buttons["Plan options"].firstMatch.tap()
+        waitFor(app.buttons["Fixture difficulty: xFDR · Auto"].firstMatch, "Back to xFDR")
+        // Close the menu.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)).tap()
+        settle()
+
+        // Squad rotation (menu) and the transfer timeline (the transfers row), both audited.
+        planMenu(app, "Squad rotation")
         waitFor(app.staticTexts["Goalkeepers"].firstMatch, "Squad rotation grid", timeout: 40)
         settle()
-        check(app, "17-squad-rotation", combinedTiles: true)
+        // Screenshot only: the same grid is audited from the team in test03, and its audit can stall
+        // for many minutes under load (5 Oct), which held this whole test up.
+        screenshot(app, "17-squad-rotation")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        app.buttons["Transfer timeline"].firstMatch.tap()
+        settle()
+        let transfers = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Transfer timeline' OR label CONTAINS ' transfer'")).firstMatch
+        reveal(transfers, in: app)
+        transfers.tap()
         let timeline = app.staticTexts.matching(NSPredicate(format: "label == 'Timeline' OR label BEGINSWITH 'No changes yet'")).firstMatch
         waitFor(timeline, "Transfer timeline", timeout: 40)
         settle()
         check(app, "18-transfer-timeline")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        waitFor(firstDraft, "Drafts list")
-        // Audit only once the draft has finished sliding away.
-        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["This week's fixtures · xFDR"].firstMatch)
-        waitForExpectations(timeout: 10)
-        check(app, "12-planner-list", sizesAndLists: false)
     }
 
-    /// Builds from a blank draft: "+" opens the picker, a pick lands on the pitch, the player menu
-    /// removes him. Blank drafts are deleted afterwards (the imported one is kept for test08).
+    /// Builds from a blank plan: "+" opens the picker, a pick lands on the pitch, the player menu
+    /// removes him. Blank plans are deleted afterwards (the imported one is kept for test08).
     func test09PlannerEditing() {
         let app = launch(["-entryId", team])
         openPlanner(app)
-        // The "New draft" row in Your plans (Dan, 4 Oct: plans and drafts obvious on the Planner tab).
-        let newDraft = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'New draft'")).firstMatch
-        reveal(newDraft, in: app)
-        waitFor(newDraft, "New draft button", timeout: 30)
-        newDraft.tap()
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        // A new plan from the switcher (with plans) or the start card's "another Team ID" (without).
+        if plan.exists {
+            plan.tap()
+            waitFor(app.navigationBars["Switch plan"].firstMatch, "Switch plan")
+            app.buttons["New plan"].firstMatch.tap()
+        } else {
+            app.buttons["Import another team’s ID…"].firstMatch.tap()
+        }
         // The sheet opens on import, with the connected Team ID filled in.
         let teamField = app.textFields["FPL Team ID"].firstMatch
         waitFor(teamField, "New draft sheet")
@@ -500,7 +546,7 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Create"].firstMatch.tap()
 
         let addKeeper = app.buttons["Add a goalkeeper"].firstMatch
-        waitFor(addKeeper, "Blank draft", timeout: 40)
+        waitFor(addKeeper, "Blank plan", timeout: 40)
         addKeeper.tap()
         // A picker row reads "Name, Club, £4.5m, 34 points, …".
         let firstKeeper = app.buttons.matching(NSPredicate(format: "label MATCHES '.*, £[0-9.]+m, [0-9]+ points.*'")).firstMatch
@@ -511,13 +557,13 @@ final class ScreenAuditTests: XCTestCase {
         firstKeeper.tap()
 
         let squadOfOne = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '1 of 15 players'")).firstMatch
-        waitFor(squadOfOne, "The pick on the draft", timeout: 40)
+        waitFor(squadOfOne, "The pick on the plan", timeout: 40)
         let empty = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '0 of 15 players'")).firstMatch
 
-        // Undo takes the pick back off; redo puts it back.
+        // Undo takes the pick back off; redo (in the plan's menu) puts it back.
         app.buttons["Undo"].firstMatch.tap()
         waitFor(empty, "Undo", timeout: 40)
-        app.buttons["Redo"].firstMatch.tap()
+        planMenu(app, "Redo")
         waitFor(squadOfOne, "Redo", timeout: 40)
 
         let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
@@ -544,8 +590,8 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Remove from squad"].firstMatch.tap()
         waitFor(empty, "Squad empty again", timeout: 40)
 
-        // The shortlist has him (audited); swipe him off again.
-        app.buttons["Shortlist"].firstMatch.tap()
+        // The shortlist (plan menu) has him (audited); swipe him off again.
+        planMenu(app, "Shortlist")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", starred)).firstMatch
         waitFor(row, "\(starred) on the shortlist", timeout: 40)
         settle()
@@ -564,54 +610,61 @@ final class ScreenAuditTests: XCTestCase {
         check(app, "20b-shortlist-all", clippingCheckedLarge: true)
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
-        // A chip plays, then cancels.
-        let wildcard = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1'")).firstMatch
-        for _ in 0..<4 where !(wildcard.exists && wildcard.isHittable) { app.swipeUp() }
-        wildcard.tap()
-        let playing = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1' AND label CONTAINS 'Playing in GW'")).firstMatch
+        // A chip plays, then cancels, from "Chip: None ▾".
+        let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Chip: '")).firstMatch
+        reveal(chip, in: app)
+        chip.tap()
+        app.buttons["Play Wildcard 1"].firstMatch.tap()
+        let playing = app.buttons["Chip: Wildcard 1"].firstMatch
         waitFor(playing, "Wildcard played", timeout: 40)
         playing.tap()
-        let available = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Wildcard 1' AND label CONTAINS 'Available'")).firstMatch
-        waitFor(available, "Wildcard cancelled", timeout: 40)
+        app.buttons["Cancel Wildcard 1"].firstMatch.tap()
+        waitFor(app.buttons["Chip: none"].firstMatch, "Wildcard cancelled", timeout: 40)
 
-        // The draft menu: budget and free transfers (audited), rename, then delete.
-        app.buttons["Draft options"].firstMatch.tap()
-        app.buttons["Bank and free transfers…"].firstMatch.tap()
+        // The plan menu: budget and free transfers (audited), rename, then delete.
+        app.scrollViews.firstMatch.swipeDown(velocity: .fast)
+        app.scrollViews.firstMatch.swipeDown(velocity: .fast)
+        planMenu(app, "Bank and free transfers…")
         waitFor(app.navigationBars["Bank"].firstMatch, "Bank sheet")
         settle()
         check(app, "15-draft-money")
         app.buttons["Cancel"].firstMatch.tap()
+        settle()
 
-        app.buttons["Draft options"].firstMatch.tap()
-        app.buttons["Rename…"].firstMatch.tap()
+        planMenu(app, "Rename…")
         let nameField = app.alerts.textFields.firstMatch
         waitFor(nameField, "Rename box")
         nameField.tap()
         nameField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "UI test draft")
         app.alerts.buttons["Save"].tap()
-        waitFor(app.navigationBars["UI test draft"].firstMatch, "Renamed", timeout: 40)
+        waitFor(app.buttons["Plan: UI test draft"].firstMatch, "Renamed", timeout: 40)
 
-        app.buttons["Draft options"].firstMatch.tap()
-        app.buttons["Delete draft…"].firstMatch.tap()
-        app.buttons["Delete draft"].firstMatch.tap()
-        waitFor(app.navigationBars["Planner"].firstMatch, "Back on the drafts list", timeout: 40)
-        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["UI test draft"].firstMatch)
-        waitForExpectations(timeout: 20)
+        planMenu(app, "Delete plan…")
+        app.buttons["Delete plan"].firstMatch.tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons["Plan: UI test draft"].firstMatch)
+        waitForExpectations(timeout: 40)
 
-        // Tidy up: delete any other blank draft (e.g. from an earlier failed run).
-        let blanks = app.buttons.matching(NSPredicate(format: "label CONTAINS 'of 15 players'"))
+        // Tidy up: delete any other blank plan (e.g. from an earlier failed run), from the switcher.
+        openPlanner(app)
+        let current = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        guard current.exists else { return }
+        current.tap()
+        waitFor(app.navigationBars["Switch plan"].firstMatch, "Switch plan")
+        let blanks = app.buttons.matching(NSPredicate(format: "label CONTAINS 'of 15 players' AND NOT (label BEGINSWITH 'Options for')"))
         _ = blanks.firstMatch.waitForExistence(timeout: 5)
         var guardCount = 0
         while blanks.count > 0 && guardCount < 5 {
             guardCount += 1
             let before = blanks.count
-            blanks.firstMatch.swipeLeft()
-            app.buttons["Delete"].firstMatch.tap()
-            app.buttons["Delete draft"].firstMatch.tap()
+            let blankName = blanks.firstMatch.label.components(separatedBy: ",").first ?? ""
+            app.buttons["Options for \(blankName)"].firstMatch.tap()
+            app.buttons["Delete…"].firstMatch.tap()
+            app.buttons["Delete plan"].firstMatch.tap()
             expectation(for: NSPredicate { _, _ in blanks.count < before }, evaluatedWith: nil)
             waitForExpectations(timeout: 20)
         }
-        XCTAssertEqual(blanks.count, 0, "blank drafts left behind")
+        XCTAssertEqual(blanks.count, 0, "blank plans left behind")
+        app.buttons["Done"].firstMatch.tap()
     }
 
     /// Leagues on the Team tab: add Dan's league by ID, its Overview, Standings and "vs me"
@@ -1288,6 +1341,7 @@ final class ScreenAuditTests: XCTestCase {
         openMyTeam(app)
         reveal(app.staticTexts["Add your FPL team"].firstMatch, in: app)
         waitFor(app.staticTexts["Add your FPL team"].firstMatch, "Explore Team")
-        check(app, "10-explore-team")
+        // The Planner's start card, or the plan switcher (a sheet) when the device has plans.
+        check(app, "10-explore-team", sizesAndLists: false)
     }
 }

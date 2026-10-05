@@ -251,17 +251,30 @@ final class ReviewCaptureTests: XCTestCase {
         capture(app, "r51-matchday-breakdown")
     }
 
+    /// The Planner workspace (Dan's concept, 5 Oct): the plan top to bottom, its views, and the
+    /// plan switcher.
     func testR07Planner() {
-        let app = launch(["-entryId", team])
+        var app = launch(["-entryId", team])
         openPlanner(app)
-        let firstDraft = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'From your FPL team'")).firstMatch
-        waitFor(firstDraft, "Planner drafts", timeout: 45)
-        settle()
-        capture(app, "r60-planner-drafts")
-        firstDraft.tap()
-        waitFor(app.staticTexts["Starting XI"].firstMatch, "Draft pitch", timeout: 40)
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        waitFor(plan, "A plan", timeout: 45)
+        app.buttons["Pitch"].firstMatch.tap()
         settle(3)
-        capture(app, "r61-planner-draft")
+        capture(app, "r60-planner-plan", pages: 8)
+        for layout in ["List", "Fixtures"] {
+            app = launch(["-entryId", team])
+            openPlanner(app)
+            app.buttons[layout].firstMatch.tap()
+            settle(3)
+            capture(app, "r61-planner-" + layout.lowercased(), pages: 4)
+        }
+        app = launch(["-entryId", team])
+        openPlanner(app)
+        app.buttons["Pitch"].firstMatch.tap()
+        plan.tap()
+        waitFor(app.navigationBars["Switch plan"].firstMatch, "Switch plan")
+        settle()
+        capture(app, "r64-planner-switch", pages: 2)
     }
 
     /// Projections ("results first, depth on demand", 5 Oct): the list, its menus, the run's
@@ -365,16 +378,14 @@ final class ReviewCaptureTests: XCTestCase {
         capture(app, "r90-player-projected-points", pages: 2)
     }
 
-    /// The Planner tab as it opens, with no jump: what you see first.
+    /// Your FPL team, read-only (from the switcher): top to bottom, then Team news and Squad rotation.
     func testR07bPlannerLanding() {
-        let app = launch(["-entryId", team])
-        app.tabBars.buttons["Planner"].tap()
-        waitFor(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your current team'")).firstMatch, "Planner page card", timeout: 40)
+        var app = launch(["-entryId", team])
+        openMyTeam(app)
         settle(3)
-        capture(app, "r59-planner-landing", pages: 12)
-        // Team news and squad rotation, from the current team.
+        capture(app, "r59-fpl-team", pages: 8)
         for (button, marker, name) in [("Team news", "Team news", "r62-team-news"), ("Squad rotation", "Squad rotation", "r63-squad-rotation")] {
-            let app = launch(["-entryId", team])
+            app = launch(["-entryId", team])
             openMyTeam(app)
             let b = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", button)).firstMatch
             reveal(b, in: app)
@@ -499,20 +510,35 @@ final class ReviewCaptureTests: XCTestCase {
         return app
     }
 
-    /// Your current team: below your plans on the Planner tab (Dan, 4 Oct).
+    /// Your FPL team: read-only, from the plan switcher on the Planner tab (Dan's concept, 5 Oct).
     private func openMyTeam(_ app: XCUIApplication) {
         app.tabBars.buttons["Planner"].tap()
-        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your current team'")).firstMatch
-        waitFor(jump, "Your current team on the page card")
-        jump.tap()
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        let teamRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'FPL team'")).firstMatch
+        let addTeam = app.staticTexts["Add your FPL team"].firstMatch
+        let either = NSPredicate { _, _ in plan.exists || teamRow.exists || addTeam.exists }
+        expectation(for: either, evaluatedWith: nil)
+        waitForExpectations(timeout: 45)
+        if addTeam.exists && !plan.exists { return }
+        if !teamRow.exists {
+            plan.tap()
+            waitFor(app.navigationBars["Switch plan"].firstMatch, "Switch plan")
+            // Exploring without a team: the switcher offers to add one instead.
+            if addTeam.waitForExistence(timeout: 3) && !teamRow.exists { return }
+        }
+        teamRow.tap()
+        waitFor(app.navigationBars["FPL team"].firstMatch, "FPL team")
         settle(1)
     }
 
-    /// Your plans: the top of the Planner tab.
+    /// The Planner tab: your plan, or the start card when there's none.
     private func openPlanner(_ app: XCUIApplication) {
         app.tabBars.buttons["Planner"].tap()
-        let jump = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Your plans'")).firstMatch
-        if jump.waitForExistence(timeout: 10) { jump.tap() }
+        let plan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Plan: '")).firstMatch
+        let importButton = app.buttons["Import my FPL team"].firstMatch
+        let either = NSPredicate { _, _ in plan.exists || importButton.exists }
+        expectation(for: either, evaluatedWith: nil)
+        waitForExpectations(timeout: 45)
         settle(1)
     }
 

@@ -5,9 +5,30 @@ import SwiftUI
 /// Official FDR or xFDR, and which xFDR (Auto, Overall, Attack or Defence). Built from the
 /// fixture ticker's club runs.
 struct TeamFixturesView: View {
-    @Environment(AppModel.self) private var appModel
     let team: Team
     let snapshot: Team.Snapshot
+    @Binding var model: FixtureView.Model
+    @Binding var lens: FixtureView.Lens
+    let onInfo: () -> Void
+    let onPlayer: (Int) -> Void
+
+    var body: some View {
+        let picks = TeamSquad.rows(snapshot, team: team).flatMap { $0 } + TeamSquad.bench(snapshot)
+        SquadFixturesView(members: picks.compactMap { pick in
+            team.player(pick.playerId).map { SquadFixturesView.Member(player: $0, onBench: pick.role == .bench) }
+        }, model: $model, lens: $lens, onInfo: onInfo, onPlayer: onPlayer)
+    }
+}
+
+/// Any squad's next ten gameweeks (the team's, or a plan's since 5 Oct), names pinned with photo
+/// and badge, with the difficulty model in plain view. Built from the fixture ticker's club runs.
+struct SquadFixturesView: View {
+    struct Member {
+        let player: PlayerSummary
+        let onBench: Bool
+    }
+    @Environment(AppModel.self) private var appModel
+    let members: [Member]
     @Binding var model: FixtureView.Model
     @Binding var lens: FixtureView.Lens
     let onInfo: () -> Void
@@ -79,7 +100,7 @@ struct TeamFixturesView: View {
     }
 
     private func load(force: Bool) async {
-        let clubs = Array(Set(team.players.values.map(\.clubId)))
+        let clubs = Array(Set(members.map(\.player.clubId)))
         let research = appModel.researchRepository
         func endpoint(_ lens: FixtureView.Lens) -> CachedEndpoint<ResearchTicker> {
             research.ticker(horizon: Self.horizon, fuzzy: false, sort: .sum, hardestFirst: false, clubs: clubs,
@@ -97,9 +118,8 @@ struct TeamFixturesView: View {
     }
 
     private func rows(defence: ResearchTicker, attack: ResearchTicker) -> [FixtureRunGrid.Row] {
-        let picks = TeamSquad.rows(snapshot, team: team).flatMap { $0 } + TeamSquad.bench(snapshot)
-        return picks.compactMap { pick in
-            guard let player = team.player(pick.playerId) else { return nil }
+        members.map { member in
+            let player = member.player
             let defensive = player.position == .gk || player.position == .def
             let ticker = defensive ? defence : attack
             let variant = byPosition ? (defensive ? "Defence" : "Attack")
@@ -110,7 +130,7 @@ struct TeamFixturesView: View {
             return FixtureRunGrid.Row(
                 id: player.id,
                 title: player.webName,
-                subtitle: [club?.shortName, variant, pick.role == .bench ? "Bench" : nil].compactMap { $0 }.joined(separator: " · "),
+                subtitle: [club?.shortName, variant, member.onBench ? "Bench" : nil].compactMap { $0 }.joined(separator: " · "),
                 photo: player.photo,
                 clubId: player.clubId,
                 cells: cells.map { FixtureCellModel(tickerCell: $0, club: appModel.club,

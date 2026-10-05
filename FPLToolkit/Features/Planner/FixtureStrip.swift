@@ -31,8 +31,10 @@ struct FixtureStrip: View {
 
     private func cellView(_ week: PlannerDraft.StripWeek) -> some View {
         let side = roomy ? cell * 1.8 : cell
+        // The roomy strip (list rows) uses a text style, so the audit sees it follow Dynamic Type;
+        // the pitch tiles' tiny cells keep a scaled point size.
         return Text(week.band.map(String.init) ?? "–")
-            .font(.system(size: roomy ? digit * 1.7 : digit, weight: .bold).monospacedDigit())
+            .font(roomy ? .footnote.weight(.bold).monospacedDigit() : .system(size: digit, weight: .bold).monospacedDigit())
             .foregroundStyle(week.band.map(DifficultyColor.text) ?? ToolkitColor.secondaryText)
             .frame(width: side, height: side * 1.2)
             .background(week.band.map(DifficultyColor.fill) ?? ToolkitColor.raised,

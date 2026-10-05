@@ -1,26 +1,23 @@
 import SwiftUI
 
-/// The Planner tab (Dan, 4 Oct 2026): your plans and drafts at the top, then your current team
-/// below with its news and info as the Team tab had them. A card at the top says both are here and
-/// jumps to each. Drafts are this device's (Phase 2); the team is your published FPL squad.
+/// The Planner tab (Dan's concept, 5 Oct 2026: "One workspace, different plans. The squad is the
+/// starting point. The plan selector replaces the landing directory."). It opens on your plan; the
+/// plan's name switches plans, starts a new one, or opens your FPL team, read-only, with its news,
+/// fixtures and odds as the Team tab had them.
 struct PlannerView: View {
     @Environment(AppModel.self) private var appModel
-    @Environment(\.scenePhase) private var scenePhase
     /// nil while exploring without a team: import needs a Team ID, and there's no squad to show.
     let entryId: Int?
     // Created up front: a task on an empty view never runs.
     @State private var list: Resource<PlannerDraftList>
-    @State private var team: Resource<Team>?
-    @State private var odds: Resource<Odds>?
+    /// The plan on screen: the last one opened (kept by DraftView), else the latest.
+    @AppStorage(LastDraft.idKey) private var lastDraftId = ""
+    @State private var showingSwitch = false
+    @State private var showingNewDraft = false
+    @State private var showingTeam = false
+    @State private var addingTeam = false
     @State private var creating: String?
     @State private var createError: ErrorCopy?
-    @State private var opened: PlannerDraftRoute?
-    @State private var pendingDelete: PlannerDraftSummary?
-    /// Drafts being deleted: hidden straight away, shown again if the delete fails.
-    @State private var deleting: Set<String> = []
-    @State private var showingNewDraft = false
-    @State private var showingLeagues = false
-    @State private var addingTeam = false
 
     init(entryId: Int?, repository: PlannerRepository) {
         self.entryId = entryId
@@ -28,169 +25,395 @@ struct PlannerView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                    // "Your plans" scrolls to the very top, so the page card naming both parts shows too.
-                    PlannerPageMap(drafts: visibleDrafts?.count, team: teamLine) { section in
-                        scroll(to: section, proxy)
-                    }
-                    .id(PlannerSection.plans)
-                    plans
-                    currentTeam(proxy)
+        Group {
+            switch list.phase {
+            case .loading:
+                ScrollView {
+                    SkeletonCards(caption: "Loading your plans…")
+                        .padding(.horizontal, ToolkitSpace.page)
                 }
-                .padding(.horizontal, 18)
-                .padding(.bottom, ToolkitSpace.section)
+            case .failed(let copy):
+                ErrorStateView(copy: copy) { Task { await list.retry() } }
+            case .loaded(let loaded):
+                workspace(loaded.value.drafts)
             }
-            .refreshable { await refreshAll() }
-            .onAppear {
-                // Back from a draft: names, planned weeks, copies and deletions may have changed.
-                if !list.isInitial { Task { await list.load(bypassCache: true) } }
-                openPending(proxy)
-            }
-            .onChange(of: appModel.router.pendingDraftId) { openPending(proxy) }
-            .onChange(of: appModel.router.pendingPlannerSection) { openPending(proxy) }
         }
         .task {
             if list.isInitial { await list.load() }
         }
-        .task { await loadTeam() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await refreshTeamIfStale() } }
+        // Back on the tab: names and planned transfers may have changed.
+        .onAppear {
+            if !list.isInitial { Task { await list.load(bypassCache: true) } }
+            openPending()
         }
-        .navigationDestination(for: PlannerDraftRoute.self) { route in
-            DraftView(id: route.id, repository: appModel.plannerRepository)
+        .onChange(of: appModel.router.pendingDraftId) { openPending() }
+        .onChange(of: appModel.router.pendingPlannerSection) { openPending() }
+        .navigationDestination(isPresented: $showingTeam) {
+            if let entryId { FPLTeamView(entryId: entryId) }
         }
-        .navigationDestination(item: $opened) { route in
-            DraftView(id: route.id, repository: appModel.plannerRepository)
+        .sheet(isPresented: $showingSwitch) {
+            SwitchPlanSheet(
+                drafts: list.loaded?.value.drafts ?? [],
+                selectedId: currentId(list.loaded?.value.drafts ?? []),
+                teamGameweek: appModel.bootstrap?.value.gameweek.current,
+                hasTeam: entryId != nil,
+                onSelect: { id in
+                    lastDraftId = id
+                    showingSwitch = false
+                },
+                onNew: {
+                    showingSwitch = false
+                    showingNewDraft = true
+                },
+                onTeam: {
+                    showingSwitch = false
+                    showingTeam = true
+                },
+                onAddTeam: {
+                    showingSwitch = false
+                    addingTeam = true
+                },
+                onRename: { draft, name in await rename(draft, to: name) },
+                onDuplicate: { draft in await create(.copy(draft.id), label: "Copying \u{201C}\(draft.name)\u{201D}…") },
+                onDelete: { draft in await delete(draft) })
         }
-        .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
-        .toolbar {
-            if entryId != nil {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingLeagues = true } label: {
-                        Label("Your leagues", systemImage: "trophy")
-                    }
-                    .tint(ToolkitColor.accent)
-                }
-            }
-        }
-        .sheet(isPresented: $addingTeam) { AddTeamSheet() }
         .sheet(isPresented: $showingNewDraft) {
             NewDraftSheet(entryId: entryId, drafts: list.loaded?.value.drafts ?? []) { request, label in
                 Task { await create(request, label: label) }
             }
         }
-        .confirmationDialog(
-            pendingDelete.map { "Delete \u{201C}\($0.name)\u{201D}?" } ?? "",
-            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-            titleVisibility: .visible,
-            presenting: pendingDelete
-        ) { draft in
-            Button("Delete draft", role: .destructive) { Task { await delete(draft) } }
-        } message: { _ in
-            Text("This can't be undone.")
-        }
+        .sheet(isPresented: $addingTeam) { AddTeamSheet() }
         .toolkitScreen()
         .navigationTitle("Planner")
-        // In the top bar, as on Today (Dan, 30 Sep).
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .settingsButton(entryId: entryId)
     }
 
-    // MARK: Your plans
-
-    private var visibleDrafts: [PlannerDraftSummary]? {
-        list.loaded?.value.drafts.filter { !deleting.contains($0.id) }
+    @ViewBuilder
+    private func workspace(_ drafts: [PlannerDraftSummary]) -> some View {
+        if let id = currentId(drafts) {
+            DraftView(id: id, repository: appModel.plannerRepository,
+                      onSwitch: { showingSwitch = true },
+                      onDeleted: { Task { await afterDelete() } })
+                .id(id)
+        } else {
+            start
+        }
     }
 
-    @ViewBuilder private var plans: some View {
-        SectionHeader(title: "Your plans")
-        Text("Drafts are separate plans: try transfers, chips and captains for the weeks ahead. Your real team below doesn't change.")
-            .font(.subheadline)
-            .foregroundStyle(ToolkitColor.secondaryText)
-            .fixedSize(horizontal: false, vertical: true)
-        switch list.phase {
-        case .loading:
-            SkeletonCards(caption: "Loading your drafts…", count: 1)
-        case .failed(let copy):
-            ResearchErrorView(copy: copy) { Task { await list.retry() } }
-        case .loaded(let loaded):
-            if loaded.isFromCache || list.refreshError != nil { SavedDataBanner(resource: list) }
-            if let creating {
-                HStack(spacing: ToolkitSpace.sm) {
-                    ProgressView()
-                    Text(creating).foregroundStyle(ToolkitColor.secondaryText)
+    /// No plans yet: the ways to start one, and your FPL team.
+    private var start: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                if let creating {
+                    HStack(spacing: ToolkitSpace.sm) {
+                        ProgressView()
+                        Text(creating).foregroundStyle(ToolkitColor.secondaryText)
+                    }
                 }
-            }
-            if let createError { ErrorBanner(copy: createError) }
-            let drafts = visibleDrafts ?? []
-            if drafts.isEmpty {
+                if let createError { ErrorBanner(copy: createError) }
                 EmptyPlanner(entryId: entryId, busy: creating != nil) { request, label in
                     Task { await create(request, label: label) }
                 } more: {
                     showingNewDraft = true
                 }
-            } else {
-                CardGroup {
-                    ForEach(drafts) { draft in
-                        NavigationLink(value: PlannerDraftRoute(id: draft.id)) {
-                            LinkRowLabel(title: draft.name, detail: DraftRow.details(draft), systemImage: "doc.text")
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            Button("Delete draft", systemImage: "trash", role: .destructive) { pendingDelete = draft }
-                        }
-                        .accessibilityAction(named: "Delete draft") { pendingDelete = draft }
-                        RowDivider()
+                if entryId != nil {
+                    SectionLabel(text: "FPL reference")
+                    FPLTeamRow(gameweek: appModel.bootstrap?.value.gameweek.current) { showingTeam = true }
+                } else {
+                    AddTeamCard(message: "Add your FPL team to plan from it, and to see your published squad with each player's next fixture, price and availability.") {
+                        addingTeam = true
                     }
-                    Button { showingNewDraft = true } label: {
-                        LinkRowLabel(title: "New draft", detail: "Import a team, start from scratch or copy a draft",
-                                     systemImage: "plus", showsChevron: false)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(creating != nil)
                 }
-                Text("Drafts are kept on this device's account with FPLToolkit. Press and hold a draft to delete it.")
-                    .font(.footnote)
+            }
+            .padding(.horizontal, ToolkitSpace.page)
+            .padding(.bottom, ToolkitSpace.section)
+        }
+    }
+
+    private func currentId(_ drafts: [PlannerDraftSummary]) -> String? {
+        if drafts.contains(where: { $0.id == lastDraftId }) { return lastDraftId }
+        return drafts.max { ($0.updatedAt ?? "") < ($1.updatedAt ?? "") }?.id
+    }
+
+    /// Today's "Continue your plan" names a plan; links to your team open it.
+    private func openPending() {
+        if let id = appModel.router.pendingDraftId {
+            appModel.router.pendingDraftId = nil
+            lastDraftId = id
+        }
+        if let section = appModel.router.pendingPlannerSection {
+            appModel.router.pendingPlannerSection = nil
+            if section == .team, entryId != nil { showingTeam = true }
+        }
+    }
+
+    private func create(_ request: PlannerNewDraft, label: String) async {
+        creating = label
+        createError = nil
+        defer { creating = nil }
+        do {
+            let draft = try await appModel.plannerRepository.create(request)
+            await list.load(bypassCache: true)
+            lastDraftId = draft.id
+        } catch let error as APIError {
+            createError = ErrorCopy(error)
+        } catch {}
+    }
+
+    private func rename(_ draft: PlannerDraftSummary, to name: String) async {
+        _ = try? await appModel.plannerRepository.update(draft.id, PlannerDraftPatch(name: name))
+        await list.load(bypassCache: true)
+    }
+
+    private func delete(_ draft: PlannerDraftSummary) async {
+        do {
+            try await appModel.plannerRepository.delete(draft.id)
+            LastDraft.forget(id: draft.id)
+            await list.load(bypassCache: true)
+        } catch let error as APIError {
+            createError = ErrorCopy(error)
+        } catch {}
+    }
+
+    private func afterDelete() async {
+        await list.load(bypassCache: true)
+    }
+}
+
+/// The read-only FPL team, as a row (concept 02's "FPL REFERENCE").
+struct FPLTeamRow: View {
+    let gameweek: Int?
+    let open: () -> Void
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: ToolkitSpace.md) {
+                Image(systemName: "lock")
+                    .font(.title3)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .frame(width: 28)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(gameweek.map { "FPL team · GW\($0)" } ?? "FPL team")
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Text("Read-only · last synced squad, news and fixtures")
+                        .font(.subheadline)
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: ToolkitSpace.sm)
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .accessibilityHidden(true)
+            }
+            .padding(ToolkitSpace.lg)
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .background(ToolkitColor.canvas.opacity(0.6), in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card).strokeBorder(ToolkitColor.border))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens your published FPL squad")
+    }
+}
+
+/// Concept 02: your plans (the current one ticked, each with ⋯), your FPL team for reference,
+/// and a new plan.
+struct SwitchPlanSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let drafts: [PlannerDraftSummary]
+    let selectedId: String?
+    let teamGameweek: Int?
+    let hasTeam: Bool
+    let onSelect: (String) -> Void
+    let onNew: () -> Void
+    let onTeam: () -> Void
+    /// Exploring without a team: add one.
+    let onAddTeam: () -> Void
+    let onRename: (PlannerDraftSummary, String) async -> Void
+    let onDuplicate: (PlannerDraftSummary) async -> Void
+    let onDelete: (PlannerDraftSummary) async -> Void
+    @State private var renaming: PlannerDraftSummary?
+    @State private var newName = ""
+    @State private var deleting: PlannerDraftSummary?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                    SectionLabel(text: "Your plans")
+                    ForEach(drafts) { draft in
+                        planRow(draft)
+                    }
+                    SectionLabel(text: "FPL reference")
+                        .padding(.top, ToolkitSpace.md)
+                    if hasTeam {
+                        FPLTeamRow(gameweek: teamGameweek, open: onTeam)
+                    } else {
+                        AddTeamCard(message: "Add your FPL team to plan from it, and to see your published squad with its news and fixtures.",
+                                    add: onAddTeam)
+                    }
+                }
+                .padding(.horizontal, ToolkitSpace.page)
+                .padding(.bottom, ToolkitSpace.section)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button(action: onNew) {
+                    Label("New plan", systemImage: "plus")
+                }
+                .buttonStyle(ToolkitPrimaryButtonStyle())
+                .padding(.horizontal, ToolkitSpace.page)
+                .padding(.vertical, ToolkitSpace.sm)
+                .background(ToolkitColor.canvas)
+            }
+            .toolkitScreen()
+            .navigationTitle("Switch plan")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .alert("Rename plan", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+                TextField("Name", text: $newName)
+                Button("Save") {
+                    let name = newName.trimmingCharacters(in: .whitespaces)
+                    if let draft = renaming, !name.isEmpty, name != draft.name {
+                        Task { await onRename(draft, name) }
+                    }
+                    renaming = nil
+                }
+                Button("Cancel", role: .cancel) { renaming = nil }
+            }
+            .confirmationDialog(deleting.map { "Delete \u{201C}\($0.name)\u{201D}?" } ?? "",
+                                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                                titleVisibility: .visible, presenting: deleting) { draft in
+                Button("Delete plan", role: .destructive) { Task { await onDelete(draft) } }
+            } message: { _ in
+                Text("This can't be undone.")
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private func planRow(_ draft: PlannerDraftSummary) -> some View {
+        let selected = draft.id == selectedId
+        return HStack(alignment: .center, spacing: ToolkitSpace.sm) {
+            Button { onSelect(draft.id) } label: {
+                HStack(alignment: .firstTextBaseline, spacing: ToolkitSpace.md) {
+                    Image(systemName: selected ? "checkmark.circle.fill" : "doc.text")
+                        .font(.title3)
+                        .foregroundStyle(selected ? ToolkitColor.accent : ToolkitColor.secondaryText)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(draft.name)
+                            .font(.headline)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(SwitchPlanSheet.detail(draft))
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(minHeight: 52)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(draft.name), \(SwitchPlanSheet.detail(draft))")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .accessibilityHint(selected ? "The plan on screen" : "Switches to this plan")
+            Menu {
+                Button {
+                    newName = draft.name
+                    renaming = draft
+                } label: { Label("Rename…", systemImage: "pencil") }
+                Button { Task { await onDuplicate(draft) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
+                Button(role: .destructive) { deleting = draft } label: { Label("Delete…", systemImage: "trash") }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Options for \(draft.name)")
+        }
+        .padding(.horizontal, ToolkitSpace.md)
+        .padding(.vertical, ToolkitSpace.sm)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+        .overlay(RoundedRectangle(cornerRadius: ToolkitRadius.card)
+            .strokeBorder(selected ? ToolkitColor.accent : Color.clear, lineWidth: 1.5))
+    }
+
+    /// "GW6–9 · 1 planned transfer", "Nothing planned yet".
+    nonisolated static func detail(_ draft: PlannerDraftSummary) -> String {
+        guard let first = draft.plannedGws.min(), let last = draft.plannedGws.max() else {
+            return draft.source == .import ? "From your FPL team · nothing planned yet" : "\(draft.playerCount) of 15 players · nothing planned yet"
+        }
+        let weeks = first == last ? "GW\(first)" : "GW\(first)–\(last)"
+        if let n = draft.transferCount {
+            return "\(weeks) · \(n) planned transfer\(n == 1 ? "" : "s")"
+        }
+        return "\(weeks) · \(draft.plannedGws.count) week\(draft.plannedGws.count == 1 ? "" : "s") planned"
+    }
+}
+
+/// Your FPL team, read-only (from the plan switcher and Today's "View fixtures"): the squad you
+/// last published, with team news, squad rotation, the pitch, list and fixtures, and odds, as the
+/// Team tab had it. Your leagues are a tap away.
+struct FPLTeamView: View {
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
+    let entryId: Int
+    @State private var team: Resource<Team>?
+    @State private var odds: Resource<Odds>?
+    @State private var showingLeagues = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                Text("Read-only: the squad you last published to FPL, with team news, fixtures and prices. Changes go in a plan.")
+                    .font(.subheadline)
                     .foregroundStyle(ToolkitColor.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
+                // "Plan changes" goes back to your plan.
+                TeamSection(entryId: entryId, resource: team, odds: odds) { dismiss() }
             }
+            .padding(.horizontal, 18)
+            .padding(.bottom, ToolkitSpace.section)
+        }
+        .refreshable {
+            async let o: Void = odds?.load(bypassCache: true) ?? ()
+            await team?.load(bypassCache: true)
+            await o
+            noteSquad()
+        }
+        .toolkitScreen()
+        .navigationTitle("FPL team")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showingLeagues = true } label: {
+                    Label("Your leagues", systemImage: "trophy")
+                }
+                .tint(ToolkitColor.accent)
+            }
+        }
+        .navigationDestination(isPresented: $showingLeagues) { LeaguesListView() }
+        .task { await load() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await refreshIfStale() } }
         }
     }
 
-    // MARK: Your current team
-
-    @ViewBuilder private func currentTeam(_ proxy: ScrollViewProxy) -> some View {
-        SectionHeader(title: "Your current team")
-            .id(PlannerSection.team)
-            .padding(.top, ToolkitSpace.md)
-        if let entryId {
-            Text("Your published squad as FPL has it, with team news, fixtures and prices.")
-                .font(.subheadline)
-                .foregroundStyle(ToolkitColor.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            TeamSection(entryId: entryId, resource: team, odds: odds) {
-                scroll(to: .plans, proxy)
-            }
-        } else {
-            AddTeamCard(message: "Add your FPL team to see your published squad here, with each player's next fixture, price and availability.") {
-                addingTeam = true
-            }
-        }
-    }
-
-    /// "GW5 squad · team news" once the team has loaded.
-    private var teamLine: String? {
-        guard entryId != nil else { return nil }
-        if let gw = team?.loaded?.value.snapshot?.gw { return "GW\(gw) squad, team news and fixtures" }
-        return "Your squad, team news and fixtures"
-    }
-
-    // MARK: Loading
-
-    private func loadTeam() async {
-        guard let entryId else { return }
+    private func load() async {
         if odds == nil {
             let odds = Resource(appModel.liveRepository.odds())
             self.odds = odds
@@ -202,23 +425,15 @@ struct PlannerView: View {
             await team.load()
             noteSquad()
         } else {
-            await refreshTeamIfStale()
+            await refreshIfStale()
         }
     }
 
-    /// Back on the Planner from another tab or the app: reload the squad after a minute (odds after
-    /// 5), keeping the current copy on screen meanwhile.
-    private func refreshTeamIfStale() async {
+    /// Back here from another tab or the app: reload the squad after a minute (odds after 5).
+    private func refreshIfStale() async {
         async let oddsLoad: Void = odds?.refreshIfStale(maxAge: 300) ?? ()
         await team?.refreshIfStale()
         await oddsLoad
-        noteSquad()
-    }
-
-    private func refreshAll() async {
-        async let drafts: Void = list.load(bypassCache: true)
-        async let squad: Void = team?.load(bypassCache: true) ?? ()
-        _ = await (drafts, squad)
         noteSquad()
     }
 
@@ -227,89 +442,6 @@ struct PlannerView: View {
             appModel.squadIds = Set(picks.map(\.playerId))
         }
     }
-
-    // MARK: Navigation
-
-    private func scroll(to section: PlannerSection, _ proxy: ScrollViewProxy) {
-        withAnimation { proxy.scrollTo(section, anchor: .top) }
-    }
-
-    /// Today's "Continue your plan" asks for a draft by setting the router's pending ID; links to
-    /// your team or your plans ask for a part of this screen.
-    private func openPending(_ proxy: ScrollViewProxy) {
-        if let id = appModel.router.pendingDraftId {
-            appModel.router.pendingDraftId = nil
-            opened = PlannerDraftRoute(id: id)
-        }
-        if let section = appModel.router.pendingPlannerSection {
-            appModel.router.pendingPlannerSection = nil
-            // After the tab switch has laid the screen out.
-            DispatchQueue.main.async { scroll(to: section, proxy) }
-        }
-    }
-
-    private func create(_ request: PlannerNewDraft, label: String) async {
-        creating = label
-        createError = nil
-        defer { creating = nil }
-        do {
-            let draft = try await appModel.plannerRepository.create(request)
-            await list.load(bypassCache: true)
-            opened = PlannerDraftRoute(id: draft.id)
-        } catch let error as APIError {
-            createError = ErrorCopy(error)
-        } catch {}
-    }
-
-    private func delete(_ draft: PlannerDraftSummary) async {
-        deleting.insert(draft.id)
-        defer { deleting.remove(draft.id) }
-        do {
-            try await appModel.plannerRepository.delete(draft.id)
-            await list.load(bypassCache: true)
-        } catch let error as APIError {
-            createError = ErrorCopy(error)
-        } catch {}
-    }
-}
-
-/// The top of the Planner tab: what's on this page, each part a tap away.
-private struct PlannerPageMap: View {
-    /// Nil until the drafts have loaded.
-    let drafts: Int?
-    /// Nil while exploring without a team.
-    let team: String?
-    let jump: (PlannerSection) -> Void
-
-    var body: some View {
-        CardGroup {
-            Button { jump(.plans) } label: {
-                LinkRowLabel(title: "Your plans", detail: plansLine, systemImage: "calendar.badge.plus", showsChevron: false)
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Scrolls to your plans")
-            RowDivider()
-            Button { jump(.team) } label: {
-                LinkRowLabel(title: "Your current team", detail: team ?? "Add your FPL team to see it here",
-                             systemImage: "tshirt", trailing: "Below ↓", showsChevron: false)
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Scrolls down to your current team")
-        }
-    }
-
-    private var plansLine: String {
-        switch drafts {
-        case nil: "Drafts for the weeks ahead"
-        case 0?: "No drafts yet: start one below"
-        case 1?: "1 draft"
-        case let n?: "\(n) drafts"
-        }
-    }
-}
-
-struct PlannerDraftRoute: Hashable, Identifiable {
-    let id: String
 }
 
 /// A draft's line under its name.

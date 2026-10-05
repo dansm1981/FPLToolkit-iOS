@@ -20,6 +20,8 @@ struct PlannerDraftSummary: Decodable, Sendable, Identifiable, Hashable {
     /// Gameweeks with planned changes after the starting squad.
     let plannedGws: [Int]
     let playerCount: Int
+    /// Players brought in across the planned weeks (happy-backend-pal#75); nil from older servers.
+    var transferCount: Int? = nil
 }
 
 struct PlannerDraftList: Decodable, Sendable {

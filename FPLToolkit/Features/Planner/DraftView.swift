@@ -1,13 +1,27 @@
 import SwiftUI
 
-/// One draft for one gameweek: the pitch and bench, money, the rule check, chips and the
+/// How a plan's squad is shown (concept 01): the pitch, a list, or each player's next fixtures.
+enum PlanLayout: String, CaseIterable, Identifiable {
+    case pitch = "Pitch", list = "List", fixtures = "Fixtures"
+    var id: String { rawValue }
+}
+
+/// One plan, as the Planner tab's workspace (Dan's concept, 5 Oct 2026: "One workspace, different
+/// plans. The squad is the starting point."): the plan's name to switch plans, the gameweek with
+/// its deadline, free transfers and bank, the squad as a pitch, list or fixtures, the chip, and the
 /// week's transfers. Everything shown is the server's answer (contract §13).
 struct DraftView: View {
     @Environment(AppModel.self) private var appModel
     @State private var model: DraftModel
+    /// Opens the plan switcher.
+    let onSwitch: () -> Void
+    /// The plan was deleted: the Planner picks another.
+    let onDeleted: () -> Void
 
-    init(id: String, repository: PlannerRepository) {
+    init(id: String, repository: PlannerRepository, onSwitch: @escaping () -> Void, onDeleted: @escaping () -> Void) {
         _model = State(initialValue: DraftModel(id: id, repository: repository))
+        self.onSwitch = onSwitch
+        self.onDeleted = onDeleted
     }
 
     var body: some View {
@@ -15,13 +29,13 @@ struct DraftView: View {
             switch model.resource.phase {
             case .loading:
                 ScrollView {
-                    SkeletonCards(caption: "Loading the draft…")
+                    SkeletonCards(caption: "Loading your plan…")
                         .padding(.horizontal, ToolkitSpace.page)
                 }
             case .failed(let copy):
                 ErrorStateView(copy: copy) { Task { await model.resource.retry() } }
             case .loaded(let loaded):
-                DraftContent(draft: loaded.value, model: model)
+                DraftContent(draft: loaded.value, model: model, onSwitch: onSwitch, onDeleted: onDeleted)
             }
         }
         .task {
@@ -29,9 +43,6 @@ struct DraftView: View {
             await model.load()
         }
         .onChange(of: model.draft?.name) { _, name in LastDraft.remember(id: model.id, name: name) }
-        .toolkitScreen()
-        .navigationTitle(model.draft?.name ?? "Draft")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -40,7 +51,8 @@ private struct DraftContent: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let draft: PlannerDraft
     let model: DraftModel
-    @Environment(\.dismiss) private var dismiss
+    let onSwitch: () -> Void
+    let onDeleted: () -> Void
     /// The player whose menu is open.
     @State private var menuFor: PlannerDraft.Pick?
     @State private var pickerSlot: PickerSlot?
@@ -55,6 +67,11 @@ private struct DraftContent: View {
     /// The player tapped in Team news, opened once the sheet has closed.
     @State private var newsPlayer: Int?
     @State private var showingPlanSource = false
+    @State private var showingFdrInfo = false
+    @State private var showingRotation = false
+    @State private var showingTimeline = false
+    @State private var showingShortlist = false
+    @AppStorage("planner.layout") private var layout: PlanLayout = .pitch
     @AppStorage(FixtureView.modelKey) private var fixtureModel = FixtureView.Model.xfdr
     @AppStorage(FixtureView.lensKey) private var fixtureLens = FixtureView.Lens.position
 
@@ -68,10 +85,17 @@ private struct DraftContent: View {
         )
     }
 
+    private var chipLabels: [String: String] {
+        Dictionary(uniqueKeysWithValues: draft.chips.map { ($0.key, $0.label) })
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: ToolkitSpace.lg) {
-                GameweekStepper(draft: draft, model: model)
+                PlanHeader(draft: draft, model: model, onSwitch: onSwitch, onSource: { showingPlanSource = true }) {
+                    draftMenu
+                }
+                PlanWeekCard(draft: draft, model: model, onMoney: { editingMoney = true })
                 SavedDataBanner(resource: model.resource)
                 if let error = model.stepError {
                     ErrorBanner(copy: error)
@@ -91,49 +115,53 @@ private struct DraftContent: View {
                 if let from = model.swapFrom {
                     SwapBanner(name: draft.player(from)?.webName ?? "this player") { model.swapFrom = nil }
                 }
-                DraftStatusLine(draft: draft, onMoney: { editingMoney = true }, onSource: { showingPlanSource = true })
                 if !draft.check.ok {
                     IssuesCard(issues: draft.check.issues)
                 }
-                if !draft.transfers.in.isEmpty || !draft.transfers.out.isEmpty {
-                    WeekTransfers(draft: draft)
+                Picker("Show the squad as", selection: $layout) {
+                    ForEach(PlanLayout.allCases) { Text($0.rawValue).tag($0) }
                 }
-                DraftTools(model: $fixtureModel, lens: $fixtureLens, draftModel: model,
-                           chipLabels: Dictionary(uniqueKeysWithValues: draft.chips.map { ($0.key, $0.label) })) {
-                    showingNews = true
-                }
-                if draft.isEditable && (model.canUndo || model.canRedo) {
-                    UndoBar(model: model)
-                }
-                if typeSize.isAccessibilitySize {
+                .pickerStyle(.segmented)
+                switch layout {
+                case .pitch:
+                    if typeSize.isAccessibilitySize {
+                        SquadList(draft: draft, actions: actions)
+                    } else {
+                        PitchCard(draft: draft, actions: actions)
+                        BenchCard(draft: draft, actions: actions)
+                    }
+                case .list:
                     SquadList(draft: draft, actions: actions)
-                } else {
-                    PitchCard(draft: draft, actions: actions)
-                    BenchCard(draft: draft, actions: actions)
+                case .fixtures:
+                    SquadFixturesView(members: (draft.starting + draft.bench).compactMap { pick in
+                        draft.player(pick.playerId).map { SquadFixturesView.Member(player: $0, onBench: draft.bench.contains(pick)) }
+                    }, model: $fixtureModel, lens: $fixtureLens,
+                    onInfo: { showingFdrInfo = true },
+                    onPlayer: { id in appModel.router.openPlayer(id) })
                 }
                 if !draft.isEditable {
                     Label("GW\(draft.gw) has passed. Plan from GW\(draft.firstEditableGw).", systemImage: "lock")
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
-                ChipsSection(draft: draft, model: model)
+                PlanChipRow(draft: draft, model: model)
+                PlanTransfersRow(draft: draft) { showingTimeline = true }
                 Footnotes(draft: draft, fixtures: FixtureView(model: fixtureModel, lens: fixtureLens))
             }
             .padding(.horizontal, ToolkitSpace.page)
             .padding(.bottom, ToolkitSpace.section)
         }
         .refreshable { await model.resource.load(bypassCache: true) }
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if model.isApplying {
-                    ProgressView().accessibilityLabel("Saving")
-                }
-                Menu { draftMenu } label: {
-                    Label("Draft options", systemImage: "ellipsis")
-                }
-            }
+        .navigationDestination(isPresented: $showingRotation) {
+            SquadRotationView { try await model.evolution() }
         }
-        .alert("Rename draft", isPresented: $renaming) {
+        .navigationDestination(isPresented: $showingTimeline) {
+            DraftPlanView(model: model, chipLabels: chipLabels)
+        }
+        .navigationDestination(isPresented: $showingShortlist) {
+            ShortlistView(draftModel: model)
+        }
+        .alert("Rename plan", isPresented: $renaming) {
             TextField("Name", text: $newName)
             Button("Save") {
                 let name = newName.trimmingCharacters(in: .whitespaces)
@@ -148,7 +176,10 @@ private struct DraftContent: View {
         }
         .sheet(isPresented: $showingPlanSource) {
             InfoSheet(title: "A plan, not an FPL submission",
-                      message: "Changes here affect this draft only; your FPL team is unchanged. Make the real changes in FPL when you're ready. The squad you imported and the gameweek you're planning are kept separate.")
+                      message: "Changes here affect this plan only; your FPL team is unchanged. Make the real changes in FPL when you're ready. The squad you started from and the gameweek you're planning are kept separate.")
+        }
+        .sheet(isPresented: $showingFdrInfo) {
+            InfoSheet(title: "Fixture difficulty", message: TeamText.fdrMessage)
         }
         .sheet(isPresented: $showingNews, onDismiss: {
             if let id = newsPlayer {
@@ -163,13 +194,13 @@ private struct DraftContent: View {
         .onChange(of: fixtureModel) { Task { await model.reload() } }
         .onChange(of: fixtureLens) { Task { await model.reload() } }
         .confirmationDialog("Reset to your FPL squad?", isPresented: $confirmingReset, titleVisibility: .visible) {
-            Button("Reset draft", role: .destructive) { Task { await model.apply(.reset) } }
+            Button("Reset plan", role: .destructive) { Task { await model.apply(.reset) } }
         } message: {
-            Text("The draft goes back to the squad imported from FPL, and every planned week is cleared.")
+            Text("The plan goes back to the squad imported from FPL, and every planned week is cleared.")
         }
         .confirmationDialog("Delete \u{201C}\(draft.name)\u{201D}?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Delete draft", role: .destructive) {
-                Task { if await model.delete() { dismiss() } }
+            Button("Delete plan", role: .destructive) {
+                Task { if await model.delete() { onDeleted() } }
             }
         } message: {
             Text("This can't be undone.")
@@ -187,45 +218,70 @@ private struct DraftContent: View {
         }
     }
 
-    /// The website's draft toolbar as a menu: share, rename, budget, duplicate, reset, delete.
+    /// ⋯: the plan's tools (concept 01 keeps them off the screen) and the website's draft toolbar.
     @ViewBuilder
     private var draftMenu: some View {
-        if let url = URL(string: draft.shareUrl) {
-            ShareLink(item: url, subject: Text(draft.name), message: Text("My FPL plan")) {
-                Label("Share link", systemImage: "link")
+        Section {
+            Button { showingNews = true } label: { Label("Team news", systemImage: "newspaper") }
+            Button { showingRotation = true } label: { Label("Squad rotation", systemImage: "square.grid.3x3") }
+            Button { showingTimeline = true } label: { Label("Transfer timeline", systemImage: "calendar") }
+            Button { showingShortlist = true } label: { Label("Shortlist", systemImage: "star") }
+            Menu {
+                Picker("Fixture model", selection: $fixtureModel) {
+                    ForEach(FixtureView.Model.allCases) { Text($0.label).tag($0) }
+                }
+                if fixtureModel == .xfdr {
+                    Picker("View", selection: $fixtureLens) {
+                        ForEach(FixtureView.Lens.allCases) { Text($0.label).tag($0) }
+                    }
+                }
+            } label: {
+                Label("Fixture difficulty: \(FixtureView(model: fixtureModel, lens: fixtureLens).summary)", systemImage: "slider.horizontal.3")
             }
         }
-        ShareLink(item: DraftShareText.make(draft), subject: Text(draft.name)) {
-            Label("Share as text", systemImage: "text.alignleft")
+        if model.canRedo {
+            Button { Task { await model.redo() } } label: {
+                Label(model.redoSummary.map { "Redo \($0)" } ?? "Redo", systemImage: "arrow.uturn.forward")
+            }
         }
-        Divider()
-        Button {
-            newName = draft.name
-            renaming = true
-        } label: {
-            Label("Rename…", systemImage: "pencil")
-        }
-        Button { editingMoney = true } label: {
-            Label("Bank and free transfers…", systemImage: "sterlingsign.circle")
-        }
-        Button {
-            Task {
-                notice = nil
-                if let copy = await model.duplicate() {
-                    notice = "Saved a copy: \u{201C}\(copy.name)\u{201D}. It's in your drafts."
+        Section {
+            if let url = URL(string: draft.shareUrl) {
+                ShareLink(item: url, subject: Text(draft.name), message: Text("My FPL plan")) {
+                    Label("Share link", systemImage: "link")
                 }
             }
-        } label: {
-            Label("Duplicate", systemImage: "plus.square.on.square")
-        }
-        if draft.entryId != nil {
-            Button { confirmingReset = true } label: {
-                Label("Reset to FPL squad…", systemImage: "arrow.counterclockwise")
+            ShareLink(item: DraftShareText.make(draft), subject: Text(draft.name)) {
+                Label("Share as text", systemImage: "text.alignleft")
             }
         }
-        Divider()
+        Section {
+            Button {
+                newName = draft.name
+                renaming = true
+            } label: {
+                Label("Rename…", systemImage: "pencil")
+            }
+            Button { editingMoney = true } label: {
+                Label("Bank and free transfers…", systemImage: "sterlingsign.circle")
+            }
+            Button {
+                Task {
+                    notice = nil
+                    if let copy = await model.duplicate() {
+                        notice = "Saved a copy: \u{201C}\(copy.name)\u{201D}. Switch to it from the plan's name."
+                    }
+                }
+            } label: {
+                Label("Duplicate", systemImage: "plus.square.on.square")
+            }
+            if draft.entryId != nil {
+                Button { confirmingReset = true } label: {
+                    Label("Reset to FPL squad…", systemImage: "arrow.counterclockwise")
+                }
+            }
+        }
         Button(role: .destructive) { confirmingDelete = true } label: {
-            Label("Delete draft…", systemImage: "trash")
+            Label("Delete plan…", systemImage: "trash")
         }
     }
 
@@ -272,6 +328,282 @@ private struct DraftContent: View {
     }
 }
 
+// MARK: - Workspace header, week, chip and transfers (concept 01)
+
+/// "My plan ▾" with undo and ⋯, and "Draft · based on GW5 ⓘ".
+private struct PlanHeader<MenuContent: View>: View {
+    let draft: PlannerDraft
+    let model: DraftModel
+    let onSwitch: () -> Void
+    let onSource: () -> Void
+    @ViewBuilder let menu: () -> MenuContent
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .center, spacing: ToolkitSpace.sm) {
+                Button(action: onSwitch) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(draft.name)
+                            .font(.title.weight(.bold))
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Image(systemName: "chevron.down")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.accent)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Plan: \(draft.name)")
+                .accessibilityHint("Switch plan, start a new one, or open your FPL team")
+                Spacer(minLength: ToolkitSpace.sm)
+                if model.isApplying {
+                    ProgressView().accessibilityLabel("Saving")
+                }
+                Button { Task { await model.undo() } } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(model.canUndo ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
+                .disabled(!model.canUndo || model.isApplying)
+                .accessibilityLabel("Undo")
+                .accessibilityValue(model.undoSummary ?? "")
+                Menu { menu() } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Plan options")
+            }
+            Button(action: onSource) {
+                HStack(spacing: 4) {
+                    Text(origin)
+                    Image(systemName: "info.circle").imageScale(.small).accessibilityHidden(true)
+                }
+                .font(.subheadline)
+                .foregroundStyle(ToolkitColor.secondaryText)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Explains that a plan doesn't change your FPL team")
+        }
+    }
+
+    /// "Draft · based on GW5", "Draft · from scratch".
+    private var origin: String {
+        draft.entryId != nil ? "Draft · based on GW\(max(1, draft.firstEditableGw - 1))" : "Draft · from scratch"
+    }
+}
+
+/// The gameweek card: ◀ GW6 ▶ with the deadline, then free transfers and the bank.
+private struct PlanWeekCard: View {
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let draft: PlannerDraft
+    let model: DraftModel
+    let onMoney: () -> Void
+
+    var body: some View {
+        let range = model.gwRange
+        let rows = typeSize.stacksRows
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: ToolkitSpace.sm))
+        VStack(alignment: .leading, spacing: 4) {
+            rows {
+                HStack(spacing: 0) {
+                    step("chevron.left", label: "Previous gameweek", target: draft.gw - 1,
+                         enabled: range.map { draft.gw > $0.lowerBound } ?? false)
+                    Text("GW\(draft.gw)")
+                        .font(.title2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .accessibilityLabel("Gameweek \(draft.gw)")
+                    step("chevron.right", label: "Next gameweek", target: draft.gw + 1,
+                         enabled: range.map { draft.gw < $0.upperBound } ?? false)
+                    if model.isStepping { ProgressView().controlSize(.small).padding(.leading, 4) }
+                }
+                if !typeSize.stacksRows { Spacer(minLength: ToolkitSpace.sm) }
+                Text(when)
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            rows {
+                Text(freeTransfers)
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                if !typeSize.stacksRows { Spacer(minLength: ToolkitSpace.sm) }
+                Button(action: onMoney) {
+                    Text("\(Format.price(draft.money.bank)) bank")
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(draft.money.bank < 0 ? ToolkitColor.error : ToolkitColor.primaryText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(Format.price(draft.money.bank)) in the bank")
+                .accessibilityHint("Opens the budget")
+            }
+            if draft.check.players < 15 {
+                Text("\(draft.check.players) of 15 players")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.warning)
+            }
+        }
+        .padding(.horizontal, ToolkitSpace.md)
+        .padding(.vertical, ToolkitSpace.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+    }
+
+    /// The next deadline for the first plannable week; later weeks say what they hold.
+    private var when: String {
+        if draft.gw < draft.firstEditableGw { return "Starting squad" }
+        if draft.gw == draft.firstEditableGw, let next = appModel.bootstrap?.value.gameweek.next, next.id == draft.gw {
+            return Format.deadline(next.deadline)
+        }
+        if draft.gw == draft.firstEditableGw { return "Next deadline" }
+        return draft.ledger.contains { $0.gw == draft.gw && $0.transfers > 0 } ? "Planned week" : "Carried over"
+    }
+
+    /// "1 FT · estimated", "2 FT", "Free transfers unknown".
+    private var freeTransfers: String {
+        guard let ft = draft.freeTransfersThisWeek else { return "Free transfers unknown" }
+        return "\(ft) FT\(draft.freeTransfers.estimated ? " · estimated" : "")"
+    }
+
+    private func step(_ symbol: String, label: String, target: Int, enabled: Bool) -> some View {
+        Button {
+            Task { await model.show(gw: target) }
+        } label: {
+            Image(systemName: symbol)
+                .font(.title3.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(enabled ? ToolkitColor.accent : ToolkitColor.secondaryText)
+        .disabled(!enabled || model.isStepping)
+        .accessibilityLabel(label)
+    }
+}
+
+/// "Chip: None ▾" (play or cancel this week's chip) and whether the plan is saved.
+private struct PlanChipRow: View {
+    let draft: PlannerDraft
+    let model: DraftModel
+
+    var body: some View {
+        let active = draft.chips.first { $0.state == .active }
+        HStack(alignment: .center, spacing: ToolkitSpace.sm) {
+            Menu {
+                ForEach(draft.chips) { chip in
+                    if let verb = verb(chip) {
+                        Button("\(verb) \(chip.label)") {
+                            Task { await model.apply(.chip(chip.key, gw: draft.gw)) }
+                        }
+                    } else {
+                        Button("\(chip.label): \(status(chip))") {}
+                            .disabled(true)
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text("Chip: \(active?.label ?? "None")")
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                    Image(systemName: "chevron.down")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.accent)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .disabled(model.isApplying)
+            .accessibilityLabel("Chip: \(active?.label ?? "none")")
+            .accessibilityHint("Plays or cancels a chip in GW\(draft.gw)")
+            Spacer(minLength: ToolkitSpace.sm)
+            Text(model.isApplying ? "Saving…" : model.actionError != nil ? "Not saved" : "Saved")
+                .font(.subheadline)
+                .foregroundStyle(model.actionError != nil ? ToolkitColor.error : ToolkitColor.secondaryText)
+        }
+    }
+
+    /// "Play" or "Cancel" when the chip can change this week; nil when it can't.
+    private func verb(_ chip: PlannerDraft.Chip) -> String? {
+        guard draft.isEditable else { return nil }
+        switch chip.state {
+        case .available: return "Play"
+        case .active: return "Cancel"
+        default: return nil
+        }
+    }
+
+    private func status(_ chip: PlannerDraft.Chip) -> String {
+        switch chip.state {
+        case .active: "Playing in GW\(draft.gw)"
+        case .available: chip.window.map { "Available (GW\($0.start)–\($0.end))" } ?? "Available"
+        default: chip.note ?? "Not available"
+        }
+    }
+}
+
+/// The week's transfers in one row ("Calafiori → Saliba · 1 transfer ›"), opening the timeline.
+private struct PlanTransfersRow: View {
+    let draft: PlannerDraft
+    let open: () -> Void
+
+    var body: some View {
+        let pairs = Array(zip(draft.transfers.out, draft.transfers.in))
+        let row = draft.ledger.first { $0.gw == draft.gw }
+        Button(action: open) {
+            HStack(spacing: ToolkitSpace.md) {
+                Image(systemName: "arrow.left.arrow.right")
+                    .foregroundStyle(ToolkitColor.accent)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pairs.isEmpty ? "No transfers in GW\(draft.gw)" : pairs.map { "\(name($0.0)) → \(name($0.1))" }.joined(separator: ", "))
+                        .font(.headline)
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(detail(count: pairs.count, row: row))
+                        .font(.subheadline)
+                        .foregroundStyle(row.map { $0.hits > 0 } == true ? ToolkitColor.warning : ToolkitColor.secondaryText)
+                }
+                Spacer(minLength: ToolkitSpace.sm)
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .accessibilityHidden(true)
+            }
+            .padding(ToolkitSpace.md)
+            .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens the transfer timeline")
+    }
+
+    private func detail(count: Int, row: PlannerDraft.LedgerRow?) -> String {
+        guard count > 0 else { return "Transfer timeline" }
+        let transfers = "\(count) transfer\(count == 1 ? "" : "s")"
+        if let row, row.hits > 0 { return "\(transfers) · −\(row.hitPoints) pts" }
+        return transfers
+    }
+
+    private func name(_ id: Int) -> String { draft.player(id)?.webName ?? "Player \(id)" }
+}
+
 /// What tapping the pitch does: a player opens his menu (or completes a swap), an empty place
 /// opens the picker. `add` is nil when the gameweek can't be edited.
 struct TileActions {
@@ -305,55 +637,6 @@ private struct SwapBanner: View {
 
 // MARK: - Gameweek
 
-private struct GameweekStepper: View {
-    let draft: PlannerDraft
-    let model: DraftModel
-
-    var body: some View {
-        let range = model.gwRange
-        HStack(spacing: ToolkitSpace.md) {
-            stepButton("chevron.left", label: "Previous gameweek", target: draft.gw - 1,
-                       enabled: range.map { draft.gw > $0.lowerBound } ?? false)
-            VStack(spacing: 2) {
-                HStack(spacing: ToolkitSpace.sm) {
-                    Text("GW\(draft.gw)")
-                        .font(.title2.weight(.bold).monospacedDigit())
-                        .foregroundStyle(ToolkitColor.primaryText)
-                    if model.isStepping { ProgressView().controlSize(.small) }
-                }
-                Text(caption)
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            .frame(maxWidth: .infinity)
-            .accessibilityElement(children: .combine)
-            stepButton("chevron.right", label: "Next gameweek", target: draft.gw + 1,
-                       enabled: range.map { draft.gw < $0.upperBound } ?? false)
-        }
-        .padding(.top, ToolkitSpace.sm)
-    }
-
-    private var caption: String {
-        if draft.gw < draft.firstEditableGw { return "Starting squad, before the next deadline" }
-        if draft.gw == draft.firstEditableGw { return "Next deadline" }
-        return draft.ledger.contains { $0.gw == draft.gw && $0.transfers > 0 } ? "Planned week" : "Carried over"
-    }
-
-    private func stepButton(_ symbol: String, label: String, target: Int, enabled: Bool) -> some View {
-        Button {
-            Task { await model.show(gw: target) }
-        } label: {
-            Image(systemName: symbol)
-                .font(.title3.weight(.semibold))
-                .frame(width: 44, height: 44)
-                .background(ToolkitColor.surface, in: Circle())
-        }
-        .foregroundStyle(enabled ? ToolkitColor.link : ToolkitColor.secondaryText)
-        .disabled(!enabled || model.isStepping)
-        .accessibilityLabel(label)
-    }
-}
-
 // MARK: - Money and rules
 
 private struct IssuesCard: View {
@@ -373,36 +656,6 @@ private struct IssuesCard: View {
             }
         }
     }
-}
-
-private struct WeekTransfers: View {
-    let draft: PlannerDraft
-
-    var body: some View {
-        let row = draft.ledger.first { $0.gw == draft.gw }
-        ToolkitCard {
-            VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-                SectionLabel(text: "Transfers this week")
-                ForEach(Array(zip(draft.transfers.out, draft.transfers.in)), id: \.0) { out, inn in
-                    HStack(spacing: ToolkitSpace.sm) {
-                        Text(name(out)).foregroundStyle(ToolkitColor.secondaryText)
-                        Image(systemName: "arrow.right").foregroundStyle(ToolkitColor.secondaryText).accessibilityHidden(true)
-                        Text(name(inn)).foregroundStyle(ToolkitColor.primaryText).fontWeight(.semibold)
-                    }
-                    .font(.subheadline)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(name(out)) out, \(name(inn)) in")
-                }
-                if let row {
-                    Text(row.hits > 0 ? "\(row.transfers) transfers · \(row.hitPoints) points" : "\(row.transfers) of \(row.freeTransfers) free transfers")
-                        .font(.footnote)
-                        .foregroundStyle(row.hits > 0 ? ToolkitColor.warning : ToolkitColor.secondaryText)
-                }
-            }
-        }
-    }
-
-    private func name(_ id: Int) -> String { draft.player(id)?.webName ?? "Player \(id)" }
 }
 
 // MARK: - Pitch
@@ -539,94 +792,6 @@ enum DraftTile {
                                   .init(gw: week.gw, bands: week.fixtures.filter { !$0.blank }.map { $0.xfdr?.band ?? week.band })
                               },
                               accessibilityLabel: spoken.joined(separator: ", "))
-    }
-}
-
-/// Undo and redo beside the pitch (as on the website), each naming the change it takes back or
-/// makes again: "Undo Salah → Palmer". VoiceOver hears "Undo" with the change as its value.
-private struct UndoBar: View {
-    let model: DraftModel
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Button { Task { await model.undo() } } label: {
-                Label(model.undoSummary.map { "Undo \($0)" } ?? "Undo", systemImage: "arrow.uturn.backward")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(UndoButtonStyle())
-            .disabled(!model.canUndo || model.isApplying)
-            .accessibilityLabel("Undo")
-            .accessibilityValue(model.undoSummary ?? "")
-            Button { Task { await model.redo() } } label: {
-                Label("Redo", systemImage: "arrow.uturn.forward")
-            }
-            .buttonStyle(UndoButtonStyle())
-            .disabled(!model.canRedo || model.isApplying)
-            .accessibilityLabel("Redo")
-            .accessibilityValue(model.redoSummary ?? "")
-        }
-    }
-}
-
-private struct UndoButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(isEnabled ? ToolkitColor.primaryText : ToolkitColor.secondaryText)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(minHeight: 44)
-            .toolkitCard(radius: 12)
-            .opacity(configuration.isPressed ? 0.7 : 1)
-    }
-}
-
-/// "Plan only ⓘ · GW6 onwards" and "1 FT · £2.2m bank", with squad status when it isn't full.
-private struct DraftStatusLine: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
-    let draft: PlannerDraft
-    let onMoney: () -> Void
-    let onSource: () -> Void
-
-    var body: some View {
-        // At the large sizes the two halves go one above the other instead of both wrapping.
-        let line = typeSize.stacksRows
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
-            : AnyLayout(HStackLayout())
-        VStack(alignment: .leading, spacing: 0) {
-            line {
-                ContextLine(lead: "Plan only", parts: ["GW\(draft.firstEditableGw) onwards"],
-                            leadHint: "Explains that a plan doesn't change your FPL team", onInfo: onSource)
-                if !typeSize.stacksRows { Spacer(minLength: ToolkitSpace.sm) }
-                Button(action: onMoney) {
-                    Text(summary)
-                        .font(.subheadline.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(draft.money.bank < 0 ? ToolkitColor.error : ToolkitColor.link)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(spokenFreeTransfers), \(Format.price(draft.money.bank)) in the bank")
-                .accessibilityHint("Opens the budget")
-            }
-            if draft.check.players < 15 {
-                Text("\(draft.check.players) of 15 players")
-                    .font(.subheadline)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-        }
-    }
-
-    private var summary: String {
-        let ft = draft.freeTransfersThisWeek.map { "\($0)\(draft.freeTransfers.estimated ? "*" : "") FT · " } ?? ""
-        return ft + "\(Format.price(draft.money.bank)) bank"
-    }
-
-    private var spokenFreeTransfers: String {
-        guard let ft = draft.freeTransfersThisWeek else { return "Free transfers unknown" }
-        return "\(ft) free transfer\(ft == 1 ? "" : "s")\(draft.freeTransfers.estimated ? ", estimated" : "")"
     }
 }
 
@@ -837,96 +1002,6 @@ private struct SquadList: View {
 
 // MARK: - Chips and notes
 
-private struct ChipsSection: View {
-    let draft: PlannerDraft
-    let model: DraftModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
-            SectionLabel(text: "Chips")
-            ForEach(draft.chips) { chip in
-                if let verb = verb(chip) {
-                    Button {
-                        Task { await model.apply(.chip(chip.key, gw: draft.gw)) }
-                    } label: {
-                        row(chip, verb: verb)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(model.isApplying)
-                    .accessibilityHint(chip.state == .active
-                                       ? "Cancels \(chip.label) in GW\(draft.gw)"
-                                       : "Plays \(chip.label) in GW\(draft.gw)")
-                } else {
-                    row(chip, verb: nil)
-                }
-            }
-        }
-    }
-
-    /// "Play" or "Cancel" when the chip can change this week; nil when it can't.
-    private func verb(_ chip: PlannerDraft.Chip) -> String? {
-        guard draft.isEditable else { return nil }
-        switch chip.state {
-        case .available: return "Play"
-        case .active: return "Cancel"
-        default: return nil
-        }
-    }
-
-    private func row(_ chip: PlannerDraft.Chip, verb: String?) -> some View {
-        HStack(spacing: ToolkitSpace.md) {
-            Image(systemName: symbol(chip.state))
-                .foregroundStyle(tint(chip.state))
-                .frame(width: 24)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(chip.label)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(ToolkitColor.primaryText)
-                Text(status(chip))
-                    .font(.footnote)
-                    .foregroundStyle(ToolkitColor.secondaryText)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: ToolkitSpace.sm)
-            if let verb {
-                Text(verb)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(ToolkitColor.link)
-            }
-        }
-        .padding(.vertical, 2)
-        .frame(minHeight: 44)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-    }
-
-    private func status(_ chip: PlannerDraft.Chip) -> String {
-        switch chip.state {
-        case .active: "Playing in GW\(draft.gw)"
-        case .available: chip.window.map { "Available (GW\($0.start)–\($0.end))" } ?? "Available"
-        default: chip.note ?? ""
-        }
-    }
-
-    private func symbol(_ state: PlannerDraft.Chip.State) -> String {
-        switch state {
-        case .active: "checkmark.circle.fill"
-        case .available: "circle"
-        case .played: "checkmark.circle"
-        case .blocked, .outside, .unknown: "minus.circle"
-        }
-    }
-
-    private func tint(_ state: PlannerDraft.Chip.State) -> Color {
-        switch state {
-        case .active: ToolkitColor.accent
-        case .available: ToolkitColor.link
-        default: ToolkitColor.secondaryText
-        }
-    }
-}
-
 private struct Footnotes: View {
     let draft: PlannerDraft
     let fixtures: FixtureView
@@ -942,7 +1017,7 @@ private struct Footnotes: View {
             if draft.fixtureStrip != nil {
                 Text("The strip under each player is the next six gameweeks' difficulty (\(fixtures.summary)), from 1 (easiest) to 5 (hardest). An outlined week has two games.")
             }
-            Text("Plans use today's prices and your squad's fixtures. There are no points forecasts.")
+            Text("Plans use today's prices and your squad's fixtures. Each player's projected points are on the Projections tab.")
         }
         .font(.footnote)
         .foregroundStyle(ToolkitColor.secondaryText)
@@ -961,102 +1036,3 @@ extension Position {
     }
 }
 
-/// The website's fixture switches (model and lens), Team news, Squad rotation and the transfer
-/// timeline, above the pitch.
-private struct DraftTools: View {
-    @Binding var model: FixtureView.Model
-    @Binding var lens: FixtureView.Lens
-    let draftModel: DraftModel
-    let chipLabels: [String: String]
-    let onNews: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: ToolkitSpace.md) {
-                    fixtureMenu
-                    Spacer(minLength: 0)
-                    newsButton
-                }
-                VStack(alignment: .leading, spacing: 0) {
-                    fixtureMenu
-                    newsButton
-                }
-            }
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: ToolkitSpace.md) {
-                    rotationLink
-                    Spacer(minLength: 0)
-                    timelineLink
-                }
-                VStack(alignment: .leading, spacing: 0) {
-                    rotationLink
-                    timelineLink
-                }
-            }
-            shortlistLink
-        }
-    }
-
-    private var shortlistLink: some View {
-        NavigationLink {
-            ShortlistView(draftModel: draftModel)
-        } label: {
-            Label("Shortlist", systemImage: "star")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.link)
-                .frame(minHeight: 44)
-        }
-    }
-
-    private var rotationLink: some View {
-        NavigationLink {
-            SquadRotationView { try await draftModel.evolution() }
-        } label: {
-            Label("Squad rotation", systemImage: "square.grid.3x3")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.link)
-                .frame(minHeight: 44)
-        }
-    }
-
-    private var timelineLink: some View {
-        NavigationLink {
-            DraftPlanView(model: draftModel, chipLabels: chipLabels)
-        } label: {
-            Label("Transfer timeline", systemImage: "calendar")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.link)
-                .frame(minHeight: 44)
-        }
-    }
-
-    private var fixtureMenu: some View {
-        Menu {
-            Picker("Fixture model", selection: $model) {
-                ForEach(FixtureView.Model.allCases) { Text($0.label).tag($0) }
-            }
-            if model == .xfdr {
-                Picker("View", selection: $lens) {
-                    ForEach(FixtureView.Lens.allCases) { Text($0.label).tag($0) }
-                }
-            }
-        } label: {
-            Label(FixtureView(model: model, lens: lens).summary, systemImage: "slider.horizontal.3")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.link)
-                .frame(minHeight: 44)
-        }
-        .accessibilityLabel("Fixture difficulty: \(FixtureView(model: model, lens: lens).summary)")
-        .accessibilityHint("Chooses FPL's difficulty or xFDR, and the xFDR view")
-    }
-
-    private var newsButton: some View {
-        Button(action: onNews) {
-            Label("Team news", systemImage: "newspaper")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ToolkitColor.link)
-                .frame(minHeight: 44)
-        }
-    }
-}
