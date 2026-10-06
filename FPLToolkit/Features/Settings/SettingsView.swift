@@ -87,8 +87,7 @@ struct SettingsView: View {
                 }
                 .listRowBackground(ToolkitColor.surface)
 
-                #if DEBUG
-                if entryId != nil {
+                if BuildChannel.isBeta, entryId != nil {
                     Section("Developer") {
                         NavigationLink {
                             LiveReplayPicker {
@@ -104,7 +103,6 @@ struct SettingsView: View {
                     }
                     .listRowBackground(ToolkitColor.surface)
                 }
-                #endif
             }
             .scrollContentBackground(.hidden)
             .background(ToolkitColor.canvas.ignoresSafeArea())
