@@ -102,6 +102,8 @@ struct Bootstrap: Decodable, Sendable {
             let priceAlerts: Bool
             let availabilityAlerts: Bool
             let deadlineReminders: Bool
+            /// Matchday alerts (happy-backend-pal#85); nil from older servers.
+            var matchdayAlerts: Bool?
         }
         let minSupportedAppVersion: String
         let webBaseUrl: String
@@ -492,6 +494,23 @@ struct DevicePrefs: Codable, Sendable, Equatable {
         var availability: Bool
         var deadline24h: Bool
         var deadline3h: Bool
+        /// Matchday alerts (happy-backend-pal#85); nil from older servers.
+        var matchday: MatchdayAlerts?
+    }
+    /// Matchday alerts: a master switch, then one switch per kind (contract §39).
+    struct MatchdayAlerts: Codable, Sendable, Equatable {
+        var enabled: Bool
+        var lineups: Bool
+        var goals: Bool
+        var assists: Bool
+        var cards: Bool
+        var subs: Bool
+        var defcon: Bool
+        var final: Bool
+
+        /// The server's defaults: off, with the big moments ready for when they're turned on.
+        static let standard = MatchdayAlerts(enabled: false, lineups: true, goals: true, assists: true,
+                                             cards: true, subs: false, defcon: false, final: true)
     }
     struct QuietHours: Codable, Sendable, Equatable {
         var start: String
@@ -588,7 +607,7 @@ struct DeviceUpdate: Encodable, Sendable {
 /// One entry in the alert history (contract §12.4): what was sent, held or not sent, and why.
 struct AlertItem: Decodable, Sendable, Identifiable, Hashable {
     enum Category: String, FallbackDecodable {
-        case price, availability, deadline
+        case price, availability, deadline, matchday
         case other
         static let fallback = Self.other
     }

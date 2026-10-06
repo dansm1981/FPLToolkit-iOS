@@ -280,13 +280,16 @@ struct MatchdayView: View {
                             }
                         })
                         .padding(.horizontal, ToolkitSpace.page)
+                    MatchdayAlertsCard()
+                        .padding(.horizontal, ToolkitSpace.page)
+                        .padding(.top, ToolkitSpace.lg)
                 }
                 .toolkitScreen()
                 .navigationTitle("Follow Matchday")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { sheet = nil } } }
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         case .estimates:
             InfoSheet(title: "Estimated additions", message: MatchdayCopy.estimates)
         case .sources:
@@ -451,7 +454,7 @@ struct MatchdayFollowCard: View {
                 Label("On your Lock Screen", systemImage: "lock.iphone")
                     .font(.headline)
                     .foregroundStyle(ToolkitColor.positive)
-                Text("It updates while FPLToolkit is open. Once alerts are switched on it will update by itself.")
+                Text("It keeps itself up to date, even with FPLToolkit closed.")
                     .font(.subheadline)
                     .foregroundStyle(ToolkitColor.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -472,6 +475,69 @@ struct MatchdayFollowCard: View {
             }
         }
         .padding(.top, ToolkitSpace.sm)
+    }
+}
+
+/// Matchday alerts beside following on the Lock Screen (tasks/push.md stage 2): the master switch,
+/// and a way to choose which. Shown once the server has switched matchday alerts on.
+struct MatchdayAlertsCard: View {
+    @Environment(AppModel.self) private var appModel
+    @State private var prefs: DevicePrefs?
+    @State private var saving = false
+    @State private var showingPrimer = false
+
+    var body: some View {
+        if appModel.pushFeatures?.matchdayAlerts == true {
+            VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                if let prefs {
+                    Toggle(isOn: Binding(
+                        get: { prefs.notifications.matchday?.enabled ?? false },
+                        set: { save(enabled: $0, prefs) }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Matchday alerts").font(.headline)
+                            Text("Goals, assists, red cards, line-ups and your final score, for your starting XI.")
+                                .font(.subheadline)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .tint(ToolkitColor.accent)
+                    .disabled(saving)
+                    if prefs.notifications.matchday?.enabled == true, appModel.push.permission != .authorized {
+                        Button("Turn on notifications") { showingPrimer = true }
+                            .buttonStyle(ToolkitSecondaryButtonStyle())
+                    }
+                    NavigationLink {
+                        NotificationSettingsView()
+                    } label: {
+                        Label("Choose which alerts", systemImage: "slider.horizontal.3")
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                }
+            }
+            .task { prefs = try? await appModel.deviceSession.device().prefs }
+            .sheet(isPresented: $showingPrimer) { NotificationPrimerView() }
+        }
+    }
+
+    private func save(enabled: Bool, _ current: DevicePrefs) {
+        var next = current
+        var alerts = next.notifications.matchday ?? .standard
+        alerts.enabled = enabled
+        next.notifications.matchday = alerts
+        prefs = next
+        saving = true
+        if enabled, appModel.push.permission != .authorized { showingPrimer = true }
+        Task {
+            defer { saving = false }
+            if let saved = try? await appModel.deviceSession.updatePrefs(.init(notifications: next.notifications)) {
+                prefs = saved.prefs ?? next
+            } else {
+                prefs = current
+            }
+        }
     }
 }
 

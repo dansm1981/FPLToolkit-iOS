@@ -46,6 +46,27 @@ struct NotificationSettingsView: View {
                 }
                 .listRowBackground(ToolkitColor.surface)
 
+                if f?.matchdayAlerts == true {
+                    let alerts = prefs.notifications.matchday ?? .standard
+                    Section {
+                        matchdayToggle("Matchday alerts", "What happens to your team, as it happens", \.enabled, prefs)
+                        if alerts.enabled {
+                            matchdayToggle("Line-ups", "Who of your XI starts, about an hour before kick-off", \.lineups, prefs)
+                            matchdayToggle("Goals", "Once FPL confirms them, with your points", \.goals, prefs)
+                            matchdayToggle("Assists", "Once FPL confirms them, with your points", \.assists, prefs)
+                            matchdayToggle("Red cards", "Once FPL confirms them", \.cards, prefs)
+                            matchdayToggle("Substitutions", "When one of your players comes off", \.subs, prefs)
+                            matchdayToggle("DEFCON", "When one of your players reaches it", \.defcon, prefs)
+                            matchdayToggle("Bonus and final score", "When FPL confirms them", \.final, prefs)
+                        }
+                    } header: {
+                        Text("Matchday")
+                    } footer: {
+                        Text("For your starting XI, and bench players once they're subbed on. Points include your captain. At most 10 a matchday.")
+                    }
+                    .listRowBackground(ToolkitColor.surface)
+                }
+
                 Section {
                     Toggle(isOn: Binding(
                         get: { prefs.quietHours.start != prefs.quietHours.end },
@@ -65,7 +86,7 @@ struct NotificationSettingsView: View {
                 } header: {
                     Text("Quiet hours")
                 } footer: {
-                    Text("On this phone's clock. Availability changes and deadline reminders wait until quiet hours end; price alerts found during them are skipped.")
+                    Text("On this phone's clock. Availability changes and deadline reminders wait until quiet hours end; price and matchday alerts found during them are skipped.")
                 }
                 .listRowBackground(ToolkitColor.surface)
             } else if let error {
@@ -114,6 +135,27 @@ struct NotificationSettingsView: View {
                 var next = prefs
                 next[keyPath: path] = on
                 save(next)
+            }
+        )) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                Text(detail).font(.footnote).foregroundStyle(ToolkitColor.secondaryText)
+            }
+        }
+        .tint(ToolkitColor.accent)
+        .disabled(saving)
+    }
+
+    private func matchdayToggle(_ title: String, _ detail: String, _ path: WritableKeyPath<DevicePrefs.MatchdayAlerts, Bool>, _ prefs: DevicePrefs) -> some View {
+        Toggle(isOn: Binding(
+            get: { (prefs.notifications.matchday ?? .standard)[keyPath: path] },
+            set: { on in
+                var next = prefs
+                var alerts = next.notifications.matchday ?? .standard
+                alerts[keyPath: path] = on
+                next.notifications.matchday = alerts
+                save(next)
+                if on, path == \.enabled, appModel.push.permission != .authorized { showingPrimer = true }
             }
         )) {
             VStack(alignment: .leading, spacing: 2) {

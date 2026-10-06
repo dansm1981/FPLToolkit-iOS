@@ -77,6 +77,7 @@ struct AlertRow: View {
         case .price: ToolkitColor.information
         case .availability: ToolkitColor.warning
         case .deadline: ToolkitColor.positive
+        case .matchday: ToolkitColor.accent
         case .other: ToolkitColor.secondaryText
         }
     }
@@ -93,6 +94,7 @@ struct AlertRow: View {
             case "quiet_hours": return "Not sent: found during quiet hours"
             case "outside_window": return "Not sent: found outside the 15:00–22:30 price window"
             case "daily_cap": return "Not sent: daily alert limit reached"
+            case "matchday_cap": return "Not sent: matchday alert limit reached"
             case "notifications_off": return "Not sent: notifications are off on this iPhone"
             default: return "Not sent"
             }

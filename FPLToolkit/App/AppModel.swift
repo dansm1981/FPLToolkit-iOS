@@ -81,7 +81,7 @@ final class AppModel {
         #if DEBUG
         // `-forcePushFeatures YES` shows the notification screens before the server switches them on.
         if UserDefaults.standard.bool(forKey: "forcePushFeatures") {
-            return .init(priceAlerts: true, availabilityAlerts: true, deadlineReminders: true)
+            return .init(priceAlerts: true, availabilityAlerts: true, deadlineReminders: true, matchdayAlerts: true)
         }
         #endif
         return bootstrap?.value.config.features
@@ -89,7 +89,7 @@ final class AppModel {
 
     var anyPushFeature: Bool {
         guard let f = pushFeatures else { return false }
-        return f.priceAlerts || f.availabilityAlerts || f.deadlineReminders
+        return f.priceAlerts || f.availabilityAlerts || f.deadlineReminders || f.matchdayAlerts == true
     }
 
     func connect(entryId: Int) {

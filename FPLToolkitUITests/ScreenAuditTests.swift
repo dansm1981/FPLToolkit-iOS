@@ -416,10 +416,27 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.buttons["Reset app data"], "Settings")
         check(app, "07-settings", sizesAndLists: false)
         app.buttons["Notifications"].tap()
-        waitFor(app.staticTexts["Quiet hours"].firstMatch, "Notification settings")
+        // The first alert switch: with the Matchday section, quiet hours start below the fold.
+        waitFor(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Price projections'")).firstMatch,
+                "Notification settings")
         check(app, "08-notifications", sizesAndLists: false)
 
+        // Matchday alerts (tasks/push.md stage 2): the master switch shows one switch per kind.
+        // Turned back off afterwards, so the simulator's device keeps its settings.
+        let matchday = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Matchday alerts'")).firstMatch
+        reveal(matchday, in: app)
+        if (matchday.value as? String) != "1" { matchday.tap() }
+        let goals = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Goals'")).firstMatch
+        waitFor(goals, "Matchday alert kinds")
+        settle()
+        check(app, "08b-notifications-matchday", sizesAndLists: false)
+        reveal(matchday, in: app)
+        matchday.tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: goals)
+        waitForExpectations(timeout: 15)
+
         // Live matchday (Dan, 2 Oct): who Matchday watches; rivals are the saved ones (Stage B).
+        reveal(app.buttons["Live matchday"].firstMatch, in: app)
         app.buttons["Live matchday"].firstMatch.tap()
         let owned = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Highly owned'")).firstMatch
         waitFor(owned, "Live matchday")
