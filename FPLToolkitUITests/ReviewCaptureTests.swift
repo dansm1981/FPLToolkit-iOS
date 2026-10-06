@@ -501,6 +501,311 @@ final class ReviewCaptureTests: XCTestCase {
         return UIImage(cgImage: cropped).pngData()
     }
 
+    // MARK: - Live matchday and rivals (Dan, 6 Oct: "a full dump … to review offline")
+
+    /// A stretch of play the server can replay (`reviewReplay` picks one, e.g. gw5-2).
+    private func replayId() async throws -> String {
+        let url = URL(string: "https://www.fpltoolkit.co.uk/api/mobile/v1/live/replays")!
+        let (data, _) = try await URLSession.shared.data(from: url)
+        struct Item: Decodable { let id: String }
+        struct Payload: Decodable { let replays: [Item] }
+        struct List: Decodable { let data: Payload }
+        let replays = try JSONDecoder().decode(List.self, from: data).data.replays
+        let chosen = setting("reviewReplay", default: "")
+        guard let id = replays.first(where: { $0.id == chosen })?.id
+                ?? replays.first(where: { !$0.id.hasSuffix("-all") })?.id ?? replays.first?.id else {
+            throw XCTSkip("No matchday the server can replay")
+        }
+        return id
+    }
+
+    /// Today in a frozen replay, then Matchday.
+    private func openReplayMatchday(_ app: XCUIApplication, today name: String, pages: Int) {
+        waitFor(app.buttons["End replay"].firstMatch, "Replay on Today", timeout: 60)
+        settle(2)
+        capture(app, name, pages: pages)
+        for _ in 0..<6 { app.swipeDown() }
+        let card = app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch
+        waitFor(card, "Gameweek on Today", timeout: 30)
+        reveal(card, in: app)
+        card.tap()
+        waitFor(app.buttons["Your team"].firstMatch, "Matchday", timeout: 60)
+        settle(2)
+    }
+
+    private func toTop(_ app: XCUIApplication) {
+        for _ in 0..<8 { app.swipeDown() }
+        settle(1)
+    }
+
+    /// A SwiftUI switch toggles from its control, not its label: tap near the right edge.
+    private func flip(_ element: XCUIElement) {
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
+
+    func testR11LiveMatchday() async throws {
+        let id = try await replayId()
+
+        // The same stretch of play near its start and at its end.
+        for (seconds, tag) in [(45, "a-start"), (1185, "c-end")] {
+            let app = launch(["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", String(seconds)])
+            openReplayMatchday(app, today: "m\(tag)-today", pages: 2)
+            capture(app, "m\(tag)-matchday", pages: 4)
+            toTop(app)
+            app.buttons["Live feed"].firstMatch.tap()
+            settle()
+            capture(app, "m\(tag)-feed", pages: 3)
+            app.terminate()
+        }
+
+        // Halfway through: everything.
+        let arguments = ["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600",
+                         "-matchdayWatch", "owned,elite", "-forcePushFeatures", "YES"]
+        var app = launch(arguments)
+        openReplayMatchday(app, today: "mb-today", pages: 4)
+        capture(app, "mb-matchday", pages: 14)
+        toTop(app)
+
+        app.buttons["Live feed"].firstMatch.tap()
+        settle()
+        capture(app, "mb-feed", pages: 8)
+        for (filter, slug) in [("Goals", "goals"), ("DEFCON & saves", "defence"), ("Bonus", "bonus"), ("Line-ups & subs", "lineups")] {
+            toTop(app)
+            let button = app.buttons["Show \(filter)"].firstMatch
+            guard button.exists else { continue }
+            button.tap()
+            settle()
+            capture(app, "mb-feed-\(slug)", pages: 3)
+        }
+        toTop(app)
+        if app.buttons["Show All"].firstMatch.exists { app.buttons["Show All"].firstMatch.tap() }
+
+        app.buttons["Matches"].firstMatch.tap()
+        settle()
+        capture(app, "mb-matches", pages: 3)
+        toTop(app)
+        let match = app.buttons.matching(NSPredicate(format: "label CONTAINS ' minutes' OR label CONTAINS ', full time'")).firstMatch
+        if match.waitForExistence(timeout: 10) {
+            match.tap()
+            settle(3)
+            capture(app, "mb-match-stats", pages: 5)
+        }
+
+        toTop(app)
+        app.buttons["Your team"].firstMatch.tap()
+        settle()
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch
+        reveal(row, in: app)
+        row.tap()
+        if app.staticTexts["FPL-recorded"].firstMatch.waitForExistence(timeout: 20) {
+            settle()
+            capture(app, "mb-breakdown", pages: 4)
+            let done = app.buttons.matching(NSPredicate(format: "label == 'Done'"))
+            done.element(boundBy: done.count - 1).tap()
+            settle()
+        }
+
+        // Settings: who Matchday watches, matchday alerts, the replay tool; then alert history.
+        // (Before the Lock Screen: the simulator can stay locked after it.)
+        app.terminate()
+        app = launch(arguments)
+        waitFor(app.buttons["End replay"].firstMatch, "Replay on Today", timeout: 60)
+        app.buttons["Settings"].firstMatch.tap()
+        waitFor(app.buttons["Reset app data"], "Settings")
+        settle()
+        capture(app, "md-settings", pages: 4)
+        toTop(app)
+        app.buttons["Live matchday"].firstMatch.tap()
+        settle(2)
+        capture(app, "md-live-matchday-settings", pages: 5)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        settle()
+        toTop(app)
+        app.buttons["Notifications"].firstMatch.tap()
+        let master = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Matchday alerts'")).firstMatch
+        if master.waitForExistence(timeout: 20) {
+            reveal(master, in: app)
+            if (master.value as? String) != "1" { flip(master) }
+            reveal(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Goals'")).firstMatch, in: app)
+            settle()
+            toTop(app)
+            capture(app, "md-notifications", pages: 5)
+            reveal(master, in: app)
+            flip(master) // back off: the simulator's device keeps its settings
+            settle()
+        }
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        settle()
+        let replays = app.buttons["Live matchday replay"].firstMatch
+        reveal(replays, in: app)
+        replays.tap()
+        settle(3)
+        capture(app, "md-replay-picker", pages: 3)
+
+        app.open(URL(string: "fpltoolkit://watch/alerts")!)
+        settle(3)
+        capture(app, "md-alert-history", pages: 3)
+
+        // Back to Matchday for following on the Lock Screen (last: the simulator can stay locked).
+        app.terminate()
+        app = launch(arguments)
+        openReplayMatchday(app, today: "mb-today-again", pages: 1)
+        // Follow Matchday: the Lock Screen and the matchday alerts switch.
+        toTop(app)
+        let follow = app.buttons["Follow on your Lock Screen"].firstMatch
+        if follow.waitForExistence(timeout: 10) {
+            follow.tap()
+            waitFor(app.navigationBars["Follow Matchday"].firstMatch, "Follow Matchday")
+            settle(2)
+            capture(app, "mb-follow", pages: 3)
+            let start = app.buttons.matching(NSPredicate(format: "label == 'Follow on your Lock Screen'"))
+            if start.count > 0 {
+                start.element(boundBy: start.count - 1).tap()
+                settle(2)
+                capture(app, "mb-following", pages: 1)
+            }
+            app.buttons.matching(NSPredicate(format: "label == 'Done'")).firstMatch.tap()
+            settle()
+
+            // The Dynamic Island (app in the background), then the Lock Screen.
+            XCUIDevice.shared.press(.home)
+            settle(3)
+            attach(XCUIScreen.main.screenshot(), "mb-dynamic-island~01")
+            let lock = NSSelectorFromString("pressLockButton")
+            if XCUIDevice.shared.responds(to: lock) {
+                XCUIDevice.shared.perform(lock)
+                settle(2)
+                XCUIDevice.shared.press(.home)
+                settle(3)
+                // iOS asks once whether to allow Live Activities from the app.
+                let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+                let allow = springboard.buttons["Allow"].firstMatch
+                if allow.waitForExistence(timeout: 3) {
+                    allow.tap()
+                    settle(2)
+                }
+                attach(XCUIScreen.main.screenshot(), "mb-lock-screen~01")
+                for _ in 0..<2 {
+                    let bottom = springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.99))
+                    bottom.press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+                    settle(2)
+                }
+            }
+            app.activate()
+            settle(2)
+            let followAgain = app.buttons["Follow on your Lock Screen"].firstMatch
+            if followAgain.waitForExistence(timeout: 10) {
+                followAgain.tap()
+                let stop = app.buttons["Stop following"].firstMatch
+                if stop.waitForExistence(timeout: 10) { stop.tap() }
+                app.buttons.matching(NSPredicate(format: "label == 'Done'")).firstMatch.tap()
+            }
+        }
+    }
+
+    func testR12Rivals() {
+        let app = launch(["-entryId", team])
+        // Rivals come from saved leagues (League of Experts, as in test22).
+        openMyTeam(app)
+        let leaguesButton = app.buttons["Your leagues"].firstMatch
+        waitFor(leaguesButton, "Your leagues button", timeout: 40)
+        leaguesButton.tap()
+        let addLeague = app.buttons["Add a league"].firstMatch
+        waitFor(addLeague, "Your leagues", timeout: 40)
+        let league = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'LEAGUE OF EXPERTS'")).firstMatch
+        if !league.waitForExistence(timeout: 20) {
+            addLeague.tap()
+            let field = app.textFields["Mini-league ID"].firstMatch
+            waitFor(field, "Add a league")
+            field.tap()
+            field.typeText("783382")
+            app.buttons["Add"].firstMatch.tap()
+            waitFor(league, "League added", timeout: 120)
+        }
+        // The league's Rivals tab.
+        reveal(league, in: app)
+        league.tap()
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label ==[c] 'What matters to you'")).firstMatch, "Overview", timeout: 60)
+        // Standings (rivals tagged, "Rivals only"), then "Around you" (the old website "Rivals" tab).
+        let standings = app.buttons["Standings"].firstMatch
+        reveal(standings, in: app)
+        standings.tap()
+        settle(3)
+        capture(app, "v1-league-standings", pages: 3)
+        toTop(app)
+        let around = app.buttons["Around you"].firstMatch
+        reveal(around, in: app)
+        if around.exists {
+            around.tap()
+            settle(3)
+            capture(app, "v1b-league-around-you", pages: 6)
+        }
+
+        // Watch → Rivals: your saved rivals.
+        app.tabBars.buttons["Watch"].tap()
+        let watchRivals = app.segmentedControls.buttons["Rivals"].firstMatch
+        waitFor(watchRivals, "Watch")
+        watchRivals.tap()
+        let add = app.buttons.matching(NSPredicate(format: "label == 'Add a rival' OR label == 'Add'")).firstMatch
+        waitFor(add, "Rivals", timeout: 60)
+        settle(2)
+        capture(app, "v2-rivals", pages: 5)
+        toTop(app)
+        add.tap()
+        let search = app.searchFields.firstMatch
+        waitFor(search, "Add a rival", timeout: 60)
+        settle(2)
+        capture(app, "v3-add-rival", pages: 4)
+        search.tap()
+        search.typeText("McBride")
+        settle(3)
+        let addAndy = app.buttons["Add Andy McBride as a rival"].firstMatch
+        capture(app, "v3b-add-rival-search", pages: 2)
+        if addAndy.exists {
+            addAndy.tap()
+            let feature = app.alerts.buttons["Feature"].firstMatch
+            if feature.waitForExistence(timeout: 20) { feature.tap() }
+        }
+        let closeSearch = app.buttons.matching(NSPredicate(format: "label == 'Cancel' OR label == 'Close'")).firstMatch
+        if closeSearch.exists { closeSearch.tap() }
+        let done = app.buttons["Done"].firstMatch
+        if done.waitForExistence(timeout: 10) { done.tap() }
+
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Andy'")).firstMatch
+        if row.waitForExistence(timeout: 60) {
+            row.tap()
+            waitFor(app.buttons["Overview"].firstMatch, "Rival", timeout: 60)
+            settle(2)
+            capture(app, "v4-rival-overview", pages: 10)
+            for (tab, name) in [("Teams", "v5-rival-teams"), ("Stats", "v6-rival-stats"), ("GW Audit", "v7-rival-audit")] {
+                toTop(app)
+                app.buttons[tab].firstMatch.tap()
+                settle(2)
+                capture(app, name, pages: 10)
+            }
+        }
+
+        // Today: the featured rival.
+        app.tabBars.buttons["Today"].tap()
+        waitFor(app.staticTexts["Your leagues"].firstMatch, "Today", timeout: 60)
+        let featured = app.staticTexts["Your rival"].firstMatch
+        if featured.waitForExistence(timeout: 20) {
+            reveal(featured, in: app)
+            settle()
+            capture(app, "v8-today-rival", pages: 2)
+        }
+    }
+
+    private func attach(_ shot: XCUIScreenshot, _ name: String) {
+        let attachment = XCTAttachment(screenshot: shot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if let reviewOut {
+            try? shot.pngRepresentation.write(to: reviewOut.appendingPathComponent(name + ".png"))
+        }
+    }
+
     // MARK: - Helpers (as in ScreenAuditTests)
 
     private func launch(_ arguments: [String]) -> XCUIApplication {

@@ -425,13 +425,16 @@ final class ScreenAuditTests: XCTestCase {
         // Turned back off afterwards, so the simulator's device keeps its settings.
         let matchday = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Matchday alerts'")).firstMatch
         reveal(matchday, in: app)
-        if (matchday.value as? String) != "1" { matchday.tap() }
+        // A SwiftUI switch toggles from its control, not its label.
+        if (matchday.value as? String) != "1" { matchday.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap() }
+        // The kinds appear below it, possibly below the fold (offscreen rows don't exist).
         let goals = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Goals'")).firstMatch
+        reveal(goals, in: app)
         waitFor(goals, "Matchday alert kinds")
         settle()
         check(app, "08b-notifications-matchday", sizesAndLists: false)
         reveal(matchday, in: app)
-        matchday.tap()
+        matchday.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: goals)
         waitForExpectations(timeout: 15)
 
