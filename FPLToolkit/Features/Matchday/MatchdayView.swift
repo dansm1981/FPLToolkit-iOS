@@ -150,7 +150,7 @@ struct MatchdayView: View {
 
     private func follow(_ live: LiveTeam) {
         do {
-            try MatchdayActivity.start(live, entryId: entryId, updated: updated)
+            try MatchdayActivity.start(live, entryId: entryId, updated: updated, session: appModel.deviceSession)
             following = true
             followError = nil
         } catch {
@@ -275,7 +275,7 @@ struct MatchdayView: View {
                         start: { follow(live) },
                         stop: {
                             Task {
-                                await MatchdayActivity.stop(entryId: entryId)
+                                await MatchdayActivity.stop(entryId: entryId, session: appModel.deviceSession)
                                 following = false
                             }
                         })

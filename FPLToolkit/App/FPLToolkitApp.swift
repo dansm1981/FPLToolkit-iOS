@@ -16,6 +16,7 @@ struct FPLToolkitApp: App {
                     await appModel.push.refresh()
                     await appModel.syncDevice()
                     await appModel.mergeStarLists()
+                    MatchdayActivity.resume(session: appModel.deviceSession)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
