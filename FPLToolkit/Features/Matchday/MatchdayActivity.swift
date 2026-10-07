@@ -70,11 +70,36 @@ enum MatchdayActivity {
         }
     }
 
-    /// At launch: picks up activities still running from before, so a new token still reaches the server.
+    /// At launch: picks up activities still running from before, so a new token still reaches the
+    /// server; and, for Follow my matchdays, sends the push-to-start token and picks up activities
+    /// the server starts (Matchday v2 phase 2).
     static func resume(session: DeviceSession) {
         for activity in Activity<MatchdayActivityAttributes>.activities where activity.activityState == .active {
             sendPushTokens(activity, session: session)
         }
+        guard startObservers.isEmpty else { return }
+        startObservers.append(Task {
+            for await activity in Activity<MatchdayActivityAttributes>.activityUpdates {
+                sendPushTokens(activity, session: session)
+            }
+        })
+        if #available(iOS 17.2, *) {
+            startObservers.append(Task {
+                for await data in Activity<MatchdayActivityAttributes>.pushToStartTokenUpdates {
+                    let token = data.map { String(format: "%02x", $0) }.joined()
+                    _ = try? await session.send("PUT", "devices/me", body: DeviceUpdate(liveStartToken: .some(token)),
+                                                as: DeviceInfo.self)
+                }
+            })
+        }
+    }
+
+    private static var startObservers: [Task<Void, Never>] = []
+
+    /// Follow my matchdays needs push-to-start (iOS 17.2).
+    static var canFollowMatchdays: Bool {
+        if #available(iOS 17.2, *) { return isEnabled }
+        return false
     }
 
     private static var tokenTasks: [String: Task<Void, Never>] = [:]

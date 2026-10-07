@@ -507,10 +507,80 @@ struct DevicePrefs: Codable, Sendable, Equatable {
         var subs: Bool
         var defcon: Bool
         var final: Bool
+        /// Matchday v2 phase 2 (happy-backend-pal#88): bonus, rival lead changes, save points,
+        /// clean sheets lost. Older servers don't send them: the Normal preset's values stand in.
+        var bonus: Bool = true
+        var rivals: Bool = true
+        var saves: Bool = false
+        var cleanSheets: Bool = false
 
-        /// The server's defaults: off, with the big moments ready for when they're turned on.
+        /// The server's defaults: off, with the Normal preset ready for when they're turned on.
         static let standard = MatchdayAlerts(enabled: false, lineups: true, goals: true, assists: true,
-                                             cards: true, subs: false, defcon: false, final: true)
+                                             cards: true, subs: false, defcon: true, final: true)
+
+        private enum CodingKeys: String, CodingKey {
+            case enabled, lineups, goals, assists, cards, subs, defcon, final, bonus, rivals, saves, cleanSheets
+        }
+
+        init(enabled: Bool, lineups: Bool, goals: Bool, assists: Bool, cards: Bool, subs: Bool, defcon: Bool, final: Bool) {
+            self.enabled = enabled
+            self.lineups = lineups
+            self.goals = goals
+            self.assists = assists
+            self.cards = cards
+            self.subs = subs
+            self.defcon = defcon
+            self.final = final
+        }
+
+        init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let s = Self.standard
+            enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? s.enabled
+            lineups = try c.decodeIfPresent(Bool.self, forKey: .lineups) ?? s.lineups
+            goals = try c.decodeIfPresent(Bool.self, forKey: .goals) ?? s.goals
+            assists = try c.decodeIfPresent(Bool.self, forKey: .assists) ?? s.assists
+            cards = try c.decodeIfPresent(Bool.self, forKey: .cards) ?? s.cards
+            subs = try c.decodeIfPresent(Bool.self, forKey: .subs) ?? s.subs
+            defcon = try c.decodeIfPresent(Bool.self, forKey: .defcon) ?? s.defcon
+            final = try c.decodeIfPresent(Bool.self, forKey: .final) ?? s.final
+            bonus = try c.decodeIfPresent(Bool.self, forKey: .bonus) ?? s.bonus
+            rivals = try c.decodeIfPresent(Bool.self, forKey: .rivals) ?? s.rivals
+            saves = try c.decodeIfPresent(Bool.self, forKey: .saves) ?? s.saves
+            cleanSheets = try c.decodeIfPresent(Bool.self, forKey: .cleanSheets) ?? s.cleanSheets
+        }
+
+        /// Dan's presets (7 Oct): Essential, Normal (the default), Everything.
+        enum Preset: String, CaseIterable, Identifiable {
+            case essential = "Essential", normal = "Normal", everything = "Everything"
+            var id: String { rawValue }
+
+            /// The kinds a preset switches on; the rest go off.
+            var kinds: Set<WritableKeyPath<MatchdayAlerts, Bool>> {
+                let essential: Set<WritableKeyPath<MatchdayAlerts, Bool>> = [\.goals, \.assists, \.cards, \.final]
+                let normal = essential.union([\.lineups, \.defcon, \.bonus, \.rivals])
+                switch self {
+                case .essential: return essential
+                case .normal: return normal
+                case .everything: return normal.union([\.subs, \.saves, \.cleanSheets])
+                }
+            }
+        }
+
+        static var allKinds: [WritableKeyPath<MatchdayAlerts, Bool>] {
+            [\.lineups, \.goals, \.assists, \.cards, \.subs, \.defcon, \.bonus, \.final, \.rivals, \.saves, \.cleanSheets]
+        }
+
+        /// The preset these switches match, or nil when they've been chosen one by one.
+        var preset: Preset? {
+            Preset.allCases.first { p in Self.allKinds.allSatisfy { self[keyPath: $0] == p.kinds.contains($0) } }
+        }
+
+        func applying(_ preset: Preset) -> MatchdayAlerts {
+            var next = self
+            for kind in Self.allKinds { next[keyPath: kind] = preset.kinds.contains(kind) }
+            return next
+        }
     }
     struct QuietHours: Codable, Sendable, Equatable {
         var start: String
@@ -521,6 +591,8 @@ struct DevicePrefs: Codable, Sendable, Equatable {
     var autoTrackSquad: Bool
     /// Matchday's players to watch (happy-backend-pal#66); nil from servers before it.
     var matchday: MatchdayPrefs?
+    /// Follow my matchdays (Matchday v2): the Lock Screen activity starts itself for each spell.
+    var followMatchdays: Bool?
 
     /// Which players Matchday shows beside your own team, and how many mini-league rivals.
     struct MatchdayPrefs: Codable, Sendable, Equatable {
@@ -576,6 +648,7 @@ struct DeviceUpdate: Encodable, Sendable {
         var notifications: DevicePrefs.Notifications?
         var quietHours: DevicePrefs.QuietHours?
         var matchday: DevicePrefs.MatchdayPrefs?
+        var followMatchdays: Bool?
     }
 
     var entryId: Int??
@@ -585,8 +658,10 @@ struct DeviceUpdate: Encodable, Sendable {
     var apnsToken: String??
     var apnsEnvironment: String?
     var prefs: PrefsPatch?
+    /// Follow my matchdays' push-to-start token; `.some(nil)` clears it.
+    var liveStartToken: String??
 
-    private enum CodingKeys: String, CodingKey { case entryId, timeZone, appVersion, apnsToken, apnsEnvironment, prefs }
+    private enum CodingKeys: String, CodingKey { case entryId, timeZone, appVersion, apnsToken, apnsEnvironment, prefs, liveStartToken }
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -601,6 +676,9 @@ struct DeviceUpdate: Encodable, Sendable {
         try c.encodeIfPresent(appVersion, forKey: .appVersion)
         try c.encodeIfPresent(apnsEnvironment, forKey: .apnsEnvironment)
         try c.encodeIfPresent(prefs, forKey: .prefs)
+        if let liveStartToken {
+            if let token = liveStartToken { try c.encode(token, forKey: .liveStartToken) } else { try c.encodeNil(forKey: .liveStartToken) }
+        }
     }
 }
 

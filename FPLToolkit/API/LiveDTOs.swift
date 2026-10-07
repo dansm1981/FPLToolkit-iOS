@@ -357,10 +357,63 @@ struct LiveTeam: Decodable, Sendable {
             let basis: String
             let rival: Rival?
         }
+        /// Recaps (phase 2): a finished spell between spells, and the gameweek's story at the end.
+        struct Recap: Decodable, Sendable, Hashable {
+            struct Moment: Decodable, Sendable, Hashable {
+                let id: String
+                let text: String
+                let detail: String
+            }
+            struct Spell: Decodable, Sendable, Hashable {
+                struct Rival: Decodable, Sendable, Hashable {
+                    let entryId: Int
+                    let name: String
+                    /// Positive: you gained on them.
+                    let swing: Int
+                }
+                struct Next: Decodable, Sendable, Hashable {
+                    let kickoff: Date
+                    let playerIds: [Int]
+                }
+                let start: Date
+                let title: String
+                let points: Int
+                let rival: Rival?
+                let best: Moment?
+                let next: Next?
+            }
+            struct Final: Decodable, Sendable, Hashable {
+                struct Rival: Decodable, Sendable, Hashable {
+                    let entryId: Int
+                    let name: String
+                    let you: Int
+                    let them: Int
+                    let margin: Int
+                }
+                struct Gain: Decodable, Sendable, Hashable {
+                    let playerId: Int
+                    let points: Int
+                }
+                struct Bench: Decodable, Sendable, Hashable {
+                    let points: Int
+                    let playerId: Int?
+                }
+                let gameweek: Int
+                let points: Int
+                let confirmed: Bool
+                let rival: Rival?
+                let decided: Moment?
+                let biggestGain: Gain?
+                let benchPain: Bench?
+            }
+            let spell: Spell?
+            let final: Final?
+        }
         let whatMattersNow: [Item]
         let nextPoints: [Item]
         let justHappened: [Moment]
         var ifNothingChanges: EndState?
+        var recap: Recap?
     }
 
     struct Substitution: Decodable, Sendable, Hashable {

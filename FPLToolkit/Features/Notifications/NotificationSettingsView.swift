@@ -51,13 +51,38 @@ struct NotificationSettingsView: View {
                     Section {
                         matchdayToggle("Matchday alerts", "What happens to your team, as it happens", \.enabled, prefs)
                         if alerts.enabled {
-                            matchdayToggle("Line-ups", "Who of your XI starts, about an hour before kick-off", \.lineups, prefs)
-                            matchdayToggle("Goals", "Once FPL confirms them, with your points", \.goals, prefs)
-                            matchdayToggle("Assists", "Once FPL confirms them, with your points", \.assists, prefs)
-                            matchdayToggle("Red cards", "Once FPL confirms them", \.cards, prefs)
-                            matchdayToggle("Substitutions", "When one of your players comes off", \.subs, prefs)
-                            matchdayToggle("DEFCON", "When one of your players reaches it", \.defcon, prefs)
-                            matchdayToggle("Bonus and final score", "When FPL confirms them", \.final, prefs)
+                            // Presets for most people, every switch underneath (Dan, 7 Oct).
+                            Picker("How many", selection: Binding(
+                                get: { alerts.preset },
+                                set: { preset in
+                                    guard let preset else { return }
+                                    var next = prefs
+                                    next.notifications.matchday = alerts.applying(preset)
+                                    save(next)
+                                }
+                            )) {
+                                ForEach(DevicePrefs.MatchdayAlerts.Preset.allCases) { Text($0.rawValue).tag(Optional($0)) }
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(saving)
+                            Text(presetDetail(alerts.preset))
+                                .font(.footnote)
+                                .foregroundStyle(ToolkitColor.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                            DisclosureGroup("Choose each alert") {
+                                matchdayToggle("Goals", "Once FPL confirms them, with your points", \.goals, prefs)
+                                matchdayToggle("Assists", "Once FPL confirms them, with your points", \.assists, prefs)
+                                matchdayToggle("Red cards", "Once FPL confirms them", \.cards, prefs)
+                                matchdayToggle("Final score", "When FPL confirms the gameweek", \.final, prefs)
+                                matchdayToggle("Line-ups", "Who of your XI starts, about an hour before kick-off", \.lineups, prefs)
+                                matchdayToggle("DEFCON", "When one of your players reaches it", \.defcon, prefs)
+                                matchdayToggle("Bonus", "When FPL confirms your players' bonus", \.bonus, prefs)
+                                matchdayToggle("Rival lead changes", "When your featured rival overtakes you, or you them", \.rivals, prefs)
+                                matchdayToggle("Substitutions", "When one of your players comes off", \.subs, prefs)
+                                matchdayToggle("Saves", "When your keeper earns a save point", \.saves, prefs)
+                                matchdayToggle("Clean sheets lost", "When a goal costs your players a clean sheet", \.cleanSheets, prefs)
+                            }
+                            .tint(ToolkitColor.link)
                         }
                     } header: {
                         Text("Matchday")
@@ -144,6 +169,15 @@ struct NotificationSettingsView: View {
         }
         .tint(ToolkitColor.accent)
         .disabled(saving)
+    }
+
+    private func presetDetail(_ preset: DevicePrefs.MatchdayAlerts.Preset?) -> String {
+        switch preset {
+        case .essential: "Goals, assists, red cards and your final score."
+        case .normal: "Adds line-ups, DEFCON, bonus and rival lead changes."
+        case .everything: "Adds substitutions, saves and clean sheets lost."
+        case nil: "Your own choice of alerts."
+        }
     }
 
     private func matchdayToggle(_ title: String, _ detail: String, _ path: WritableKeyPath<DevicePrefs.MatchdayAlerts, Bool>, _ prefs: DevicePrefs) -> some View {

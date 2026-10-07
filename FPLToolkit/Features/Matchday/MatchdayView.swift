@@ -44,6 +44,11 @@ struct MatchdayView: View {
     /// Whether the current load asked for your rivals; if they arrive later, it loads again.
     @State private var loadedWithRivals = false
     @State private var showingHeadToHead = false
+    /// A moment opened from Pulse or All moments (phase 2).
+    @State private var pushedMoment: String?
+    /// Matchday v2's Team tab: the pitch or the list.
+    @AppStorage("matchday.teamLayout") private var teamLayout = "pitch"
+    @Environment(\.dynamicTypeSize) private var typeSize
     private var v2: Bool { MatchdayV2.isOn(v2Stored) }
 
     static let refreshSeconds: UInt64 = 30
@@ -107,6 +112,9 @@ struct MatchdayView: View {
         }
         .navigationDestination(isPresented: $showingHeadToHead) {
             MatchdayHeadToHead(live: table.current?.loaded?.value) { pushedRival = $0 }
+        }
+        .navigationDestination(item: $pushedMoment) { id in
+            MatchdayMomentView(live: table.current?.loaded?.value, itemId: id) { sheet = .points($0) }
         }
         .refreshable {
             await table.refresh()
@@ -248,12 +256,26 @@ struct MatchdayView: View {
                           onPlayer: { sheet = .points($0) },
                           onRival: { _ in showingHeadToHead = true },
                           onAllMoments: { showingAllMoments = true },
-                          onNextPoints: { showingNextPoints = true })
+                          onNextPoints: { showingNextPoints = true },
+                          onMoment: { pushedMoment = $0 })
         case .team:
-            MatchdayTeamRows(live: live, players: live.squad.filter { $0.position <= 11 }) { sheet = .points($0) }
-            SectionHeader(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
-            CardGroup {
-                LinkRow(title: benchTitle(live), detail: benchDetail(live), systemImage: "tshirt") { sheet = .bench }
+            // At accessibility text sizes the list stands in for the pitch, as in the Planner.
+            let pitchFits = !typeSize.isAccessibilitySize
+            if v2 && pitchFits {
+                Picker("Layout", selection: $teamLayout) {
+                    Text("Pitch").tag("pitch")
+                    Text("List").tag("list")
+                }
+                .pickerStyle(.segmented)
+            }
+            if v2 && pitchFits && teamLayout == "pitch" {
+                MatchdayPitch(live: live) { sheet = .points($0) }
+            } else {
+                MatchdayTeamRows(live: live, players: live.squad.filter { $0.position <= 11 }) { sheet = .points($0) }
+                SectionHeader(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
+                CardGroup {
+                    LinkRow(title: benchTitle(live), detail: benchDetail(live), systemImage: "tshirt") { sheet = .bench }
+                }
             }
             if let rivals = live.rivals {
                 MatchdayRivalsSection(live: live, rivals: rivals) { pushedRival = $0 }
@@ -268,7 +290,7 @@ struct MatchdayView: View {
                 MatchdayMoments(live: live)
             }
         case .matches:
-            MatchdayFixtures(live: live, refreshed: updated)
+            MatchdayFixtures(live: live, refreshed: updated, yoursFirst: v2)
         }
         if live.total.provisionalBonus > 0 {
             Button { sheet = .estimates } label: {
@@ -354,6 +376,11 @@ struct MatchdayView: View {
                             }
                         })
                         .padding(.horizontal, ToolkitSpace.page)
+                    if v2 {
+                        FollowMatchdaysCard()
+                            .padding(.horizontal, ToolkitSpace.page)
+                            .padding(.top, ToolkitSpace.lg)
+                    }
                     MatchdayAlertsCard()
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.top, ToolkitSpace.lg)
@@ -604,6 +631,48 @@ struct MatchdayFollowCard: View {
             }
         }
         .padding(.top, ToolkitSpace.sm)
+    }
+}
+
+/// Follow my matchdays (Matchday v2 phase 2): the Lock Screen activity starts itself ten minutes
+/// before each spell of your matches and comes down when the spell is over.
+struct FollowMatchdaysCard: View {
+    @Environment(AppModel.self) private var appModel
+    @State private var on: Bool?
+    @State private var saving = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
+            if MatchdayActivity.canFollowMatchdays {
+                Toggle(isOn: Binding(get: { on ?? false }, set: { save($0) })) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Follow my matchdays").font(.headline)
+                        Text("Starts on your Lock Screen ten minutes before your players kick off, and stops after each spell of matches.")
+                            .font(.subheadline)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .tint(ToolkitColor.accent)
+                .disabled(on == nil || saving)
+            } else {
+                Text("Follow my matchdays needs Live Activities on (Settings → FPLToolkit) and iOS 17.2 or later.")
+                    .font(.subheadline)
+                    .foregroundStyle(ToolkitColor.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .task { on = (try? await appModel.deviceSession.device().prefs?.followMatchdays) ?? false }
+    }
+
+    private func save(_ value: Bool) {
+        let previous = on
+        on = value
+        saving = true
+        Task {
+            defer { saving = false }
+            if (try? await appModel.deviceSession.updatePrefs(.init(followMatchdays: value))) == nil { on = previous }
+        }
     }
 }
 
@@ -1037,6 +1106,8 @@ struct MatchdayFixtures: View {
     let live: LiveTeam
     /// When the live data last arrived: an open match's stats reload with it.
     var refreshed: Date?
+    /// Matchday v2: day headings, and your players under each match.
+    var yoursFirst = false
     /// The match opened to show its stats (Dan, 29 Sep: "click a particular game").
     @State private var expanded: Int?
 
@@ -1048,7 +1119,18 @@ struct MatchdayFixtures: View {
             VStack(spacing: 0) {
                 let sorted = live.fixtures.sorted { ($0.kickoff ?? .distantFuture) < ($1.kickoff ?? .distantFuture) }
                 ForEach(Array(sorted.enumerated()), id: \.element.id) { index, f in
-                    if index > 0 { Divider().overlay(ToolkitColor.border) }
+                    if yoursFirst, let kickoff = f.kickoff,
+                       index == 0 || !Calendar.current.isDate(sorted[index - 1].kickoff ?? .distantPast, inSameDayAs: kickoff) {
+                        Text(kickoff.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, index == 0 ? 12 : 16)
+                            .padding(.bottom, 4)
+                            .accessibilityAddTraits(.isHeader)
+                    } else if index > 0 {
+                        Divider().overlay(ToolkitColor.border)
+                    }
                     if f.state == .notStarted {
                         // Nothing to open yet: a plain row, not a disabled (greyed-out) button,
                         // so the kick-off time keeps its contrast (found by the replay audit).
@@ -1063,6 +1145,22 @@ struct MatchdayFixtures: View {
                         .buttonStyle(.plain)
                         .accessibilityHint(expanded == f.id ? "Hides the match stats" : "Shows the match stats")
                         .accessibilityAddTraits(expanded == f.id ? .isSelected : [])
+                    }
+                    if yoursFirst {
+                        let yours = live.squad.filter { $0.fixtureIds.contains(f.id) && $0.position <= 11 }
+                        if !yours.isEmpty {
+                            Text(yours.map { p in
+                                "\(live.player(p.playerId)?.webName ?? "Player") \(p.points * max(p.multiplier, 1))"
+                            }.joined(separator: " · "))
+                            .font(.footnote)
+                            .foregroundStyle(ToolkitColor.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 10)
+                            .accessibilityLabel("Your players: " + yours.map { p in
+                                "\(live.player(p.playerId)?.webName ?? "Player"), \(p.points * max(p.multiplier, 1)) points"
+                            }.joined(separator: "; "))
+                        }
                     }
                     if expanded == f.id {
                         MatchStatsPanel(fixtureId: f.id, gameweek: live.gameweek, squad: Set(live.squad.map(\.playerId)),

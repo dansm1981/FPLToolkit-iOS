@@ -417,7 +417,16 @@ final class ScreenAuditTests: XCTestCase {
         reveal(matchday, in: app)
         // A SwiftUI switch toggles from its control, not its label.
         if (matchday.value as? String) != "1" { matchday.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap() }
-        // The kinds appear below it, possibly below the fold (offscreen rows don't exist).
+        // Presets, then every switch under "Choose each alert" (possibly below the fold).
+        let normal = app.buttons["Normal"].firstMatch
+        reveal(normal, in: app)
+        waitFor(normal, "Matchday presets")
+        normal.tap()
+        settle()
+        XCTAssertTrue(normal.isSelected, "Normal applies")
+        let choose = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Choose each alert'")).firstMatch
+        reveal(choose, in: app)
+        choose.tap()
         let goals = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Goals'")).firstMatch
         reveal(goals, in: app)
         waitFor(goals, "Matchday alert kinds")
@@ -1282,6 +1291,34 @@ final class ScreenAuditTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap()
             settle()
         }
+        // Phase 2: a moment from Just happened, then the pitch and Matches.
+        for _ in 0..<6 { app.swipeDown() }
+        let moment = app.buttons.matching(NSPredicate(format: "label CONTAINS ' scores' OR label CONTAINS ' assists'")).firstMatch
+        if moment.waitForExistence(timeout: 5) {
+            reveal(moment, in: app)
+            settle() // let the scroll come to rest, or the tap lands on whatever moves under it
+            moment.tap()
+            if app.navigationBars["Moment"].firstMatch.waitForExistence(timeout: 15) {
+                settle()
+                check(app, "90e-matchday-moment")
+                app.navigationBars.buttons.element(boundBy: 0).tap()
+                settle()
+            }
+        }
+        for _ in 0..<6 { app.swipeDown() }
+        app.buttons["Your team"].firstMatch.tap()
+        if app.buttons["Pitch"].firstMatch.waitForExistence(timeout: 10) {
+            app.buttons["Pitch"].firstMatch.tap()
+            settle()
+            // Like the Planner's pitch: each tile is one element, its text sized to fit five across.
+            check(app, "90f-matchday-pitch", combinedTiles: true)
+        }
+        app.buttons["Matches"].firstMatch.tap()
+        settle()
+        check(app, "90g-matchday-matches")
+        app.buttons["Pulse"].firstMatch.tap()
+        settle()
+
         // Phase 1: every point within reach, when there are more than Pulse shows.
         let all = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'All points within reach'")).firstMatch
         for _ in 0..<6 { app.swipeDown() }

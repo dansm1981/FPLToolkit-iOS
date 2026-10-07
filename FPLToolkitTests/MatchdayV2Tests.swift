@@ -68,6 +68,39 @@ struct MatchdayV2Tests {
         #expect(new.rival == "4 pts ahead of Andy")
     }
 
+    @Test func notificationPresets() throws {
+        typealias A = DevicePrefs.MatchdayAlerts
+        let standard = A.standard
+        #expect(standard.preset == .normal)
+        let essential = standard.applying(.essential)
+        #expect(essential.preset == .essential && essential.goals && !essential.lineups && !essential.subs)
+        let everything = standard.applying(.everything)
+        #expect(everything.preset == .everything && everything.subs && everything.saves && everything.cleanSheets)
+        var custom = standard
+        custom.saves = true
+        #expect(custom.preset == nil)
+        // An older server's prefs (no new keys) read as the Normal preset.
+        let old = try JSONDecoder().decode(A.self, from: Data(#"{"enabled": true, "lineups": true, "goals": true, "assists": true, "cards": true, "subs": false, "defcon": true, "final": true}"#.utf8))
+        #expect(old.enabled && old.preset == .normal)
+    }
+
+    @Test func recapsDecodeAndRead() throws {
+        let json = """
+        {"spell": {"start": "2026-10-10T11:30:00Z", "title": "Lunchtime matches finished", "points": 12,
+                   "rival": {"entryId": 9, "name": "Andy", "swing": 9},
+                   "best": {"id": "1-goal-7", "text": "Saka scores", "detail": "+10 points as captain"},
+                   "next": {"kickoff": "2026-10-10T14:00:00Z", "playerIds": [9]}},
+         "final": {"gameweek": 6, "points": 68, "confirmed": true,
+                   "rival": {"entryId": 9, "name": "Andy", "you": 68, "them": 57, "margin": 11},
+                   "decided": null, "biggestGain": {"playerId": 7, "points": 24}, "benchPain": null}}
+        """
+        let recap = try APIClient.decode(LiveTeam.Pulse.Recap.self, from: Data(json.utf8))
+        #expect(recap.spell?.rival?.swing == 9 && recap.spell?.next?.playerIds == [9])
+        let rival = try #require(recap.final?.rival)
+        #expect(FinalRecapCard.rivalLine(rival) == "You 68 – 57 Andy · you win by 11")
+        #expect(FinalRecapCard.rivalLine(.init(entryId: 9, name: "Andy", you: 50, them: 53, margin: -3)) == "You 50 – 53 Andy · Andy wins by 3")
+    }
+
     private func decode(_ json: String) throws -> LiveTeam {
         try APIClient.decode(LiveTeam.self, from: Data(json.utf8))
     }
