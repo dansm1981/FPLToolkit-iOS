@@ -12,7 +12,6 @@ struct SettingsView: View {
     @State private var confirmingReset = false
     @State private var resetError: ErrorCopy?
     @State private var resetting = false
-    @AppStorage(MatchdayV2.key) private var matchdayV2 = false
 
     var body: some View {
         NavigationStack {
@@ -90,15 +89,6 @@ struct SettingsView: View {
 
                 if BuildChannel.isBeta, entryId != nil {
                     Section("Developer") {
-                        Toggle(isOn: $matchdayV2) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Try Matchday v2")
-                                Text("Pulse: what matters now, points within reach, your rival")
-                                    .font(.footnote)
-                                    .foregroundStyle(ToolkitColor.secondaryText)
-                            }
-                        }
-                        .tint(ToolkitColor.accent)
                         NavigationLink {
                             LiveReplayPicker {
                                 dismiss()

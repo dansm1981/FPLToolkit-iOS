@@ -165,6 +165,23 @@ struct MatchdayPulse: View {
             }
             .padding(.horizontal, 15)
             .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+        } else if let feed = live.feed, !feed.isEmpty {
+            // Nothing scored yet, but line-ups and kick-offs are in: the full feed is still a tap away.
+            Button(action: onAllMoments) {
+                HStack {
+                    Text("All moments (\(feed.count))")
+                    Spacer()
+                    Image(systemName: "chevron.right").accessibilityHidden(true)
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ToolkitColor.link)
+                .padding(.horizontal, 15)
+                .frame(minHeight: 48)
+                .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("All moments, \(feed.count)")
         }
     }
 

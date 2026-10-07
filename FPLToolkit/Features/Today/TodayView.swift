@@ -440,7 +440,6 @@ struct GameweekCard: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(AppModel.self) private var appModel
     /// Matchday v2 (Settings → Developer): the card adds your rival's gap and the latest moment.
-    @AppStorage(MatchdayV2.key) private var v2Stored = false
 
     var body: some View {
         if let team = live?.loaded?.value {
@@ -497,7 +496,7 @@ struct GameweekCard: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                    if MatchdayV2.isOn(v2Stored), team.status == .live || team.status == .between {
+                    if team.status == .live || team.status == .between {
                         if let gap = appModel.rivals.list?.featured?.gapText {
                             HStack(spacing: ToolkitSpace.md) {
                                 IconBadge(systemImage: "person.2")

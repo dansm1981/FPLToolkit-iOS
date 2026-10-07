@@ -228,6 +228,21 @@ final class ScreenAuditTests: XCTestCase {
 
     /// Goes back from a pushed screen, and waits until it's gone: a list searched while it's still
     /// sliding back in reports rows at the wrong places.
+    /// The full feed (Matchday v2 for everyone): Pulse → "All moments". Returns the screen's title
+    /// bar, for going back.
+    @discardableResult
+    private func openAllMoments(_ app: XCUIApplication) -> XCUIElement {
+        app.buttons["Pulse"].firstMatch.tap()
+        settle()
+        let all = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'All moments'")).firstMatch
+        reveal(all, in: app)
+        all.tap()
+        let screen = app.navigationBars["All moments"].firstMatch
+        _ = screen.waitForExistence(timeout: 20)
+        settle()
+        return screen
+    }
+
     private func back(_ app: XCUIApplication, leaving screen: XCUIElement) {
         app.navigationBars.buttons.element(boundBy: 0).tap()
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: screen)
@@ -1183,6 +1198,10 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(moments, "Matchday", timeout: 60)
         settle()
         check(app, "76-matchday")
+        // Your team as a list (Pulse opens first).
+        moments.tap()
+        if app.buttons["List"].firstMatch.waitForExistence(timeout: 5) { app.buttons["List"].firstMatch.tap() }
+        settle()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch
         reveal(row, in: app)
         row.tap()
@@ -1233,6 +1252,8 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(end, "Replay on Matchday", timeout: 30)
         settle()
         check(app, "81-matchday-replay")
+        app.buttons["Your team"].firstMatch.tap()
+        settle()
         // Your rivals under the bench (the featured contest), then players to watch.
         let rivals = app.staticTexts["Your rivals"].firstMatch
         if rivals.waitForExistence(timeout: 10) {
@@ -1249,17 +1270,17 @@ final class ScreenAuditTests: XCTestCase {
         app.buttons["Matches"].firstMatch.tap()
         settle()
         check(app, "82-matchday-replay-matches")
-        // The live feed (happy-backend-pal#61) ten minutes into a stretch of play.
-        app.buttons["Live feed"].firstMatch.tap()
-        settle()
+        // The live feed (happy-backend-pal#61) ten minutes into a stretch of play: Pulse → All moments.
+        for _ in 0..<4 { app.swipeDown() }
+        openAllMoments(app)
         check(app, "83-matchday-replay-feed")
     }
 
     /// Rivals (happy-backend-pal#67): Watch → Rivals, adding a manager from a saved league (the
     /// simulator's device keeps League of Experts), then their page's three tabs. Pass
     /// `auditTeam=22615` (Dan's team, in that league). The rival stays saved on this device.
-    /// Matchday v2's Pulse (tasks/matchday-v2.md phase 0), behind Settings → Developer: a replay
-    /// frozen halfway with `-matchday.v2 YES`. What matters now, Live now, Just happened and the
+    /// Matchday's Pulse (tasks/matchday-v2.md; v2 for everyone since 7 Oct): a replay frozen
+    /// halfway. What matters now, Live now, Just happened and the
     /// featured rival. `auditReplay` as for test21.
     func test25MatchdayPulse() async throws {
         let url = URL(string: "https://www.fpltoolkit.co.uk/api/mobile/v1/live/replays")!
@@ -1272,7 +1293,7 @@ final class ScreenAuditTests: XCTestCase {
         guard let id = replays.first(where: { $0.id == chosen })?.id ?? replays.first?.id else {
             throw XCTSkip("No matchday the server can replay")
         }
-        let app = launch(["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600", "-matchday.v2", "YES"])
+        let app = launch(["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600"])
         waitFor(app.buttons["End replay"].firstMatch, "Replay on Today", timeout: 60)
         let card = app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch
         waitFor(card, "Gameweek on Today", timeout: 30)

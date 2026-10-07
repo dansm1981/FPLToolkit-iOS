@@ -1,11 +1,10 @@
 import SwiftUI
 
+/// Matchday's tabs (Matchday v2 for everyone, Dan 7 Oct): Pulse first; the full feed opens from
+/// Pulse's "All moments".
 enum MatchdayMode: String, CaseIterable, Identifiable {
-    case pulse = "Pulse", team = "Your team", feed = "Live feed", matches = "Matches"
+    case pulse = "Pulse", team = "Your team", matches = "Matches"
     var id: String { rawValue }
-
-    /// v1's tabs, and Matchday v2's (Pulse first; the feed opens from Pulse's "All moments").
-    static func tabs(v2: Bool) -> [MatchdayMode] { v2 ? [.pulse, .team, .matches] : [.team, .feed, .matches] }
 }
 
 /// Matchday (S30/S31; design pack pp.24–25): one score, several clear ways to inspect it. The live
@@ -22,7 +21,7 @@ struct MatchdayView: View {
     /// The live feed's items already seen when this visit began (the previous visit's, else this
     /// visit's first load): items after them are marked new.
     @State private var feedSeen: Set<String>?
-    @State private var mode: MatchdayMode = .team
+    @State private var mode: MatchdayMode = .pulse
     @State private var sheet: MatchdaySheet?
     /// Whether the Live Activity is on the Lock Screen.
     @State private var following = false
@@ -36,20 +35,14 @@ struct MatchdayView: View {
     @State private var pushedRival: Int?
     /// The feed item a matchday alert was about: the feed opens scrolled to it, highlighted.
     @State private var focus: String?
-    /// Matchday v2 (Settings → Developer): Pulse first, the feed as "All moments".
-    @AppStorage(MatchdayV2.key) private var v2Stored = false
-    @State private var modeChosen = false
     @State private var showingAllMoments = false
     @State private var showingNextPoints = false
-    /// Whether the current load asked for your rivals; if they arrive later, it loads again.
-    @State private var loadedWithRivals = false
     @State private var showingHeadToHead = false
     /// A moment opened from Pulse or All moments (phase 2).
     @State private var pushedMoment: String?
     /// Matchday v2's Team tab: the pitch or the list.
     @AppStorage("matchday.teamLayout") private var teamLayout = "pitch"
     @Environment(\.dynamicTypeSize) private var typeSize
-    private var v2: Bool { MatchdayV2.isOn(v2Stored) }
 
     static let refreshSeconds: UInt64 = 30
     /// A replay moves several match minutes a second: refresh more often.
@@ -86,23 +79,10 @@ struct MatchdayView: View {
                 withAnimation { proxy.scrollTo(focus, anchor: .center) }
             }
         }
-        .onChange(of: appModel.rivals.list?.rivals.count ?? 0) { _, count in
-            // Your rivals arrived after this visit's first load (e.g. Matchday opened quickly).
-            if count > 0, !loadedWithRivals, entryId == appModel.entryId { reload() }
-        }
-        .onAppear {
-            guard !modeChosen else { return }
-            modeChosen = true
-            if v2 { mode = .pulse }
-        }
-        .onChange(of: v2Stored) { _, _ in
-            if !MatchdayMode.tabs(v2: v2).contains(mode) { mode = v2 ? .pulse : .team }
-            if v2, !loadedWithRivals, entryId == appModel.entryId { reload() }
-        }
         .onChange(of: appModel.router.matchdayFocus, initial: true) { _, item in
             guard let item else { return }
             focus = item
-            if v2 { showingAllMoments = true } else { mode = .feed }
+            showingAllMoments = true
             appModel.router.matchdayFocus = nil
         }
         .navigationDestination(isPresented: $showingAllMoments) {
@@ -175,12 +155,10 @@ struct MatchdayView: View {
     private func load() async {
         let watch = MatchdayWatch.current
         watched = watch
-        // Your saved rivals come with your own team's live data, from this device (Stage B). Pulse
-        // asks even without rivals: your saved leagues come the same way (Matchday v2 phase 3).
+        // Your saved rivals come with your own team's live data, from this device (Stage B), and
+        // your saved leagues the same way (Matchday v2 phase 3), so your own team always asks.
         await appModel.rivals.loadIfNeeded()
-        let hasRivals = !(appModel.rivals.list?.rivals.isEmpty ?? true)
-        let withRivals = entryId == appModel.entryId && (hasRivals || v2)
-        loadedWithRivals = withRivals
+        let withRivals = entryId == appModel.entryId
         await table.load(appModel.liveRepository.team(entryId: entryId, watch: watch,
                                                       rivalsVia: withRivals ? appModel.deviceSession : nil))
         remember()
@@ -240,8 +218,8 @@ struct MatchdayView: View {
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)
         MatchdayScoreHero(live: live, updated: updated, stale: stale,
-                          pulseLine: v2 ? pulseLine(live) : nil,
-                          rank: v2 ? live.rank : nil,
+                          pulseLine: pulseLine(live),
+                          rank: live.rank,
                           canFollow: Self.canFollow(live.status),
                           onFollow: { sheet = .follow })
         if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
@@ -254,7 +232,7 @@ struct MatchdayView: View {
             }
         }
         Picker("Show", selection: $mode) {
-            ForEach(MatchdayMode.tabs(v2: v2)) { Text($0.rawValue).tag($0) }
+            ForEach(MatchdayMode.allCases) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented)
         .padding(.vertical, 4)
@@ -269,14 +247,14 @@ struct MatchdayView: View {
         case .team:
             // At accessibility text sizes the list stands in for the pitch, as in the Planner.
             let pitchFits = !typeSize.isAccessibilitySize
-            if v2 && pitchFits {
+            if pitchFits {
                 Picker("Layout", selection: $teamLayout) {
                     Text("Pitch").tag("pitch")
                     Text("List").tag("list")
                 }
                 .pickerStyle(.segmented)
             }
-            if v2 && pitchFits && teamLayout == "pitch" {
+            if pitchFits && teamLayout == "pitch" {
                 MatchdayPitch(live: live) { sheet = .points($0) }
             } else {
                 MatchdayTeamRows(live: live, players: live.squad.filter { $0.position <= 11 }) { sheet = .points($0) }
@@ -291,14 +269,8 @@ struct MatchdayView: View {
             MatchdayWatchingSection(live: live,
                                     onPlayer: { id, reason in pushedPlayer = PlayerRef(id: id, context: reason) },
                                     onSettings: { showingWatchSettings = true })
-        case .feed:
-            if let feed = live.feed {
-                MatchdayFeed(live: live, feed: feed, seen: feedSeen, focus: focus)
-            } else {
-                MatchdayMoments(live: live)
-            }
         case .matches:
-            MatchdayFixtures(live: live, refreshed: updated, yoursFirst: v2)
+            MatchdayFixtures(live: live, refreshed: updated, yoursFirst: true)
         }
         if live.total.provisionalBonus > 0 {
             Button { sheet = .estimates } label: {
@@ -384,11 +356,9 @@ struct MatchdayView: View {
                             }
                         })
                         .padding(.horizontal, ToolkitSpace.page)
-                    if v2 {
-                        FollowMatchdaysCard()
-                            .padding(.horizontal, ToolkitSpace.page)
-                            .padding(.top, ToolkitSpace.lg)
-                    }
+                    FollowMatchdaysCard()
+                        .padding(.horizontal, ToolkitSpace.page)
+                        .padding(.top, ToolkitSpace.lg)
                     MatchdayAlertsCard()
                         .padding(.horizontal, ToolkitSpace.page)
                         .padding(.top, ToolkitSpace.lg)

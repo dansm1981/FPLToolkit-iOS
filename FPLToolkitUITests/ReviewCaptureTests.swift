@@ -237,12 +237,14 @@ final class ReviewCaptureTests: XCTestCase {
         waitFor(app.buttons["Your team"].firstMatch, "Matchday", timeout: 60)
         settle()
         capture(app, "r50-matchday")
-        for mode in ["Live feed", "Matches"] {
-            app.buttons[mode].firstMatch.tap()
-            settle()
-            capture(app, "r50-matchday-" + mode.lowercased().replacingOccurrences(of: " ", with: "-"))
-        }
+        let feed = openAllMoments(app)
+        capture(app, "r50-matchday-live-feed")
+        back(app, leaving: feed)
+        app.buttons["Matches"].firstMatch.tap()
+        settle()
+        capture(app, "r50-matchday-matches")
         app.buttons["Your team"].firstMatch.tap()
+        if app.buttons["List"].firstMatch.waitForExistence(timeout: 5) { app.buttons["List"].firstMatch.tap() }
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch
         reveal(row, in: app)
         row.tap()
@@ -552,8 +554,7 @@ final class ReviewCaptureTests: XCTestCase {
             openReplayMatchday(app, today: "m\(tag)-today", pages: 2)
             capture(app, "m\(tag)-matchday", pages: 4)
             toTop(app)
-            app.buttons["Live feed"].firstMatch.tap()
-            settle()
+            openAllMoments(app)
             capture(app, "m\(tag)-feed", pages: 3)
             app.terminate()
         }
@@ -566,8 +567,7 @@ final class ReviewCaptureTests: XCTestCase {
         capture(app, "mb-matchday", pages: 14)
         toTop(app)
 
-        app.buttons["Live feed"].firstMatch.tap()
-        settle()
+        let feedScreen = openAllMoments(app)
         capture(app, "mb-feed", pages: 8)
         for (filter, slug) in [("Goals", "goals"), ("DEFCON & saves", "defence"), ("Bonus", "bonus"), ("Line-ups & subs", "lineups")] {
             toTop(app)
@@ -579,6 +579,7 @@ final class ReviewCaptureTests: XCTestCase {
         }
         toTop(app)
         if app.buttons["Show All"].firstMatch.exists { app.buttons["Show All"].firstMatch.tap() }
+        back(app, leaving: feedScreen)
 
         app.buttons["Matches"].firstMatch.tap()
         settle()
@@ -593,6 +594,7 @@ final class ReviewCaptureTests: XCTestCase {
 
         toTop(app)
         app.buttons["Your team"].firstMatch.tap()
+        if app.buttons["List"].firstMatch.waitForExistence(timeout: 5) { app.buttons["List"].firstMatch.tap() }
         settle()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS ' point'")).firstMatch
         reveal(row, in: app)
@@ -853,6 +855,21 @@ final class ReviewCaptureTests: XCTestCase {
 
     private func waitFor(_ element: XCUIElement, _ what: String, timeout: TimeInterval = 20) {
         XCTAssertTrue(element.waitForExistence(timeout: timeout), "\(what) didn't appear")
+    }
+
+    /// The full feed (Matchday v2 for everyone): Pulse → "All moments". Returns the screen's title
+    /// bar, for going back.
+    @discardableResult
+    private func openAllMoments(_ app: XCUIApplication) -> XCUIElement {
+        app.buttons["Pulse"].firstMatch.tap()
+        settle()
+        let all = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'All moments'")).firstMatch
+        reveal(all, in: app)
+        all.tap()
+        let screen = app.navigationBars["All moments"].firstMatch
+        _ = screen.waitForExistence(timeout: 20)
+        settle()
+        return screen
     }
 
     private func back(_ app: XCUIApplication, leaving screen: XCUIElement) {
