@@ -101,6 +101,60 @@ struct MatchdayV2Tests {
         #expect(FinalRecapCard.rivalLine(.init(entryId: 9, name: "Andy", you: 50, them: 53, margin: -3)) == "You 50 – 53 Andy · Andy wins by 3")
     }
 
+    // MARK: Phase 3
+
+    @Test func decodesRankLeaguesAndWinProbability() throws {
+        let base = Self.team(captainId: 1)
+        let json = String(base.dropLast(1)) + """
+        , "rank": {"estimate": 327412, "previous": 345600, "movement": 18188, "text": "~327k",
+                   "movementText": "↑18k", "sample": 1187, "basis": "FPL doesn't publish a live overall rank."},
+          "leagues": [{"id": 783382, "name": "LEAGUE OF EXPERTS", "members": 14, "before": 3, "now": 2,
+                       "above": {"name": "Pete", "gap": 5}, "below": null, "movement": 1,
+                       "text": "2nd, up from 3rd", "detail": "5 behind Pete"}]}
+        """
+        let live = try decode(json)
+        let rank = try #require(live.rank)
+        #expect(rank.text == "~327k" && rank.movementText == "↑18k" && rank.sample == 1187)
+        #expect(live.leagues?.first?.text == "2nd, up from 3rd" && live.leagues?.first?.above?.gap == 5)
+        // Older servers: none of it.
+        let old = try decode(base)
+        #expect(old.rank == nil && old.leagues == nil && old.pulse?.winProbability == nil)
+        #expect(old.pulse?.justHappened.first?.rankChangeText == nil)
+
+        let chance = try APIClient.decode(LiveTeam.Pulse.WinProbability.self, from: Data("""
+        {"entryId": 9, "name": "Andy", "you": 0.62, "draw": 0.04, "basis": "Played out 4,000 times."}
+        """.utf8))
+        #expect(chance.youPercent == 62 && chance.themPercent == 38)
+        let close = LiveTeam.Pulse.WinProbability(entryId: 9, name: "Andy", you: 0.005, draw: 0, basis: "")
+        #expect(close.youPercent + close.themPercent == 100)
+    }
+
+    @Test func rankReadsAloudAsAnEstimate() throws {
+        let rank = try APIClient.decode(LiveTeam.Rank.self, from: Data("""
+        {"estimate": 327412, "previous": 345600, "movement": 18188, "text": "~327k",
+         "movementText": "↑18k", "sample": 1187, "basis": ""}
+        """.utf8))
+        #expect(RankText.spoken(rank) == "Estimated overall rank about 327,000, up 18,200 places since last gameweek")
+        #expect(RankText.rounded(1_234_567) == 1_230_000 && RankText.rounded(840) == 840)
+        #expect(RankText.spokenChange("↑18k") == "rank up 18 thousand")
+        #expect(RankText.spokenChange("↓2.1k") == "rank down 2.1 thousand")
+        #expect(RankText.spokenChange("↑1.2m") == "rank up 1.2 million")
+        #expect(RankText.spokenChange("↓640") == "rank down 640")
+    }
+
+    @Test func recapsCarryTheRank() throws {
+        let json = """
+        {"spell": {"start": "2026-10-10T11:30:00Z", "title": "Lunchtime matches finished", "points": 21,
+                   "rankChange": 41000, "rankChangeText": "↑41k", "rival": null, "best": null, "next": null},
+         "final": {"gameweek": 6, "points": 68, "rank": {"before": 345600, "after": 327412, "text": "~327k",
+                   "movementText": "↑18k"}, "confirmed": true, "rival": null, "decided": null,
+                   "biggestGain": null, "benchPain": null}}
+        """
+        let recap = try APIClient.decode(LiveTeam.Pulse.Recap.self, from: Data(json.utf8))
+        #expect(recap.spell?.rankChangeText == "↑41k")
+        #expect(recap.final?.rank?.text == "~327k" && recap.final?.rank?.before == 345600)
+    }
+
     private func decode(_ json: String) throws -> LiveTeam {
         try APIClient.decode(LiveTeam.self, from: Data(json.utf8))
     }

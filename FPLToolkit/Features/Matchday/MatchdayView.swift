@@ -97,6 +97,7 @@ struct MatchdayView: View {
         }
         .onChange(of: v2Stored) { _, _ in
             if !MatchdayMode.tabs(v2: v2).contains(mode) { mode = v2 ? .pulse : .team }
+            if v2, !loadedWithRivals, entryId == appModel.entryId { reload() }
         }
         .onChange(of: appModel.router.matchdayFocus, initial: true) { _, item in
             guard let item else { return }
@@ -174,9 +175,11 @@ struct MatchdayView: View {
     private func load() async {
         let watch = MatchdayWatch.current
         watched = watch
-        // Your saved rivals come with your own team's live data, from this device (Stage B).
+        // Your saved rivals come with your own team's live data, from this device (Stage B). Pulse
+        // asks even without rivals: your saved leagues come the same way (Matchday v2 phase 3).
         await appModel.rivals.loadIfNeeded()
-        let withRivals = entryId == appModel.entryId && !(appModel.rivals.list?.rivals.isEmpty ?? true)
+        let hasRivals = !(appModel.rivals.list?.rivals.isEmpty ?? true)
+        let withRivals = entryId == appModel.entryId && (hasRivals || v2)
         loadedWithRivals = withRivals
         await table.load(appModel.liveRepository.team(entryId: entryId, watch: watch,
                                                       rivalsVia: withRivals ? appModel.deviceSession : nil))
@@ -234,6 +237,7 @@ struct MatchdayView: View {
             .foregroundStyle(ToolkitColor.secondaryText)
         MatchdayScoreHero(live: live, updated: updated, stale: stale,
                           pulseLine: v2 ? pulseLine(live) : nil,
+                          rank: v2 ? live.rank : nil,
                           canFollow: Self.canFollow(live.status),
                           onFollow: { sheet = .follow })
         if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
@@ -473,6 +477,8 @@ struct MatchdayScoreHero: View {
     var stale = false
     /// Matchday v2: "3 to play · 6 pts ahead of Andy" (the tag says how many are playing).
     var pulseLine: String?
+    /// Matchday v2 phase 3: "Est. rank ~327k ↑18k".
+    var rank: LiveTeam.Rank?
     let canFollow: Bool
     let onFollow: () -> Void
     @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 52
@@ -514,6 +520,9 @@ struct MatchdayScoreHero: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(ToolkitColor.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                if let rank {
+                    MatchdayRankLine(rank: rank)
                 }
                 if !details.isEmpty {
                     Text(details)

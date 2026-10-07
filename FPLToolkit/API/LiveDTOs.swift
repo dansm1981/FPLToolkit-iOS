@@ -204,6 +204,8 @@ struct LiveTeam: Decodable, Sendable {
         var watching: String?
         /// What it did to each saved rival, featured first (happy-backend-pal#68).
         var rivals: [RivalEffect]?
+        /// What it did to your estimated overall rank, "↑18k" (Matchday v2 phase 3).
+        var rankChangeText: String?
     }
 
     /// One event's effect on one rivalry: its points × (your multiplier − theirs).
@@ -341,6 +343,8 @@ struct LiveTeam: Decodable, Sendable {
             /// "+10 points as captain"
             let detail: String?
             let at: Date
+            /// What it did to your estimated overall rank, "↑18k" (phase 3).
+            var rankChangeText: String?
         }
         /// "If nothing changes…" (happy-backend-pal#87): the matches in play ending as they stand,
         /// players still to play scoring as projected.
@@ -378,6 +382,8 @@ struct LiveTeam: Decodable, Sendable {
                 let start: Date
                 let title: String
                 let points: Int
+                /// What the spell did to your estimated overall rank, "↑18k" (phase 3).
+                var rankChangeText: String?
                 let rival: Rival?
                 let best: Moment?
                 let next: Next?
@@ -398,8 +404,18 @@ struct LiveTeam: Decodable, Sendable {
                     let points: Int
                     let playerId: Int?
                 }
+                /// Overall rank before the gameweek and the estimate now (phase 3).
+                struct Rank: Decodable, Sendable, Hashable {
+                    let before: Int?
+                    let after: Int
+                    /// "~327k"
+                    let text: String
+                    /// "↑18k"
+                    let movementText: String?
+                }
                 let gameweek: Int
                 let points: Int
+                var rank: Rank?
                 let confirmed: Bool
                 let rival: Rival?
                 let decided: Moment?
@@ -409,11 +425,68 @@ struct LiveTeam: Decodable, Sendable {
             let spell: Spell?
             let final: Final?
         }
+        /// Your chance of winning the gameweek against your featured rival (phase 3).
+        struct WinProbability: Decodable, Sendable, Hashable {
+            let entryId: Int
+            let name: String
+            /// 0–1, a draw counting half.
+            let you: Double
+            let draw: Double
+            let basis: String
+
+            /// Whole percentages that add up to 100.
+            var youPercent: Int { Int((you * 100).rounded()) }
+            var themPercent: Int { 100 - youPercent }
+        }
         let whatMattersNow: [Item]
         let nextPoints: [Item]
         let justHappened: [Moment]
         var ifNothingChanges: EndState?
         var recap: Recap?
+        var winProbability: WinProbability?
+    }
+
+    /// The live overall rank estimate (Matchday v2 phase 3): always called an estimate.
+    struct Rank: Decodable, Sendable, Hashable {
+        let estimate: Int
+        /// Overall rank after last gameweek; nil in a first gameweek.
+        let previous: Int?
+        /// Places moved since (positive: up).
+        let movement: Int?
+        /// "~327k"
+        let text: String
+        /// "↑18k"
+        let movementText: String?
+        /// Sampled managers behind it.
+        let sample: Int
+        /// How it's worked out, for the info sheet.
+        let basis: String
+    }
+
+    /// Where you'd be in a saved mini-league if the gameweek ended now (phase 3).
+    struct League: Decodable, Sendable, Hashable, Identifiable {
+        struct Above: Decodable, Sendable, Hashable {
+            let name: String
+            let gap: Int
+        }
+        struct Below: Decodable, Sendable, Hashable {
+            let name: String
+            let lead: Int
+        }
+        let id: Int
+        let name: String
+        let members: Int
+        /// Your position after last gameweek.
+        let before: Int?
+        let now: Int
+        let above: Above?
+        let below: Below?
+        /// Places moved since last gameweek (positive: up).
+        let movement: Int?
+        /// "2nd, up from 3rd"
+        let text: String
+        /// "5 behind Pete", "Top by 10 from Andy".
+        let detail: String?
     }
 
     struct Substitution: Decodable, Sendable, Hashable {
@@ -445,6 +518,10 @@ struct LiveTeam: Decodable, Sendable {
     var rivals: Rivals?
     /// Matchday v2's Pulse; nil from servers before happy-backend-pal#86.
     var pulse: Pulse?
+    /// The live overall rank estimate; nil until the gameweek's sample is in (phase 3).
+    var rank: Rank?
+    /// Your saved mini-leagues live; only with `?rivals=1` from this team's own device (phase 3).
+    var leagues: [League]?
     let players: [String: PlayerSummary]
     /// Only on a live matchday replay: what's being replayed and how far through it is.
     var replay: Replay?

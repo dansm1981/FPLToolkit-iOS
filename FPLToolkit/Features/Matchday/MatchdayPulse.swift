@@ -44,6 +44,7 @@ struct MatchdayPulse: View {
             liveNow
             justHappened(pulse)
             rivalCard
+            LiveLeaguesSection(leagues: live.leagues ?? [])
         } else {
             Text("Pulse needs the latest server update. Your team, the feed and matches still work as before.")
                 .font(.subheadline)
@@ -175,6 +176,9 @@ struct MatchdayPulse: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle((row?.gap ?? 0) >= 0 ? ToolkitColor.positive : ToolkitColor.warning)
                 }
+                if let chance = live.pulse?.winProbability, chance.entryId == featured.entryId {
+                    WinProbabilityBar(chance: chance)
+                }
                 if let changed = featured.changed {
                     Text(changed)
                         .font(.subheadline)
@@ -297,6 +301,12 @@ struct PulseMomentRow: View {
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
+                if let change = moment.rankChangeText {
+                    Text("Est. rank \(change)")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                        .accessibilityLabel("Estimated \(RankText.spokenChange(change))")
+                }
                 if let rival {
                     Text(rival)
                         .font(.footnote)
@@ -414,6 +424,9 @@ struct MatchdayHeadToHead: View {
                 if let live, let rivals = live.rivals, let featured = rivals.featured {
                     let row = rivals.rows.first { $0.entryId == featured.entryId }
                     scores(live: live, name: featured.name, row: row)
+                    if let chance = live.pulse?.winProbability, chance.entryId == featured.entryId {
+                        card { WinProbabilityBar(chance: chance, showsBasis: true) }
+                    }
                     if let changed = featured.changed {
                         SectionHeader(title: "What changed")
                         card { Text(changed).fixedSize(horizontal: false, vertical: true) }
@@ -653,6 +666,12 @@ struct MatchdayMomentView: View {
             Text("Your live score is now \(live.total.estimated).")
                 .font(.subheadline)
                 .foregroundStyle(ToolkitColor.primaryText)
+            if let change = item.rankChangeText {
+                Text("Estimated overall rank \(change).")
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .accessibilityLabel("Estimated overall \(RankText.spokenChange(change)).")
+            }
             if let featured = live.rivals?.featured,
                let gap = live.rivals?.rows.first(where: { $0.entryId == featured.entryId })?.gapText {
                 Text("Season: \(gap).")
@@ -734,6 +753,12 @@ struct SpellRecapCard: View {
             Text("\(recap.points < 0 ? "−" : "+")\(abs(recap.points)) pts")
                 .font(.title.weight(.bold).monospacedDigit())
                 .foregroundStyle(ToolkitColor.primaryText)
+            if let change = recap.rankChangeText {
+                Text("Est. rank \(change)")
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .accessibilityLabel("Estimated \(RankText.spokenChange(change))")
+            }
             if let rival = recap.rival, rival.swing != 0 {
                 Text(rival.swing > 0 ? "You gained \(rival.swing) on \(rival.name)" : "\(rival.name) gained \(-rival.swing) on you")
                     .font(.subheadline.weight(.semibold))
@@ -792,6 +817,9 @@ struct FinalRecapCard: View {
                     row("The moment that decided it", "\(decided.text) · \(decided.detail)")
                 }
                 .buttonStyle(.plain)
+            }
+            if let rank = recap.rank {
+                row("Overall rank (estimate)", [rank.text, rank.movementText].compactMap { $0 }.joined(separator: " "))
             }
             if let gain = recap.biggestGain, let name = live.player(gain.playerId)?.webName {
                 row("Biggest gain", "\(name) · \(gain.points) pts")
@@ -861,6 +889,11 @@ struct ShareCard: View {
                 Text(FinalRecapCard.rivalLine(rival))
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color(red: 0.48, green: 0.83, blue: 0.65))
+            }
+            if let rank = recap.rank {
+                Text("Est. rank \([rank.text, rank.movementText].compactMap { $0 }.joined(separator: " "))")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
             }
             if let decided {
                 Text("\(decided.text) · \(decided.detail)")

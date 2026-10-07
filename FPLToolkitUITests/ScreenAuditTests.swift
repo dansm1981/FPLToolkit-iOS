@@ -1291,6 +1291,13 @@ final class ScreenAuditTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap()
             settle()
         }
+        // Phase 3: your leagues, live (not in replays, so only when the server sends them).
+        let leagues = app.staticTexts["Your leagues, live"].firstMatch
+        if leagues.waitForExistence(timeout: 3) {
+            reveal(leagues, in: app)
+            settle()
+            check(app, "90f-matchday-leagues-live")
+        }
         // Phase 2: a moment from Just happened, then the pitch and Matches.
         for _ in 0..<6 { app.swipeDown() }
         let moment = app.buttons.matching(NSPredicate(format: "label CONTAINS ' scores' OR label CONTAINS ' assists'")).firstMatch
