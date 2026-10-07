@@ -342,9 +342,25 @@ struct LiveTeam: Decodable, Sendable {
             let detail: String?
             let at: Date
         }
+        /// "If nothing changes…" (happy-backend-pal#87): the matches in play ending as they stand,
+        /// players still to play scoring as projected.
+        struct EndState: Decodable, Sendable, Hashable {
+            struct Rival: Decodable, Sendable, Hashable {
+                let entryId: Int
+                let name: String
+                let points: Int
+                /// Positive: you'd win the gameweek.
+                let margin: Int
+            }
+            let points: Int
+            let stillToPlay: Int
+            let basis: String
+            let rival: Rival?
+        }
         let whatMattersNow: [Item]
         let nextPoints: [Item]
         let justHappened: [Moment]
+        var ifNothingChanges: EndState?
     }
 
     struct Substitution: Decodable, Sendable, Hashable {

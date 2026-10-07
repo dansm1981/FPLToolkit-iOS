@@ -16,6 +16,9 @@ struct MatchdayActivityAttributes: ActivityAttributes {
         /// LiveTeam.Status raw value: upcoming, live, between, awaitingBonus, finished.
         var status: String
         var updatedAt: Date
+        /// Your featured rival: "4 pts ahead of Andy" (Matchday v2; nil without one, and from
+        /// servers before happy-backend-pal#87).
+        var rival: String?
     }
 
     var entryId: Int

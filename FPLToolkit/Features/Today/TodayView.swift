@@ -407,6 +407,9 @@ struct GameweekCard: View {
     let onHistory: () -> Void
     @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 58
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(AppModel.self) private var appModel
+    /// Matchday v2 (Settings → Developer): the card adds your rival's gap and the latest moment.
+    @AppStorage(MatchdayV2.key) private var v2Stored = false
 
     var body: some View {
         if let team = live?.loaded?.value {
@@ -461,6 +464,34 @@ struct GameweekCard: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(ToolkitColor.primaryText)
                                 .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    if MatchdayV2.isOn(v2Stored), team.status == .live || team.status == .between {
+                        if let gap = appModel.rivals.list?.featured?.gapText {
+                            HStack(spacing: ToolkitSpace.md) {
+                                IconBadge(systemImage: "person.2")
+                                Text(gap)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(ToolkitColor.primaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        if let moment = team.pulse?.justHappened.first {
+                            HStack(spacing: ToolkitSpace.md) {
+                                IconBadge(systemImage: "bolt")
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(moment.text)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(ToolkitColor.primaryText)
+                                    if let detail = moment.detail {
+                                        Text(detail)
+                                            .font(.footnote)
+                                            .foregroundStyle(ToolkitColor.secondaryText)
+                                    }
+                                }
+                                .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .accessibilityElement(children: .combine)
                         }
                     }
                     Divider().overlay(ToolkitColor.heroLine)

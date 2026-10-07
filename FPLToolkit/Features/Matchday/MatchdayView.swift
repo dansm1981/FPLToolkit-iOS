@@ -40,6 +40,10 @@ struct MatchdayView: View {
     @AppStorage(MatchdayV2.key) private var v2Stored = false
     @State private var modeChosen = false
     @State private var showingAllMoments = false
+    @State private var showingNextPoints = false
+    /// Whether the current load asked for your rivals; if they arrive later, it loads again.
+    @State private var loadedWithRivals = false
+    @State private var showingHeadToHead = false
     private var v2: Bool { MatchdayV2.isOn(v2Stored) }
 
     static let refreshSeconds: UInt64 = 30
@@ -77,6 +81,10 @@ struct MatchdayView: View {
                 withAnimation { proxy.scrollTo(focus, anchor: .center) }
             }
         }
+        .onChange(of: appModel.rivals.list?.rivals.count ?? 0) { _, count in
+            // Your rivals arrived after this visit's first load (e.g. Matchday opened quickly).
+            if count > 0, !loadedWithRivals, entryId == appModel.entryId { reload() }
+        }
         .onAppear {
             guard !modeChosen else { return }
             modeChosen = true
@@ -93,6 +101,12 @@ struct MatchdayView: View {
         }
         .navigationDestination(isPresented: $showingAllMoments) {
             MatchdayAllMoments(live: table.current?.loaded?.value, seen: feedSeen, focus: focus)
+        }
+        .navigationDestination(isPresented: $showingNextPoints) {
+            MatchdayNextPoints(live: table.current?.loaded?.value) { sheet = .points($0) }
+        }
+        .navigationDestination(isPresented: $showingHeadToHead) {
+            MatchdayHeadToHead(live: table.current?.loaded?.value) { pushedRival = $0 }
         }
         .refreshable {
             await table.refresh()
@@ -155,6 +169,7 @@ struct MatchdayView: View {
         // Your saved rivals come with your own team's live data, from this device (Stage B).
         await appModel.rivals.loadIfNeeded()
         let withRivals = entryId == appModel.entryId && !(appModel.rivals.list?.rivals.isEmpty ?? true)
+        loadedWithRivals = withRivals
         await table.load(appModel.liveRepository.team(entryId: entryId, watch: watch,
                                                       rivalsVia: withRivals ? appModel.deviceSession : nil))
         remember()
@@ -231,8 +246,9 @@ struct MatchdayView: View {
         case .pulse:
             MatchdayPulse(live: live,
                           onPlayer: { sheet = .points($0) },
-                          onRival: { pushedRival = $0 },
-                          onAllMoments: { showingAllMoments = true })
+                          onRival: { _ in showingHeadToHead = true },
+                          onAllMoments: { showingAllMoments = true },
+                          onNextPoints: { showingNextPoints = true })
         case .team:
             MatchdayTeamRows(live: live, players: live.squad.filter { $0.position <= 11 }) { sheet = .points($0) }
             SectionHeader(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
@@ -279,7 +295,8 @@ struct MatchdayView: View {
     /// Matchday v2's hero line: who's live, and the gap to your featured rival.
     private func pulseLine(_ live: LiveTeam) -> String? {
         guard [.live, .between, .awaitingBonus].contains(live.status) else { return nil }
-        var parts = ["\(live.playing) live · \(live.toPlay) to play"]
+        // The tag already says how many are playing.
+        var parts = ["\(live.toPlay) to play"]
         if let featured = live.rivals?.featured,
            let gap = live.rivals?.rows.first(where: { $0.entryId == featured.entryId })?.gapText {
             parts.append(gap)
@@ -427,7 +444,7 @@ struct MatchdayScoreHero: View {
     let live: LiveTeam
     let updated: Date?
     var stale = false
-    /// Matchday v2: "4 live · 3 to play · 6 pts ahead of Andy".
+    /// Matchday v2: "3 to play · 6 pts ahead of Andy" (the tag says how many are playing).
     var pulseLine: String?
     let canFollow: Bool
     let onFollow: () -> Void

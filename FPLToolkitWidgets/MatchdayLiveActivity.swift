@@ -32,11 +32,18 @@ struct MatchdayLiveActivity: Widget {
                         .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text(context.state.headline)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 4)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.state.headline)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(2)
+                        if let rival = context.state.rival {
+                            Text(rival)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Self.green)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
                 }
             } compactLeading: {
                 Text("\(context.state.points)")
@@ -70,6 +77,11 @@ struct MatchdayLiveActivity: Widget {
                 .font(.headline)
                 .foregroundStyle(.white)
                 .lineLimit(2)
+            if let rival = state.rival {
+                Text(rival)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Self.green)
+            }
             Text(footer(state))
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.65))

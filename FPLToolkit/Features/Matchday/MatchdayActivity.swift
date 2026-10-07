@@ -25,7 +25,10 @@ enum MatchdayActivity {
             toPlay: live.toPlay,
             headline: live.headline?.text ?? "\(live.playing) playing · \(live.toPlay) to play",
             status: live.status.rawValue,
-            updatedAt: updated ?? .now
+            updatedAt: updated ?? .now,
+            rival: live.rivals?.featured.flatMap { featured in
+                live.rivals?.rows.first { $0.entryId == featured.entryId }?.gapText
+            }
         )
     }
 

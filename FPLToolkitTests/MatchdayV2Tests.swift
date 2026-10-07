@@ -41,6 +41,33 @@ struct MatchdayV2Tests {
         #expect(pulse.justHappened.first?.detail == "+10 points as captain")
     }
 
+    @Test func ifNothingChangesWording() {
+        typealias R = LiveTeam.Pulse.EndState.Rival
+        #expect(IfNothingChangesCard.rivalText(R(entryId: 9, name: "Andy", points: 58, margin: 9)) == "You'd beat Andy by 9 this gameweek")
+        #expect(IfNothingChangesCard.rivalText(R(entryId: 9, name: "Andy", points: 70, margin: -3)) == "Andy would beat you by 3 this gameweek")
+        #expect(IfNothingChangesCard.rivalText(R(entryId: 9, name: "Andy", points: 67, margin: 0)) == "You'd draw the gameweek with Andy")
+    }
+
+    @Test func stillToComeOncePerPlayer() throws {
+        let json = """
+        [{"fixtureId": 2, "kickoff": "2026-10-10T16:30:00Z", "yours": [10, 11], "theirs": [10], "text": ""},
+         {"fixtureId": 1, "kickoff": "2026-10-10T14:00:00Z", "yours": [], "theirs": [20], "text": ""}]
+        """
+        let next = try APIClient.decode([LiveTeam.Rivals.ComingUp].self, from: Data(json.utf8))
+        let rows = MatchdayHeadToHead.stillToCome(next)
+        #expect(rows.map(\.playerId) == [20, 10, 11])
+        #expect(rows.map { $0.side("Andy") } == ["Andy only", "Both", "You only"])
+    }
+
+    @Test func lockScreenStateDecodesWithAndWithoutTheRival() throws {
+        let base = #"{"points": 55, "provisionalBonus": 3, "playing": 4, "toPlay": 6, "headline": "Hall: 9/10", "status": "live", "updatedAt": 781700000"#
+        let old = try JSONDecoder().decode(MatchdayActivityAttributes.ContentState.self, from: Data((base + "}").utf8))
+        #expect(old.rival == nil)
+        let new = try JSONDecoder().decode(MatchdayActivityAttributes.ContentState.self,
+                                           from: Data((base + #", "rival": "4 pts ahead of Andy"}"#).utf8))
+        #expect(new.rival == "4 pts ahead of Andy")
+    }
+
     private func decode(_ json: String) throws -> LiveTeam {
         try APIClient.decode(LiveTeam.self, from: Data(json.utf8))
     }

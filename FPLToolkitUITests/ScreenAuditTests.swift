@@ -1267,10 +1267,30 @@ final class ScreenAuditTests: XCTestCase {
         settle()
         check(app, "90-matchday-pulse")
         let rival = app.staticTexts["Your rival"].firstMatch
-        if rival.waitForExistence(timeout: 5) {
+        if rival.waitForExistence(timeout: 20) {
             reveal(rival, in: app)
             settle()
             check(app, "90b-matchday-pulse-rival")
+            // Phase 1: the live head-to-head.
+            let headToHead = app.buttons["Open head-to-head"].firstMatch
+            reveal(headToHead, in: app)
+            headToHead.tap()
+            waitFor(app.navigationBars.matching(NSPredicate(format: "identifier BEGINSWITH 'You v '")).firstMatch,
+                    "Head-to-head", timeout: 20)
+            settle()
+            check(app, "90c-matchday-head-to-head")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            settle()
+        }
+        // Phase 1: every point within reach, when there are more than Pulse shows.
+        let all = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'All points within reach'")).firstMatch
+        for _ in 0..<6 { app.swipeDown() }
+        if all.waitForExistence(timeout: 3) {
+            reveal(all, in: app)
+            all.tap()
+            waitFor(app.navigationBars["Next points"].firstMatch, "Next points")
+            settle()
+            check(app, "90d-matchday-next-points")
         }
     }
 
