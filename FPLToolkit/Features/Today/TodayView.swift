@@ -146,6 +146,8 @@ struct TodayContent: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     /// "Not now" on the pick-a-rival suggestion.
     @AppStorage("today.rivalPromptDismissed") private var rivalPromptDismissed = false
+    /// This device's settings, for "Follow your FPL day live" (loaded with the deadline card).
+    @State private var activationPrefs: DevicePrefs?
     let loaded: Loaded<Today>
     /// False while showing a saved copy or after a failed refresh: never claim anything is clear then.
     var isCurrent = true
@@ -172,6 +174,13 @@ struct TodayContent: View {
 
             if let next = today.gameweek.next {
                 DeadlineCard(next: next)
+                    .task(id: next.id) {
+                        guard appModel.pushFeatures?.matchdayAlerts == true else { return }
+                        activationPrefs = try? await appModel.deviceSession.device().prefs
+                    }
+                MatchdayActivationCard(next: next, prefs: activationPrefs) { saved in
+                    activationPrefs = saved ?? activationPrefs
+                }
             }
 
             if let replay = live?.loaded?.value.replay {

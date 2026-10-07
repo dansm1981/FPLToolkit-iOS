@@ -1279,7 +1279,7 @@ final class ScreenAuditTests: XCTestCase {
         card.tap()
         waitFor(app.buttons["Pulse"].firstMatch, "Matchday v2", timeout: 60)
         XCTAssertTrue(app.buttons["Pulse"].firstMatch.isSelected, "Pulse is the first tab")
-        waitFor(app.staticTexts["What matters now"].firstMatch, "Pulse", timeout: 30)
+        waitFor(app.staticTexts["What could happen next"].firstMatch, "Pulse", timeout: 30)
         settle()
         check(app, "90-matchday-pulse")
         let rival = app.staticTexts["Your rival"].firstMatch

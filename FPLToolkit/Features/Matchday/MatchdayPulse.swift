@@ -16,13 +16,20 @@ struct MatchdayPulse: View {
 
     var body: some View {
         if let pulse = live.pulse {
+            // Matchday v3 (Dan, 7 Oct): your rival race first, then what just happened and what it
+            // did to you, then what could happen next.
+            if let race = pulse.race {
+                MatchdayRaceHeader(race: race, chance: pulse.winProbability,
+                                   onOpen: { onRival(race.entryId) }, onSwing: onMoment)
+            }
             if let final = pulse.recap?.final {
                 FinalRecapCard(recap: final, live: live, onMoment: onMoment)
             } else if let spell = pulse.recap?.spell {
                 SpellRecapCard(recap: spell, live: live, onMoment: onMoment)
             }
+            justHappened(pulse)
             whatMattersNow(pulse)
-            if let end = pulse.ifNothingChanges {
+            if pulse.race == nil, let end = pulse.ifNothingChanges {
                 IfNothingChangesCard(end: end)
             }
             if pulse.nextPoints.count > pulse.whatMattersNow.count {
@@ -42,8 +49,7 @@ struct MatchdayPulse: View {
                 .buttonStyle(.plain)
             }
             liveNow
-            justHappened(pulse)
-            rivalCard
+            if pulse.race == nil { rivalCard }
             LiveLeaguesSection(leagues: live.leagues ?? [])
         } else {
             Text("Pulse needs the latest server update. Your team, the feed and matches still work as before.")
@@ -56,8 +62,8 @@ struct MatchdayPulse: View {
     // MARK: What matters now
 
     @ViewBuilder private func whatMattersNow(_ pulse: LiveTeam.Pulse) -> some View {
-        SectionHeader(title: "What matters now")
-        if pulse.whatMattersNow.isEmpty {
+        SectionHeader(title: "What could happen next")
+        if pulse.whatMattersNow.isEmpty && rivalSituations.isEmpty {
             Text(quietText)
                 .font(.subheadline)
                 .foregroundStyle(ToolkitColor.secondaryText)
@@ -74,10 +80,30 @@ struct MatchdayPulse: View {
                     }
                     .buttonStyle(.plain)
                 }
+                // Against your rival: what would help you and what would hurt you.
+                ForEach(Array(rivalSituations.enumerated()), id: \.offset) { index, situation in
+                    if index > 0 || !pulse.whatMattersNow.isEmpty { Divider().overlay(ToolkitColor.border) }
+                    Label {
+                        Text(situation.text)
+                            .foregroundStyle(ToolkitColor.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: situation.effect >= 0 ? "arrow.up.right" : "exclamationmark.triangle.fill")
+                            .foregroundStyle(situation.effect >= 0 ? ToolkitColor.positive : ToolkitColor.warning)
+                    }
+                    .font(.subheadline)
+                    .padding(.vertical, 12)
+                }
             }
             .padding(.horizontal, 15)
             .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
         }
+    }
+
+    /// The featured rival's situations in play (what would swing the race), when the race is shown.
+    private var rivalSituations: [LiveTeam.Rivals.Situation] {
+        guard live.pulse?.race != nil else { return [] }
+        return live.rivals?.featured?.now ?? []
     }
 
     /// Nothing within reach: say where the gameweek is instead.
@@ -296,18 +322,21 @@ struct PulseMomentRow: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(ToolkitColor.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                if let detail = moment.detail {
+                // The points line is in the consequence line when there is one.
+                if let detail = moment.detail, moment.impact?.points == nil {
                     Text(detail)
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.secondaryText)
                 }
-                if let change = moment.rankChangeText {
+                if let impact = moment.impact {
+                    ConsequenceLine(impact: impact)
+                } else if let change = moment.rankChangeText {
                     Text("Est. rank \(change)")
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(ToolkitColor.secondaryText)
                         .accessibilityLabel("Estimated \(RankText.spokenChange(change))")
                 }
-                if let rival {
+                if let rival, moment.impact?.rival == nil {
                     Text(rival)
                         .font(.footnote)
                         .foregroundStyle(ToolkitColor.link)
@@ -666,7 +695,9 @@ struct MatchdayMomentView: View {
             Text("Your live score is now \(live.total.estimated).")
                 .font(.subheadline)
                 .foregroundStyle(ToolkitColor.primaryText)
-            if let change = item.rankChangeText {
+            if let impact = item.impact {
+                ConsequenceLine(impact: impact)
+            } else if let change = item.rankChangeText {
                 Text("Estimated overall rank \(change).")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(ToolkitColor.primaryText)

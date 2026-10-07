@@ -153,8 +153,13 @@ struct MatchdayFeedRow: View {
                         .strikethrough(item.state == .withdrawn)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                // What it did to your rivalries: the featured rival first, at most two lines.
-                if let effects = item.rivals, !effects.isEmpty {
+                // What it did to you (Matchday v3): points, the swing against your rival, your rank.
+                if let impact = item.impact {
+                    ConsequenceLine(impact: impact)
+                }
+                // What it did to your other rivalries (the featured one is in the line above).
+                let effects = (item.rivals ?? []).filter { item.impact?.rival == nil || $0.entryId != live.rivals?.featured?.entryId }
+                if !effects.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(effects.prefix(2), id: \.entryId) { effect in
                             Label {
@@ -198,13 +203,13 @@ struct MatchdayFeedRow: View {
                         }
                     }
                 }
-                if typeSize.isAccessibilitySize, let points = item.points, points != 0 {
+                if typeSize.isAccessibilitySize, item.impact == nil, let points = item.points, points != 0 {
                     pointsTag(points)
                 }
             }
             Spacer(minLength: 0)
             if !typeSize.isAccessibilitySize {
-                if let points = item.points, points != 0 {
+                if item.impact == nil, let points = item.points, points != 0 {
                     pointsTag(points)
                 } else {
                     IconBadge(systemImage: MatchdayText.symbol(item))
@@ -213,7 +218,8 @@ struct MatchdayFeedRow: View {
         }
         .padding(.vertical, 12)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(MatchdayText.spoken(item, isNew: isNew))
+        .accessibilityLabel([MatchdayText.spoken(item, isNew: isNew), item.impact.map(ImpactText.spoken)]
+            .compactMap { $0 }.joined(separator: ", "))
     }
 
     /// The player's club badge, so a scan down the feed finds a club's items.

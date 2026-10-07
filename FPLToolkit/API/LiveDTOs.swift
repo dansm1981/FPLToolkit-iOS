@@ -206,6 +206,22 @@ struct LiveTeam: Decodable, Sendable {
         var rivals: [RivalEffect]?
         /// What it did to your estimated overall rank, "↑18k" (Matchday v2 phase 3).
         var rankChangeText: String?
+        /// What it did to you: points, the swing against your rival, your rank (Matchday v3).
+        var impact: Impact?
+    }
+
+    /// One moment's consequence (tasks/matchday-v3.md item 2): "+10 pts (C) · +6 vs Andy · Rank ↑18k".
+    struct Impact: Decodable, Sendable, Hashable {
+        struct Part: Decodable, Sendable, Hashable {
+            /// Positive is good for you.
+            let value: Int
+            let text: String
+        }
+        let points: Part?
+        let rival: Part?
+        let rank: Part?
+
+        var parts: [Part] { [points, rival, rank].compactMap { $0 } }
     }
 
     /// One event's effect on one rivalry: its points × (your multiplier − theirs).
@@ -345,6 +361,8 @@ struct LiveTeam: Decodable, Sendable {
             let at: Date
             /// What it did to your estimated overall rank, "↑18k" (phase 3).
             var rankChangeText: String?
+            /// What it did to you (Matchday v3).
+            var impact: Impact?
         }
         /// "If nothing changes…" (happy-backend-pal#87): the matches in play ending as they stand,
         /// players still to play scoring as projected.
@@ -438,12 +456,42 @@ struct LiveTeam: Decodable, Sendable {
             var youPercent: Int { Int((you * 100).rounded()) }
             var themPercent: Int { 100 - youPercent }
         }
+        /// The race against your featured rival (tasks/matchday-v3.md item 3).
+        struct Race: Decodable, Sendable, Hashable {
+            struct Swing: Decodable, Sendable, Hashable {
+                let itemId: String
+                let effect: Int
+                /// "Saka goal +8 to you"
+                let text: String
+            }
+            struct Projected: Decodable, Sendable, Hashable {
+                let you: Int
+                let them: Int
+                /// "Projected: you 72 — Andy 69"
+                let text: String
+            }
+            let entryId: Int
+            let name: String
+            let you: Int
+            let them: Int
+            /// "+3", "−2", "Level"
+            let marginText: String
+            let biggestSwing: Swing?
+            /// "Andy still has Haaland (C) to play"
+            let threats: [String]
+            /// "Your differentials: Gabriel (live), Palmer"
+            let differentials: String?
+            let projected: Projected?
+
+            var margin: Int { you - them }
+        }
         let whatMattersNow: [Item]
         let nextPoints: [Item]
         let justHappened: [Moment]
         var ifNothingChanges: EndState?
         var recap: Recap?
         var winProbability: WinProbability?
+        var race: Race?
     }
 
     /// The live overall rank estimate (Matchday v2 phase 3): always called an estimate.

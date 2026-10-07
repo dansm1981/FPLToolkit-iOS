@@ -232,6 +232,10 @@ struct MatchdayView: View {
                 reload()
             }
         }
+        // "Follow your FPL day live" (Matchday v3 item 1), for your own team.
+        if entryId == appModel.entryId, live.replay == nil {
+            MatchdayActivationMatchdayCard(gameweek: live.gameweek, finished: live.status == .finished)
+        }
         Text("GW\(live.gameweek) · \(MatchdayText.status(live.status))")
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)

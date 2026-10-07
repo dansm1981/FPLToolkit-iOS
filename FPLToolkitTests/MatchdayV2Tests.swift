@@ -155,6 +155,52 @@ struct MatchdayV2Tests {
         #expect(recap.final?.rank?.text == "~327k" && recap.final?.rank?.before == 345600)
     }
 
+    // MARK: Matchday v3
+
+    @Test func decodesImpactAndRace() throws {
+        let impact = try APIClient.decode(LiveTeam.Impact.self, from: Data("""
+        {"points": {"value": 10, "text": "+10 pts (C)"}, "rival": {"value": 6, "text": "+6 vs Andy"},
+         "rank": {"value": 18200, "text": "Rank ↑18k"}}
+        """.utf8))
+        #expect(impact.parts.map(\.text) == ["+10 pts (C)", "+6 vs Andy", "Rank ↑18k"])
+        #expect(ImpactText.spoken(impact) == "plus 10 points as captain, plus 6 against Andy, estimated rank up 18 thousand")
+        let lost = LiveTeam.Impact(points: .init(value: -4, text: "−4 pts"), rival: nil, rank: .init(value: -8421, text: "Rank ↓8.4k"))
+        #expect(ImpactText.spoken(lost) == "minus 4 points, estimated rank down 8.4 thousand")
+
+        let race = try APIClient.decode(LiveTeam.Pulse.Race.self, from: Data("""
+        {"entryId": 9, "name": "Andy", "you": 54, "them": 51, "marginText": "+3",
+         "biggestSwing": {"itemId": "g", "effect": 8, "text": "Saka goal +8 to you"},
+         "threats": ["Andy still has Haaland (C) to play"], "differentials": "Your differential: Gabriel (live)",
+         "projected": {"you": 72, "them": 69, "text": "Projected: you 72 — Andy 69"}}
+        """.utf8))
+        #expect(race.margin == 3 && race.threats.count == 1)
+        #expect(RaceText.spokenScore(race) == "You 54, Andy 51: you're 3 ahead this gameweek")
+    }
+
+    @Test func activationIsOfferedBeforeADeadlineUntilItsOn() {
+        let now = Date(timeIntervalSince1970: 1_791_000_000)
+        func offer(alerts: Bool = false, following: Bool = false, permission: Bool = false,
+                   hoursLeft: Double = 20, dismissed: Int = 0, count: Int = 0) -> Bool {
+            MatchdayActivation.shouldOffer(
+                offered: true, alertsOn: alerts, followingOn: following, canFollow: true,
+                permissionGranted: permission, deadline: now.addingTimeInterval(hoursLeft * 3600),
+                gameweek: 6, now: now, dismissedGameweek: dismissed, dismissCount: count)
+        }
+        #expect(offer())
+        #expect(!offer(hoursLeft: 60)) // too early
+        #expect(!offer(hoursLeft: -1)) // deadline passed
+        #expect(!offer(alerts: true, following: true, permission: true)) // all on already
+        #expect(offer(alerts: true, following: true, permission: false)) // notifications still off
+        #expect(!offer(dismissed: 6)) // "Not now" for this gameweek
+        #expect(!offer(count: 2)) // put off twice
+        #expect(MatchdayActivation.shouldOfferOnMatchday(
+            offered: true, alertsOn: false, followingOn: false, canFollow: true, permissionGranted: false,
+            gameweek: 6, finished: false, dismissedGameweek: 0, dismissCount: 0))
+        #expect(!MatchdayActivation.shouldOfferOnMatchday(
+            offered: true, alertsOn: false, followingOn: false, canFollow: true, permissionGranted: false,
+            gameweek: 5, finished: true, dismissedGameweek: 0, dismissCount: 0))
+    }
+
     private func decode(_ json: String) throws -> LiveTeam {
         try APIClient.decode(LiveTeam.self, from: Data(json.utf8))
     }
