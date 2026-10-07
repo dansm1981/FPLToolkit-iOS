@@ -267,17 +267,6 @@ private struct WatchContent: View {
                 .listRowInsets(EdgeInsets(top: ToolkitSpace.sm, leading: 0, bottom: ToolkitSpace.sm, trailing: 0))
             }
 
-            // Every alert in one place (Dan, 29 Sep).
-            Section {
-                NavigationLink {
-                    AlertsView()
-                } label: {
-                    LinkRowLabel(title: "Manage alerts", detail: "Choose what we tell you about", systemImage: "bell.badge",
-                                 showsChevron: false)
-                }
-            }
-            .listRowBackground(ToolkitColor.surface)
-
             if appModel.entryId != nil {
                 Section {
                     Toggle(isOn: Binding(

@@ -9,6 +9,8 @@ struct MatchStatsPanel: View {
     let gameweek: Int
     /// Your fifteen, marked in the lists.
     let squad: Set<Int>
+    /// When Matchday's live data last arrived: the stats reload with it.
+    var refreshed: Date?
     @State private var resource: Resource<MatchStats>?
 
     var body: some View {
@@ -35,6 +37,10 @@ struct MatchStatsPanel: View {
             let resource = Resource(appModel.liveRepository.match(fixtureId: fixtureId, gw: gameweek))
             self.resource = resource
             await resource.load()
+        }
+        // Kept up to date with the rest of Matchday (Matchday v2 item 10).
+        .onChange(of: refreshed) { _, _ in
+            Task { await resource?.load(bypassCache: true) }
         }
     }
 

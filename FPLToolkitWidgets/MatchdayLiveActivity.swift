@@ -21,7 +21,7 @@ struct MatchdayLiveActivity: Widget {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("\(context.state.points)")
                             .font(.title.weight(.bold).monospacedDigit())
-                        Text(context.state.provisionalBonus > 0 ? "est. pts" : "pts")
+                        Text(LiveScoreText.unit(status: context.state.status))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -60,7 +60,7 @@ struct MatchdayLiveActivity: Widget {
                 Text("\(state.points)")
                     .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
                     .foregroundStyle(.white)
-                Text(state.provisionalBonus > 0 ? "est. pts" : "pts")
+                Text(LiveScoreText.unit(status: state.status))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.65))
                 Spacer()
@@ -92,18 +92,12 @@ struct MatchdayLiveActivity: Widget {
 
     private func footer(_ state: MatchdayActivityAttributes.ContentState) -> String {
         let updated = "Updated \(state.updatedAt.formatted(date: .omitted, time: .shortened))"
-        return state.provisionalBonus > 0 ? "Includes \(state.provisionalBonus) projected bonus · \(updated)" : updated
+        let breakdown = LiveScoreText.breakdown(estimated: state.points, provisionalBonus: state.provisionalBonus,
+                                                status: state.status)
+        return "\(breakdown) · \(updated)"
     }
 
-    private func statusText(_ status: String) -> String {
-        switch status {
-        case "live": "Live"
-        case "between": "Between matches"
-        case "awaitingBonus": "Awaiting bonus"
-        case "finished": "Complete"
-        default: "Not started"
-        }
-    }
+    private func statusText(_ status: String) -> String { LiveScoreText.status(status) }
 }
 
 private struct DotLabelStyle: LabelStyle {

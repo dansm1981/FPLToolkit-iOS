@@ -22,7 +22,7 @@ struct NotificationSettingsView: View {
                     Label("Live matchday", systemImage: "eye")
                 }
             } footer: {
-                Text("Who Matchday watches beside your team. Matchday alerts will follow it too.")
+                Text("Who Matchday watches beside your team.")
             }
             .listRowBackground(ToolkitColor.surface)
 

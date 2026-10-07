@@ -3,7 +3,7 @@ import SwiftUI
 /// Live matchday (Dan, 2 Oct 2026): who Matchday watches beside your team. Highly owned players
 /// are on to begin with; Elite differentials are switched on here. Rivals are the ones you add in
 /// Watch → Rivals (they replaced the league-position rivals, Stage B). Saved on the server with
-/// the device's prefs (matchday alerts will follow them once push is live) and kept on the phone
+/// the device's prefs and kept on the phone
 /// for the live requests. Changes save straight away.
 struct MatchdayWatchSettingsView: View {
     @Environment(AppModel.self) private var appModel
@@ -44,7 +44,7 @@ struct MatchdayWatchSettingsView: View {
             } footer: {
                 VStack(alignment: .leading, spacing: ToolkitSpace.sm) {
                     if let error { Text("Couldn't save: \(error.message)").foregroundStyle(ToolkitColor.error) }
-                    Text("Shown on Matchday under your bench. Matchday alerts, when they arrive, will follow these too.")
+                    Text("Shown on Matchday under your bench.")
                 }
             }
             .listRowBackground(ToolkitColor.surface)

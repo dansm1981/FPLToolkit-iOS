@@ -310,6 +310,43 @@ struct LiveTeam: Decodable, Sendable {
         let kind: String
     }
 
+    /// Matchday v2's Pulse (happy-backend-pal#86; tasks/matchday-v2.md): what matters now, the
+    /// points within reach and the latest moments, worded by the server.
+    struct Pulse: Decodable, Sendable, Hashable {
+        struct Item: Decodable, Sendable, Hashable, Identifiable {
+            enum Tone: String, FallbackDecodable {
+                case upside, danger
+                case unknown
+                static let fallback = Self.unknown
+            }
+            let id: String
+            /// defcon, saves, bonus, sixty or cleanSheet.
+            let kind: String
+            let playerId: Int
+            /// "Hall · 9/10 DEFCON"
+            let title: String
+            /// "One more action = +2"
+            let detail: String
+            /// Points at stake for you, the captain's multiplier included.
+            let stake: Int
+            let tone: Tone
+            /// 0–1 for a progress bar.
+            let progress: Double?
+        }
+        struct Moment: Decodable, Sendable, Hashable, Identifiable {
+            /// The feed item's id.
+            let id: String
+            let playerId: Int?
+            let text: String
+            /// "+10 points as captain"
+            let detail: String?
+            let at: Date
+        }
+        let whatMattersNow: [Item]
+        let nextPoints: [Item]
+        let justHappened: [Moment]
+    }
+
     struct Substitution: Decodable, Sendable, Hashable {
         let `in`: Int
         let out: Int
@@ -337,6 +374,8 @@ struct LiveTeam: Decodable, Sendable {
     var watching: Watching?
     /// Only with `?rivals=1` from this team's own device.
     var rivals: Rivals?
+    /// Matchday v2's Pulse; nil from servers before happy-backend-pal#86.
+    var pulse: Pulse?
     let players: [String: PlayerSummary]
     /// Only on a live matchday replay: what's being replayed and how far through it is.
     var replay: Replay?

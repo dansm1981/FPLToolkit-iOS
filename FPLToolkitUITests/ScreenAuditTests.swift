@@ -397,17 +397,7 @@ final class ScreenAuditTests: XCTestCase {
         settle()
         check(app, "06c-watch-squad", sizesAndLists: false)
         for _ in 0..<3 { app.swipeDown() }
-
-        // Alerts (Dan, 29 Sep): every alert with its default.
-        let manage = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Manage alerts'")).firstMatch
-        waitFor(manage, "Manage alerts")
-        manage.tap()
-        let rise = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Price rise'")).firstMatch
-        waitFor(rise, "Alerts")
-        XCTAssertEqual(rise.value as? String, "0")
-        XCTAssertEqual(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Price change confirmed'")).firstMatch.value as? String, "1")
-        settle()
-        check(app, "06b-alerts", sizesAndLists: false)
+        // (Watch → "Manage alerts" was removed 7 Oct: alerts live in Settings → Notifications, test06.)
     }
 
     func test06SettingsAndNotifications() {
@@ -1252,6 +1242,38 @@ final class ScreenAuditTests: XCTestCase {
     /// Rivals (happy-backend-pal#67): Watch → Rivals, adding a manager from a saved league (the
     /// simulator's device keeps League of Experts), then their page's three tabs. Pass
     /// `auditTeam=22615` (Dan's team, in that league). The rival stays saved on this device.
+    /// Matchday v2's Pulse (tasks/matchday-v2.md phase 0), behind Settings → Developer: a replay
+    /// frozen halfway with `-matchday.v2 YES`. What matters now, Live now, Just happened and the
+    /// featured rival. `auditReplay` as for test21.
+    func test25MatchdayPulse() async throws {
+        let url = URL(string: "https://www.fpltoolkit.co.uk/api/mobile/v1/live/replays")!
+        let (data, _) = try await URLSession.shared.data(from: url)
+        struct Item: Decodable { let id: String }
+        struct Payload: Decodable { let replays: [Item] }
+        struct List: Decodable { let data: Payload }
+        let replays = try JSONDecoder().decode(List.self, from: data).data.replays
+        let chosen = setting("auditReplay", default: "gw5-2")
+        guard let id = replays.first(where: { $0.id == chosen })?.id ?? replays.first?.id else {
+            throw XCTSkip("No matchday the server can replay")
+        }
+        let app = launch(["-entryId", team, "-liveReplayId", id, "-liveReplayFreeze", "600", "-matchday.v2", "YES"])
+        waitFor(app.buttons["End replay"].firstMatch, "Replay on Today", timeout: 60)
+        let card = app.buttons.matching(NSPredicate(format: "label == 'View gameweek' OR label == 'Open Matchday'")).firstMatch
+        waitFor(card, "Gameweek on Today", timeout: 30)
+        card.tap()
+        waitFor(app.buttons["Pulse"].firstMatch, "Matchday v2", timeout: 60)
+        XCTAssertTrue(app.buttons["Pulse"].firstMatch.isSelected, "Pulse is the first tab")
+        waitFor(app.staticTexts["What matters now"].firstMatch, "Pulse", timeout: 30)
+        settle()
+        check(app, "90-matchday-pulse")
+        let rival = app.staticTexts["Your rival"].firstMatch
+        if rival.waitForExistence(timeout: 5) {
+            reveal(rival, in: app)
+            settle()
+            check(app, "90b-matchday-pulse-rival")
+        }
+    }
+
     func test22Rivals() {
         let app = launch(["-entryId", team])
         // Rivals come from saved leagues; test10 removes League of Experts when it's done.

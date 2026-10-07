@@ -36,6 +36,8 @@ struct MatchdayFeed: View {
     let feed: [LiveTeam.FeedItem]
     /// Items already seen when this visit began; later ones are marked new.
     let seen: Set<String>?
+    /// The item a matchday alert opened, highlighted.
+    var focus: String?
     @State private var filter: MatchdayFeedFilter = .all
 
     var body: some View {
@@ -75,6 +77,8 @@ struct MatchdayFeed: View {
                             Divider().overlay(ToolkitColor.border)
                         }
                         MatchdayFeedRow(item: item, live: live, isNew: seen.map { !$0.contains(item.id) } ?? false)
+                            .background(item.id == focus ? ToolkitColor.accent.opacity(0.14) : .clear)
+                            .id(item.id)
                     }
                 }
                 .padding(.horizontal, 15)

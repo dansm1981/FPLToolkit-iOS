@@ -13,3 +13,10 @@ enum BuildChannel {
         #endif
     }()
 }
+
+/// Matchday v2 (tasks/matchday-v2.md; Dan, 7 Oct 2026): tried behind Settings → Developer, in Xcode
+/// and TestFlight builds only, so it can be compared with v1 on a real matchday and switched off.
+enum MatchdayV2 {
+    static let key = "matchday.v2"
+    static func isOn(_ stored: Bool) -> Bool { BuildChannel.isBeta && stored }
+}

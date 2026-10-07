@@ -21,8 +21,9 @@ enum DeepLink: Equatable {
     case research
     case watch
     case alerts
-    /// Matchday (Phase 3): `fpltoolkit://matchday`, also where the Live Activity opens.
-    case matchday
+    /// Matchday (Phase 3): `fpltoolkit://matchday`, also where the Live Activity opens. A matchday
+    /// alert adds `?item=<feed item>`, the moment it's about (Matchday v2 item 10).
+    case matchday(item: String? = nil)
     /// `event` is set when the link came from an alert (notifications.md §6).
     case player(Int, event: String? = nil)
 
@@ -36,7 +37,9 @@ enum DeepLink: Equatable {
         case "projections": self = .projections
         case "research": self = .research
         case "watch": self = parts.first?.lowercased() == "alerts" ? .alerts : .watch
-        case "matchday": self = .matchday
+        case "matchday":
+            self = .matchday(item: URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first { $0.name == "item" }?.value)
         case "player":
             guard let id = parts.first.flatMap(Int.init), id > 0 else { self = .today; return }
             let event = URLComponents(url: url, resolvingAgainstBaseURL: false)?
@@ -57,6 +60,8 @@ final class Router {
     var showingAlerts = false
     /// Matchday, over whichever tab is showing.
     var showingMatchday = false
+    /// The feed item a matchday alert was about: Matchday opens its feed there, then clears it.
+    var matchdayFocus: String?
     /// A draft to open on the Planner tab (Today's "Continue your plan"); the Planner clears it.
     var pendingDraftId: String?
     /// The part of the Planner tab to scroll to when it next shows; the Planner clears it.
@@ -85,7 +90,9 @@ final class Router {
         case .alerts:
             selectedTab = .watch
             showingAlerts = true
-        case .matchday: showingMatchday = true
+        case .matchday(let item):
+            matchdayFocus = item
+            showingMatchday = true
         case .player(let id, let event): presentedPlayer = PlayerRef(id: id, fromAlert: event != nil)
         }
     }

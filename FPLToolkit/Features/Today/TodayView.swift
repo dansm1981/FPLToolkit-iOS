@@ -234,7 +234,8 @@ struct TodayContent: View {
     }
 
     private func latestMoments(_ live: LiveTeam) -> [LiveTeam.Moment] {
-        Array(live.moments.filter { $0.state != .withdrawn }.suffix(2).reversed())
+        // The server sends moments newest first.
+        Array(live.moments.filter { $0.state != .withdrawn }.prefix(2))
     }
 
     // MARK: Status (only when something needs saying)
@@ -521,12 +522,12 @@ struct GameweekCard: View {
                         .foregroundStyle(ToolkitColor.secondaryText)
                 } else {
                     HStack(alignment: .lastTextBaseline, spacing: 6) {
-                        Text("\(team.total.confirmed)")
+                        Text("\(team.total.estimated)")
                             .font(.system(size: scoreSize, weight: .bold).monospacedDigit())
                             .foregroundStyle(ToolkitColor.primaryText)
                             .minimumScaleFactor(0.6)
                             .lineLimit(1)
-                        Text("pts")
+                        Text(LiveScoreText.unit(status: team.status.rawValue))
                             .font(.subheadline)
                             .foregroundStyle(ToolkitColor.secondaryText)
                     }
@@ -766,21 +767,12 @@ private struct AttentionRow: View {
 }
 
 enum TodayText {
-    static func statusTag(_ team: LiveTeam) -> String {
-        switch team.status {
-        case .finished: "Final"
-        case .awaitingBonus: "Awaiting bonus"
-        case .upcoming: "Not started"
-        default: MatchdayText.status(team.status)
-        }
-    }
+    static func statusTag(_ team: LiveTeam) -> String { MatchdayText.status(team.status) }
 
-    /// "FPL recorded · +3 provisional bonus not included", or "bonus may change".
+    /// "52 confirmed + 3 estimated" (one score convention, Matchday v2 item 10).
     static func recordedLine(_ team: LiveTeam) -> String {
-        if team.total.provisionalBonus > 0 {
-            return "FPL recorded · +\(team.total.provisionalBonus) provisional bonus not included"
-        }
-        return team.status == .finished ? "FPL final score" : "FPL recorded · bonus may change"
+        LiveScoreText.breakdown(estimated: team.total.estimated, provisionalBonus: team.total.provisionalBonus,
+                                status: team.status.rawValue)
     }
 
     static func footer(_ snapshot: Today.Snapshot) -> String {

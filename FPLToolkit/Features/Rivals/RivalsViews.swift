@@ -246,7 +246,7 @@ struct AddRivalView: View {
                             .listRowBackground(ToolkitColor.surface)
                     }
                     if candidates.managers.isEmpty {
-                        Text("Add a mini-league from Team → Your leagues, then add rivals from it here.")
+                        Text("Add a mini-league from Today → Your leagues, then add rivals from it here.")
                             .foregroundStyle(ToolkitColor.secondaryText)
                             .listRowBackground(ToolkitColor.surface)
                     }
@@ -289,7 +289,7 @@ struct AddRivalView: View {
                 Button("Feature") { Task { await store.save(manager.entryId, RivalPatch(featured: true)) } }
                 Button("Not now", role: .cancel) {}
             } message: { _ in
-                Text("Your featured rival shows on Today, and later on Matchday. You can change it any time.")
+                Text("Your featured rival shows on Today and on Matchday. You can change it any time.")
             }
         }
     }

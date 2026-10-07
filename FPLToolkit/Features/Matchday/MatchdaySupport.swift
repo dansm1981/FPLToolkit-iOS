@@ -3,14 +3,18 @@ import Foundation
 /// Words for Matchday. Only phrasing: every fact and judgement comes from the API.
 enum MatchdayText {
     nonisolated static func status(_ status: LiveTeam.Status) -> String {
-        switch status {
-        case .upcoming: "Not started"
-        case .live: "Live"
-        case .between: "Between matches"
-        case .awaitingBonus: "Awaiting bonus"
-        case .finished: "Complete"
-        case .unknown: "Matchday"
+        LiveScoreText.status(status.rawValue)
+    }
+
+    /// "C" for whoever scores as captain now (the vice once the captain can't play), "V" for the
+    /// vice while the captain still counts (Matchday v2 item 10).
+    nonisolated static func role(_ player: LiveTeam.Player, live: LiveTeam) -> String? {
+        guard let acting = live.captainId else {
+            return player.isCaptain ? "C" : player.isViceCaptain ? "V" : nil
         }
+        if player.playerId == acting { return "C" }
+        if player.isViceCaptain { return "V" }
+        return nil
     }
 
     nonisolated static func chip(_ chip: String?) -> String? {

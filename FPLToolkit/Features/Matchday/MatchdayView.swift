@@ -1,13 +1,16 @@
 import SwiftUI
 
 enum MatchdayMode: String, CaseIterable, Identifiable {
-    case team = "Your team", feed = "Live feed", matches = "Matches"
+    case pulse = "Pulse", team = "Your team", feed = "Live feed", matches = "Matches"
     var id: String { rawValue }
+
+    /// v1's tabs, and Matchday v2's (Pulse first; the feed opens from Pulse's "All moments").
+    static func tabs(v2: Bool) -> [MatchdayMode] { v2 ? [.pulse, .team, .matches] : [.team, .feed, .matches] }
 }
 
-/// Matchday (S30/S31; design pack pp.24–25): one score, several clear ways to inspect it. The
-/// FPL-recorded total leads; provisional bonus is kept apart and never added to it. Everything is
-/// the server's (contract §24); this lays it out.
+/// Matchday (S30/S31; design pack pp.24–25): one score, several clear ways to inspect it. The live
+/// score leads (FPL-recorded plus provisional bonus) with what's in it underneath, the same on
+/// Today and the Lock Screen (Matchday v2 item 10). Everything is the server's (contract §24).
 struct MatchdayView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
@@ -31,6 +34,13 @@ struct MatchdayView: View {
     @State private var watched: DevicePrefs.MatchdayPrefs?
     /// A rival opened from Your rivals.
     @State private var pushedRival: Int?
+    /// The feed item a matchday alert was about: the feed opens scrolled to it, highlighted.
+    @State private var focus: String?
+    /// Matchday v2 (Settings → Developer): Pulse first, the feed as "All moments".
+    @AppStorage(MatchdayV2.key) private var v2Stored = false
+    @State private var modeChosen = false
+    @State private var showingAllMoments = false
+    private var v2: Bool { MatchdayV2.isOn(v2Stored) }
 
     static let refreshSeconds: UInt64 = 30
     /// A replay moves several match minutes a second: refresh more often.
@@ -50,14 +60,39 @@ struct MatchdayView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: ToolkitSpace.md) {
-                ResearchTableView(table: table, caption: "Loading your matchday…", retry: reload) { live in
-                    content(live)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                    ResearchTableView(table: table, caption: "Loading your matchday…", retry: reload) { live in
+                        content(live)
+                    }
                 }
+                .padding(.horizontal, 18)
+                .padding(.bottom, ToolkitSpace.section)
             }
-            .padding(.horizontal, 18)
-            .padding(.bottom, ToolkitSpace.section)
+            // An alert's moment: once the feed is showing, scroll it into view.
+            .task(id: "\(focus ?? "")-\(table.current?.loaded != nil)") {
+                guard let focus, table.current?.loaded != nil else { return }
+                try? await Task.sleep(for: .milliseconds(450))
+                withAnimation { proxy.scrollTo(focus, anchor: .center) }
+            }
+        }
+        .onAppear {
+            guard !modeChosen else { return }
+            modeChosen = true
+            if v2 { mode = .pulse }
+        }
+        .onChange(of: v2Stored) { _, _ in
+            if !MatchdayMode.tabs(v2: v2).contains(mode) { mode = v2 ? .pulse : .team }
+        }
+        .onChange(of: appModel.router.matchdayFocus, initial: true) { _, item in
+            guard let item else { return }
+            focus = item
+            if v2 { showingAllMoments = true } else { mode = .feed }
+            appModel.router.matchdayFocus = nil
+        }
+        .navigationDestination(isPresented: $showingAllMoments) {
+            MatchdayAllMoments(live: table.current?.loaded?.value, seen: feedSeen, focus: focus)
         }
         .refreshable {
             await table.refresh()
@@ -93,13 +128,18 @@ struct MatchdayView: View {
             await load()
             // Keep it live while matches are on; the server refreshes every 15 seconds. A replay
             // refreshes throughout.
+            // Before kick-off it refreshes every minute too, so line-ups and kick-off arrive by
+            // themselves (Matchday v2 item 10).
+            var tick = 0
             while !Task.isCancelled {
                 let replaying = LiveReplay.current != nil
                 try? await Task.sleep(nanoseconds: (replaying ? Self.replayRefreshSeconds : Self.refreshSeconds) * 1_000_000_000)
                 guard !Task.isCancelled else { continue }
+                tick += 1
                 if !replaying {
-                    guard let status = table.current?.loaded?.value.status,
-                          [.live, .between, .awaitingBonus].contains(status) else { continue }
+                    guard let status = table.current?.loaded?.value.status else { continue }
+                    let live = [.live, .between, .awaitingBonus].contains(status)
+                    guard live || (status == .upcoming && tick.isMultiple(of: 2)) else { continue }
                 }
                 await table.refresh()
                 remember()
@@ -169,7 +209,8 @@ struct MatchdayView: View {
         Text("GW\(live.gameweek) · \(MatchdayText.status(live.status))")
             .font(.subheadline)
             .foregroundStyle(ToolkitColor.secondaryText)
-        MatchdayScoreHero(live: live, updated: updated,
+        MatchdayScoreHero(live: live, updated: updated, stale: stale,
+                          pulseLine: v2 ? pulseLine(live) : nil,
                           canFollow: Self.canFollow(live.status),
                           onFollow: { sheet = .follow })
         if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
@@ -182,11 +223,16 @@ struct MatchdayView: View {
             }
         }
         Picker("Show", selection: $mode) {
-            ForEach(MatchdayMode.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(MatchdayMode.tabs(v2: v2)) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented)
         .padding(.vertical, 4)
         switch mode {
+        case .pulse:
+            MatchdayPulse(live: live,
+                          onPlayer: { sheet = .points($0) },
+                          onRival: { pushedRival = $0 },
+                          onAllMoments: { showingAllMoments = true })
         case .team:
             MatchdayTeamRows(live: live, players: live.squad.filter { $0.position <= 11 }) { sheet = .points($0) }
             SectionHeader(title: live.chip == "bboost" ? "Bench (Bench Boost)" : "Bench")
@@ -201,17 +247,17 @@ struct MatchdayView: View {
                                     onSettings: { showingWatchSettings = true })
         case .feed:
             if let feed = live.feed {
-                MatchdayFeed(live: live, feed: feed, seen: feedSeen)
+                MatchdayFeed(live: live, feed: feed, seen: feedSeen, focus: focus)
             } else {
                 MatchdayMoments(live: live)
             }
         case .matches:
-            MatchdayFixtures(live: live)
+            MatchdayFixtures(live: live, refreshed: updated)
         }
         if live.total.provisionalBonus > 0 {
             Button { sheet = .estimates } label: {
                 HStack {
-                    Text("Estimated additions")
+                    Text("Estimated bonus")
                         .foregroundStyle(ToolkitColor.secondaryText)
                     Spacer()
                     Text("+\(live.total.provisionalBonus) bonus")
@@ -225,9 +271,20 @@ struct MatchdayView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Estimated additions: \(live.total.provisionalBonus) provisional bonus, not included in the score")
+            .accessibilityLabel("Estimated bonus: \(live.total.provisionalBonus), included in the live score")
             .padding(.top, ToolkitSpace.sm)
         }
+    }
+
+    /// Matchday v2's hero line: who's live, and the gap to your featured rival.
+    private func pulseLine(_ live: LiveTeam) -> String? {
+        guard [.live, .between, .awaitingBonus].contains(live.status) else { return nil }
+        var parts = ["\(live.playing) live · \(live.toPlay) to play"]
+        if let featured = live.rivals?.featured,
+           let gap = live.rivals?.rows.first(where: { $0.entryId == featured.entryId })?.gapText {
+            parts.append(gap)
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func benchTitle(_ live: LiveTeam) -> String {
@@ -309,14 +366,19 @@ struct MatchdayView: View {
     private var updated: Date? {
         table.current?.loaded?.meta.freshness?.first { $0.source == .livePoints }?.asOf
     }
+
+    /// The server's live points are older than they should be (Matchday v2 item 10).
+    private var stale: Bool {
+        table.current?.loaded?.meta.freshness?.first { $0.source == .livePoints }?.state == .stale
+    }
 }
 
 enum MatchdayCopy {
-    static let estimates = "Provisional bonus is Toolkit's estimate from the live BPS, kept apart from the FPL-recorded score. When FPL records the bonus, the estimate goes rather than being added a second time. Automatic subs are shown as they stand until the matches finish."
+    static let estimates = "Provisional bonus is Toolkit's estimate from the live BPS. The live score includes it and says how much (\"52 confirmed + 3 estimated\"). When FPL records the bonus, the estimate becomes confirmed rather than being added a second time. Automatic subs are shown as they stand until the matches finish."
     static let sources = """
     FPL recorded: the points FPL has published, including the captain's multiplier and any transfer cost. FPL can still correct them.
 
-    Toolkit estimate: provisional bonus and automatic subs as they stand, never added to the recorded score.
+    Live score: FPL recorded plus Toolkit's estimate of the bonus to come, shown as "52 confirmed + 3 estimated". Automatic subs are shown as they stand.
 
     Football context: match events and stats from our data provider. They explain what happened; they're never points.
 
@@ -324,11 +386,49 @@ enum MatchdayCopy {
     """
 }
 
+// MARK: - All moments (Matchday v2)
+
+/// The whole live feed, opened from Pulse's "All moments" or a matchday alert.
+struct MatchdayAllMoments: View {
+    let live: LiveTeam?
+    let seen: Set<String>?
+    let focus: String?
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: ToolkitSpace.md) {
+                    if let live {
+                        if let feed = live.feed {
+                            MatchdayFeed(live: live, feed: feed, seen: seen, focus: focus)
+                        } else {
+                            MatchdayMoments(live: live)
+                        }
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, ToolkitSpace.section)
+            }
+            .task(id: focus) {
+                guard let focus else { return }
+                try? await Task.sleep(for: .milliseconds(450))
+                withAnimation { proxy.scrollTo(focus, anchor: .center) }
+            }
+        }
+        .toolkitScreen()
+        .navigationTitle("All moments")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 // MARK: - Score
 
 struct MatchdayScoreHero: View {
     let live: LiveTeam
     let updated: Date?
+    var stale = false
+    /// Matchday v2: "4 live · 3 to play · 6 pts ahead of Andy".
+    var pulseLine: String?
     let canFollow: Bool
     let onFollow: () -> Void
     @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 52
@@ -338,10 +438,10 @@ struct MatchdayScoreHero: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .lastTextBaseline) {
                     HStack(alignment: .lastTextBaseline, spacing: 6) {
-                        Text("\(live.total.confirmed)")
+                        Text("\(live.total.estimated)")
                             .font(.system(size: scoreSize, weight: .bold).monospacedDigit())
                             .foregroundStyle(ToolkitColor.primaryText)
-                        Text("pts")
+                        Text(LiveScoreText.unit(status: live.status.rawValue))
                             .font(.subheadline)
                             .foregroundStyle(ToolkitColor.secondaryText)
                     }
@@ -365,6 +465,12 @@ struct MatchdayScoreHero: View {
                         .accessibilityLabel("Follow on your Lock Screen")
                     }
                 }
+                if let pulseLine {
+                    Text(pulseLine)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if !details.isEmpty {
                     Text(details)
                         .font(.footnote)
@@ -377,6 +483,14 @@ struct MatchdayScoreHero: View {
 
     @ViewBuilder private var stateTag: some View {
         switch live.status {
+        case .live where stale, .between where stale, .awaitingBonus where stale:
+            // Never a green "playing" over data that has stopped arriving.
+            Label("Updates delayed", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(ToolkitColor.warning)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(ToolkitColor.warningFill, in: RoundedRectangle(cornerRadius: 8))
         case .live, .between:
             HStack(spacing: 5) {
                 Circle().frame(width: 6, height: 6)
@@ -393,15 +507,13 @@ struct MatchdayScoreHero: View {
     }
 
     private var recordedLine: String {
-        var line: String
-        switch live.status {
-        case .finished: line = "FPL final score"
-        case .awaitingBonus: line = "FPL recorded · bonus to come"
-        case .upcoming: line = "\(live.toPlay) players to play"
-        default: line = "FPL recorded · bonus may change"
-        }
-        if let updated, live.status == .live || live.status == .between {
-            line += " · \(updated.formatted(date: .omitted, time: .shortened))"
+        var line = live.status == .upcoming
+            ? "\(live.toPlay) players to play"
+            : LiveScoreText.breakdown(estimated: live.total.estimated, provisionalBonus: live.total.provisionalBonus,
+                                      status: live.status.rawValue)
+        if let updated, [.live, .between, .awaitingBonus].contains(live.status) {
+            line += stale ? " · last update \(updated.formatted(date: .omitted, time: .shortened))"
+                          : " · \(updated.formatted(date: .omitted, time: .shortened))"
         }
         return line
     }
@@ -557,7 +669,7 @@ struct MatchdayTeamRows: View {
                 if let summary = live.player(player.playerId) {
                     Button { onSelect(player.playerId) } label: {
                         PlayerListRow(player: summary,
-                                      role: player.isCaptain ? "C" : player.isViceCaptain ? "V" : nil,
+                                      role: MatchdayText.role(player, live: live),
                                       detail: MatchdayRowText.state(player, live: live),
                                       value: "\(player.points * max(player.multiplier, 1))",
                                       valueDetail: player.provisionalBonus > 0 ? "+\(player.provisionalBonus * max(player.multiplier, 1)) est." : nil,
@@ -842,7 +954,7 @@ struct MatchdayMoments: View {
                 .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
         } else {
             VStack(spacing: 0) {
-                ForEach(Array(live.moments.reversed().enumerated()), id: \.element.id) { index, m in
+                ForEach(Array(live.moments.enumerated()), id: \.element.id) { index, m in
                     if index > 0 { Divider().overlay(ToolkitColor.border) }
                     MomentRow(moment: m, live: live)
                 }
@@ -906,6 +1018,8 @@ private struct MomentRow: View {
 struct MatchdayFixtures: View {
     @Environment(AppModel.self) private var appModel
     let live: LiveTeam
+    /// When the live data last arrived: an open match's stats reload with it.
+    var refreshed: Date?
     /// The match opened to show its stats (Dan, 29 Sep: "click a particular game").
     @State private var expanded: Int?
 
@@ -934,7 +1048,8 @@ struct MatchdayFixtures: View {
                         .accessibilityAddTraits(expanded == f.id ? .isSelected : [])
                     }
                     if expanded == f.id {
-                        MatchStatsPanel(fixtureId: f.id, gameweek: live.gameweek, squad: Set(live.squad.map(\.playerId)))
+                        MatchStatsPanel(fixtureId: f.id, gameweek: live.gameweek, squad: Set(live.squad.map(\.playerId)),
+                                        refreshed: refreshed)
                             .padding(.bottom, ToolkitSpace.md)
                     }
                 }

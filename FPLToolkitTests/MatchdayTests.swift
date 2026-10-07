@@ -43,14 +43,14 @@ struct MatchdayTests {
         let goal = try #require(live.moments.first { $0.kind == .goal })
         #expect(MatchdayText.moment(goal, live: live).hasSuffix("scored"))
         #expect(MatchdayText.status(.awaitingBonus) == "Awaiting bonus")
-        #expect(MatchdayText.status(.finished) == "Complete")
+        #expect(MatchdayText.status(.finished) == "Final")
         #expect(MatchdayText.chip("3xc") == "Triple Captain" && MatchdayText.chip(nil) == nil)
         #expect(MatchdayText.stat("defensive_contribution", value: 13) == "DEFCON (13 contributions)")
         #expect(MatchdayText.stat("minutes", value: 90) == "90 minutes")
     }
 
     @Test func matchdayLink() throws {
-        #expect(DeepLink(url: try #require(URL(string: "fpltoolkit://matchday"))) == .matchday)
+        #expect(DeepLink(url: try #require(URL(string: "fpltoolkit://matchday"))) == .matchday(item: nil))
         let repo = LiveRepository(client: .production, cache: .shared)
         #expect(repo.team(entryId: 22615).base.path == "live/team/22615" && repo.team(entryId: 22615).base.query.isEmpty)
         #expect(repo.team(entryId: 22615, gw: 5).base.query == [URLQueryItem(name: "gw", value: "5")])
