@@ -13,9 +13,15 @@ struct MatchdayPulse: View {
     let onNextPoints: () -> Void
     /// Opens a moment: what it did to your score and your rivals (phase 2).
     var onMoment: (String) -> Void = { _ in }
+    /// Opens the Deadline reveal (your own team only).
+    var onReveal: (() -> Void)?
 
     var body: some View {
         if let pulse = live.pulse {
+            // The Deadline reveal: the main thing between the deadline and the first kick-off.
+            if let onReveal, live.status == .upcoming {
+                DeadlineRevealLink(gameweek: live.gameweek, prominent: true, open: onReveal)
+            }
             // Matchday v3 (Dan, 7 Oct): your rival race first, then what just happened and what it
             // did to you, then what could happen next.
             if let race = pulse.race {
@@ -50,6 +56,9 @@ struct MatchdayPulse: View {
             }
             liveNow
             if pulse.race == nil { rivalCard }
+            if let onReveal, live.status != .upcoming {
+                DeadlineRevealLink(gameweek: live.gameweek, open: onReveal)
+            }
             LiveLeaguesSection(leagues: live.leagues ?? [])
         } else {
             Text("Pulse needs the latest server update. Your team, the feed and matches still work as before.")

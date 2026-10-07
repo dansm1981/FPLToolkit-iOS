@@ -48,6 +48,8 @@ struct TeamFoundView: View {
         }
         .safeAreaInset(edge: .bottom) {
             Button("See what matters") {
+                // Today asks for notifications once, straight after connecting (Dan, 7 Oct).
+                UserDefaults.standard.set(true, forKey: TodayView.askNotificationsKey)
                 appModel.connect(entryId: found.entryId)
             }
             .buttonStyle(ToolkitPrimaryButtonStyle())

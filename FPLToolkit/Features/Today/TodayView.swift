@@ -4,6 +4,8 @@ import SwiftUI
 /// season's standing and money, then the next move, research and leagues. Healthy checks aren't
 /// repeated here; their detail lives in Settings › Data & sources.
 struct TodayView: View {
+    /// Set by onboarding: Today offers notifications once, as soon as it first shows.
+    static let askNotificationsKey = "onboarding.askNotifications"
     @Environment(AppModel.self) private var appModel
     @Environment(\.scenePhase) private var scenePhase
     let entryId: Int
@@ -119,6 +121,14 @@ struct TodayView: View {
                 await refreshIfStale()
             }
         }
+        .task {
+            // Straight after connecting a team: one explanation, then iOS's prompt (Dan, 7 Oct).
+            guard UserDefaults.standard.bool(forKey: Self.askNotificationsKey) else { return }
+            UserDefaults.standard.removeObject(forKey: Self.askNotificationsKey)
+            if appModel.anyPushFeature, appModel.push.permission == .notDetermined {
+                showingAlertsPrimer = true
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await refreshIfStale() } }
         }
@@ -187,6 +197,13 @@ struct TodayContent: View {
                 ReplayBanner(replay: replay) {
                     LiveReplay.end()
                     Task { await live?.load(bypassCache: true) }
+                }
+            }
+
+            // The Deadline reveal between the deadline and the first kick-off (tasks/deadline-reveal.md).
+            if let live = live?.loaded?.value, live.status == .upcoming, live.replay == nil {
+                DeadlineRevealLink(gameweek: live.gameweek, prominent: true) {
+                    appModel.router.open(.reveal)
                 }
             }
 

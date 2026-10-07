@@ -39,6 +39,9 @@ struct NotificationSettingsView: View {
                         toggle("Deadline: 24 hours before", "With how many of your players are flagged", \.notifications.deadline24h, prefs)
                         toggle("Deadline: 3 hours before", "With how many of your players are flagged", \.notifications.deadline3h, prefs)
                     }
+                    if f?.deadlineReveal == true {
+                        toggle("Deadline reveal", "Once a gameweek, when your rivals' and leagues' transfers, chips and captains are in", \.notifications.revealOn, prefs)
+                    }
                 } header: {
                     Text("Alerts")
                 } footer: {

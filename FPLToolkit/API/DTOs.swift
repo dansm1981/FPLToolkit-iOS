@@ -104,6 +104,8 @@ struct Bootstrap: Decodable, Sendable {
             let deadlineReminders: Bool
             /// Matchday alerts (happy-backend-pal#85); nil from older servers.
             var matchdayAlerts: Bool?
+            /// The Deadline reveal push (happy-backend-pal#92).
+            var deadlineReveal: Bool?
         }
         let minSupportedAppVersion: String
         let webBaseUrl: String
@@ -496,6 +498,13 @@ struct DevicePrefs: Codable, Sendable, Equatable {
         var deadline3h: Bool
         /// Matchday alerts (happy-backend-pal#85); nil from older servers.
         var matchday: MatchdayAlerts?
+        /// The Deadline reveal push (happy-backend-pal#92); nil from older servers.
+        var reveal: Bool?
+        /// The reveal switch as the settings screen reads it (on unless turned off).
+        var revealOn: Bool {
+            get { reveal ?? true }
+            set { reveal = newValue }
+        }
     }
     /// Matchday alerts: a master switch, then one switch per kind (contract §39).
     struct MatchdayAlerts: Codable, Sendable, Equatable {
@@ -518,8 +527,8 @@ struct DevicePrefs: Codable, Sendable, Equatable {
         var captain: Bool = true
         var rank: Bool = true
 
-        /// The server's defaults: off, with the Normal preset ready for when they're turned on.
-        static let standard = MatchdayAlerts(enabled: false, lineups: true, goals: true, assists: true,
+        /// The server's defaults: on (once notifications are allowed), with the Normal preset.
+        static let standard = MatchdayAlerts(enabled: true, lineups: true, goals: true, assists: true,
                                              cards: true, subs: false, defcon: false, final: true)
 
         private enum CodingKeys: String, CodingKey {

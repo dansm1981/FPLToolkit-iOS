@@ -51,6 +51,8 @@ struct NotificationPrimerView: View {
                 .accessibilityLabel("Example notification: \(example.title). \(example.body)")
 
                 VStack(spacing: 0) {
+                    point("soccerball", "Your team, live", "Goals, assists and your rival on matchdays, and who did what after each deadline")
+                    Divider().overlay(ToolkitColor.border)
                     point("tshirt", "Your players only", "Your squad and the players you watch")
                     Divider().overlay(ToolkitColor.border)
                     point("bell", "You choose the alerts", "No general football news feed")
@@ -92,6 +94,7 @@ struct NotificationPrimerView: View {
     /// An example built from what's actually switched on, never a real player.
     private var example: (title: String, body: String) {
         let f = appModel.pushFeatures
+        if f?.matchdayAlerts == true { return ("Your captain scores", "+10 pts (C) · +6 vs your rival · Rank ↑18k") }
         if f?.availabilityAlerts == true { return ("A watched player's status changed", "Tap to see the latest FPL news and when it was checked.") }
         if f?.priceAlerts == true { return ("A watched player may rise tonight", "Tap to see how close he is to the threshold.") }
         return ("Deadline in 3 hours", "Check your team before the deadline.")
