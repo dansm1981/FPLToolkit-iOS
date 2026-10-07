@@ -145,6 +145,8 @@ enum MatchdayText {
         case .cleanSheetLost: "shield.slash"
         case .bonusPosition: "star.leadinghalf.filled"
         case .bonus: "star.fill"
+        case .captainChange: "c.circle.fill"
+        case .autoSub: "arrow.left.arrow.right.circle"
         case .unknown: "circle"
         }
     }

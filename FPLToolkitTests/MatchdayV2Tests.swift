@@ -79,9 +79,24 @@ struct MatchdayV2Tests {
         var custom = standard
         custom.saves = true
         #expect(custom.preset == nil)
-        // An older server's prefs (no new keys) read as the Normal preset.
+        // Matchday v3: Normal pushes the big events; DEFCON and bonus are in Everything.
+        #expect(!standard.defcon && !standard.bonus && standard.penalties && standard.captain && standard.rank)
+        #expect(!essential.rank && essential.penalties && essential.captain)
+        #expect(everything.defcon && everything.bonus)
+        // Prefs saved before v3 (DEFCON on, no new keys) read as their own choice.
         let old = try JSONDecoder().decode(A.self, from: Data(#"{"enabled": true, "lineups": true, "goals": true, "assists": true, "cards": true, "subs": false, "defcon": true, "final": true}"#.utf8))
-        #expect(old.enabled && old.preset == .normal)
+        #expect(old.enabled && old.preset == nil && old.penalties)
+    }
+
+    @Test func rankJourneyAndRivalryResult() throws {
+        let rank = try APIClient.decode(LiveTeam.Pulse.Recap.Final.Rank.self, from: Data("""
+        {"before": 63100, "after": 41200, "text": "~41.2k", "beforeText": "~63.1k", "movementText": "↑21.9k"}
+        """.utf8))
+        #expect(FinalRecapCard.rankLine(rank) == "~63.1k → ~41.2k ↑21.9k")
+        #expect(FinalRecapCard.rivalryResult(6) == "RIVALRY WON")
+        #expect(FinalRecapCard.rivalryResult(-2) == "RIVALRY LOST")
+        #expect(FinalRecapCard.rivalryResult(0) == "RIVALRY DRAWN")
+        #expect(RankText.spokenChange("↓8,420") == "rank down 8,420")
     }
 
     @Test func recapsDecodeAndRead() throws {

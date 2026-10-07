@@ -707,7 +707,7 @@ struct MatchdayAlertsCard: View {
                     )) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Matchday alerts").font(.headline)
-                            Text("Goals, assists, red cards, line-ups and your final score, for your starting XI.")
+                            Text("The big moments for your team: goals, assists, red cards, penalties, line-up surprises, your rival and recaps.")
                                 .font(.subheadline)
                                 .foregroundStyle(ToolkitColor.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)

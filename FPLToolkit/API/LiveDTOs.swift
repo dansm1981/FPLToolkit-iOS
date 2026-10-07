@@ -175,6 +175,8 @@ struct LiveTeam: Decodable, Sendable {
             case subbedOff, subbedOn
             case defcon, save, sixtyMinutes, cleanSheet, cleanSheetLost
             case bonusPosition, bonus
+            /// Matchday v3: the vice-captain takes the armband; an automatic substitution.
+            case captainChange, autoSub
             case unknown
             static let fallback = Self.unknown
         }
@@ -396,9 +398,20 @@ struct LiveTeam: Decodable, Sendable {
                 struct Next: Decodable, Sendable, Hashable {
                     let kickoff: Date
                     let playerIds: [Int]
+                    /// "Next: Liverpool v Chelsea · 17:30", "You: Palmer", "Andy: Salah (C)" (v3).
+                    var lines: [String]?
+                }
+                /// The spell's top scorer for you: "Gabriel +9" (v3).
+                struct Star: Decodable, Sendable, Hashable {
+                    let playerId: Int
+                    let points: Int
+                    let text: String
                 }
                 let start: Date
                 let title: String
+                /// "15:00 wrap" (v3).
+                var label: String?
+                var star: Star?
                 let points: Int
                 /// What the spell did to your estimated overall rank, "↑18k" (phase 3).
                 var rankChangeText: String?
@@ -428,6 +441,8 @@ struct LiveTeam: Decodable, Sendable {
                     let after: Int
                     /// "~327k"
                     let text: String
+                    /// "~345k" (v3).
+                    var beforeText: String?
                     /// "↑18k"
                     let movementText: String?
                 }
@@ -503,6 +518,8 @@ struct LiveTeam: Decodable, Sendable {
         let movement: Int?
         /// "~327k"
         let text: String
+        /// "~345k": after last gameweek, shown the same way (Matchday v3).
+        var previousText: String?
         /// "↑18k"
         let movementText: String?
         /// Sampled managers behind it.

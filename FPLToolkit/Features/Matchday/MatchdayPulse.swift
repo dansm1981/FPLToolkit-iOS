@@ -23,7 +23,7 @@ struct MatchdayPulse: View {
                                    onOpen: { onRival(race.entryId) }, onSwing: onMoment)
             }
             if let final = pulse.recap?.final {
-                FinalRecapCard(recap: final, live: live, onMoment: onMoment)
+                FinalRecapCard(recap: final, live: live, swing: pulse.race?.biggestSwing?.text, onMoment: onMoment)
             } else if let spell = pulse.recap?.spell {
                 SpellRecapCard(recap: spell, live: live, onMoment: onMoment)
             }
@@ -778,8 +778,9 @@ struct SpellRecapCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(recap.title)
-                .font(.subheadline.weight(.semibold))
+            // "15:00 WRAP" (Matchday v3 item 8); older servers send the title only.
+            Text(recap.label?.uppercased() ?? recap.title)
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(ToolkitColor.secondaryText)
             Text("\(recap.points < 0 ? "−" : "+")\(abs(recap.points)) pts")
                 .font(.title.weight(.bold).monospacedDigit())
@@ -795,7 +796,11 @@ struct SpellRecapCard: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(rival.swing > 0 ? ToolkitColor.positive : ToolkitColor.warning)
             }
-            if let best = recap.best {
+            if let star = recap.star {
+                Label(star.text, systemImage: "star.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ToolkitColor.primaryText)
+            } else if let best = recap.best {
                 Button { onMoment(best.id) } label: {
                     Label("Best moment: \(best.text) · \(best.detail)", systemImage: "star.fill")
                         .font(.subheadline)
@@ -804,7 +809,16 @@ struct SpellRecapCard: View {
                 }
                 .buttonStyle(.plain)
             }
-            if let next = recap.next {
+            if let lines = recap.next?.lines, !lines.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(lines, id: \.self) { line in
+                        Text(line)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .font(.footnote)
+                .foregroundStyle(ToolkitColor.secondaryText)
+            } else if let next = recap.next {
                 let names = next.playerIds.compactMap { live.player($0)?.webName }
                 Text("Next up \(next.kickoff.formatted(date: .omitted, time: .shortened))\(names.isEmpty ? "" : ": \(names.joined(separator: ", "))")")
                     .font(.footnote)
@@ -822,6 +836,8 @@ struct SpellRecapCard: View {
 struct FinalRecapCard: View {
     let recap: LiveTeam.Pulse.Recap.Final
     let live: LiveTeam
+    /// The biggest swing against your rival: "Gabriel clean sheet +6 to you" (Matchday v3).
+    var swing: String?
     let onMoment: (String) -> Void
     @State private var shareImage: Image?
 
@@ -849,8 +865,11 @@ struct FinalRecapCard: View {
                 }
                 .buttonStyle(.plain)
             }
+            if let swing {
+                row("Biggest swing", swing)
+            }
             if let rank = recap.rank {
-                row("Overall rank (estimate)", [rank.text, rank.movementText].compactMap { $0 }.joined(separator: " "))
+                row("Overall rank (estimate)", FinalRecapCard.rankLine(rank))
             }
             if let gain = recap.biggestGain, let name = live.player(gain.playerId)?.webName {
                 row("Biggest gain", "\(name) · \(gain.points) pts")
@@ -873,6 +892,17 @@ struct FinalRecapCard: View {
         .task(id: recap) { shareImage = render() }
     }
 
+    /// "~63k → ~41k ↑22k"
+    nonisolated static func rankLine(_ rank: LiveTeam.Pulse.Recap.Final.Rank) -> String {
+        let journey = rank.beforeText.map { "\($0) → \(rank.text)" } ?? rank.text
+        return [journey, rank.movementText].compactMap { $0 }.joined(separator: " ")
+    }
+
+    /// "RIVALRY WON", "RIVALRY LOST", "RIVALRY DRAWN" (the share card adds a trophy when won).
+    nonisolated static func rivalryResult(_ margin: Int) -> String {
+        margin > 0 ? "RIVALRY WON" : margin < 0 ? "RIVALRY LOST" : "RIVALRY DRAWN"
+    }
+
     nonisolated static func rivalLine(_ rival: LiveTeam.Pulse.Recap.Final.Rival) -> String {
         let score = "You \(rival.you) – \(rival.them) \(rival.name)"
         switch rival.margin {
@@ -892,7 +922,7 @@ struct FinalRecapCard: View {
     }
 
     @MainActor private func render() -> Image? {
-        let renderer = ImageRenderer(content: ShareCard(recap: recap, decided: recap.decided))
+        let renderer = ImageRenderer(content: ShareCard(recap: recap, decided: recap.decided, swing: swing))
         renderer.scale = 3
         return renderer.uiImage.map { Image(uiImage: $0) }
     }
@@ -903,9 +933,13 @@ struct FinalRecapCard: View {
 struct ShareCard: View {
     let recap: LiveTeam.Pulse.Recap.Final
     let decided: LiveTeam.Pulse.Recap.Moment?
+    /// The biggest swing against your rival (Matchday v3 item 9).
+    var swing: String?
+
+    private let green = Color(red: 0.48, green: 0.83, blue: 0.65)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("FPLToolkit").font(.system(size: 18, weight: .bold))
                 Spacer()
@@ -913,23 +947,47 @@ struct ShareCard: View {
             }
             .foregroundStyle(.white.opacity(0.8))
             Spacer(minLength: 0)
-            Text("\(recap.points) pts")
-                .font(.system(size: 64, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
             if let rival = recap.rival {
-                Text(FinalRecapCard.rivalLine(rival))
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.48, green: 0.83, blue: 0.65))
-            }
-            if let rank = recap.rank {
-                Text("Est. rank \([rank.text, rank.movementText].compactMap { $0 }.joined(separator: " "))")
-                    .font(.system(size: 18, weight: .semibold))
+                // The rivalry result (Dan's "DAN 74 — 68 ANDY · RIVALRY WON").
+                // A fixed-size picture: the score shrinks to one line rather than wrapping.
+                Text("YOU \(rival.you) — \(rival.them) \(rival.name.uppercased())")
+                    .font(.system(size: 38, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.4)
+                HStack(spacing: 8) {
+                    Text(FinalRecapCard.rivalryResult(rival.margin))
+                    if rival.margin > 0 { Image(systemName: "trophy.fill") }
+                }
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(rival.margin >= 0 ? green : Color(red: 0.98, green: 0.78, blue: 0.45))
+                if let swing {
+                    Text("Biggest swing: \(swing)")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                if let rank = recap.rank {
+                    Text("Rank: \(FinalRecapCard.rankLine(rank))")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                Text("GW score: \(recap.points)")
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.85))
-            }
-            if let decided {
-                Text("\(decided.text) · \(decided.detail)")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.white.opacity(0.85))
+            } else {
+                Text("\(recap.points) pts")
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                if let rank = recap.rank {
+                    Text("Rank: \(FinalRecapCard.rankLine(rank))")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                if let decided {
+                    Text("\(decided.text) · \(decided.detail)")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
             }
             Spacer(minLength: 0)
             Text("Every kick. What it means for you.")

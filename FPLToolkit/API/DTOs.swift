@@ -509,17 +509,22 @@ struct DevicePrefs: Codable, Sendable, Equatable {
         var final: Bool
         /// Matchday v2 phase 2 (happy-backend-pal#88): bonus, rival lead changes, save points,
         /// clean sheets lost. Older servers don't send them: the Normal preset's values stand in.
-        var bonus: Bool = true
+        var bonus: Bool = false
         var rivals: Bool = true
         var saves: Bool = false
         var cleanSheets: Bool = false
+        /// Matchday v3: penalties saved or missed, the captain changing, big rank moves.
+        var penalties: Bool = true
+        var captain: Bool = true
+        var rank: Bool = true
 
         /// The server's defaults: off, with the Normal preset ready for when they're turned on.
         static let standard = MatchdayAlerts(enabled: false, lineups: true, goals: true, assists: true,
-                                             cards: true, subs: false, defcon: true, final: true)
+                                             cards: true, subs: false, defcon: false, final: true)
 
         private enum CodingKeys: String, CodingKey {
             case enabled, lineups, goals, assists, cards, subs, defcon, final, bonus, rivals, saves, cleanSheets
+            case penalties, captain, rank
         }
 
         init(enabled: Bool, lineups: Bool, goals: Bool, assists: Bool, cards: Bool, subs: Bool, defcon: Bool, final: Bool) {
@@ -548,6 +553,9 @@ struct DevicePrefs: Codable, Sendable, Equatable {
             rivals = try c.decodeIfPresent(Bool.self, forKey: .rivals) ?? s.rivals
             saves = try c.decodeIfPresent(Bool.self, forKey: .saves) ?? s.saves
             cleanSheets = try c.decodeIfPresent(Bool.self, forKey: .cleanSheets) ?? s.cleanSheets
+            penalties = try c.decodeIfPresent(Bool.self, forKey: .penalties) ?? s.penalties
+            captain = try c.decodeIfPresent(Bool.self, forKey: .captain) ?? s.captain
+            rank = try c.decodeIfPresent(Bool.self, forKey: .rank) ?? s.rank
         }
 
         /// Dan's presets (7 Oct): Essential, Normal (the default), Everything.
@@ -557,18 +565,21 @@ struct DevicePrefs: Codable, Sendable, Equatable {
 
             /// The kinds a preset switches on; the rest go off.
             var kinds: Set<WritableKeyPath<MatchdayAlerts, Bool>> {
-                let essential: Set<WritableKeyPath<MatchdayAlerts, Bool>> = [\.goals, \.assists, \.cards, \.final]
-                let normal = essential.union([\.lineups, \.defcon, \.bonus, \.rivals])
+                // Matchday v3 (Dan, 7 Oct): push the big events; the rest live in Matchday.
+                let essential: Set<WritableKeyPath<MatchdayAlerts, Bool>> = [\.goals, \.assists, \.cards, \.final,
+                                                                            \.penalties, \.captain]
+                let normal = essential.union([\.lineups, \.rivals, \.rank])
                 switch self {
                 case .essential: return essential
                 case .normal: return normal
-                case .everything: return normal.union([\.subs, \.saves, \.cleanSheets])
+                case .everything: return normal.union([\.defcon, \.bonus, \.subs, \.saves, \.cleanSheets])
                 }
             }
         }
 
         static var allKinds: [WritableKeyPath<MatchdayAlerts, Bool>] {
-            [\.lineups, \.goals, \.assists, \.cards, \.subs, \.defcon, \.bonus, \.final, \.rivals, \.saves, \.cleanSheets]
+            [\.lineups, \.goals, \.assists, \.cards, \.subs, \.defcon, \.bonus, \.final, \.rivals, \.saves, \.cleanSheets,
+             \.penalties, \.captain, \.rank]
         }
 
         /// The preset these switches match, or nil when they've been chosen one by one.

@@ -73,8 +73,11 @@ struct NotificationSettingsView: View {
                                 matchdayToggle("Goals", "Once FPL confirms them, with your points", \.goals, prefs)
                                 matchdayToggle("Assists", "Once FPL confirms them, with your points", \.assists, prefs)
                                 matchdayToggle("Red cards", "Once FPL confirms them", \.cards, prefs)
-                                matchdayToggle("Final score", "When FPL confirms the gameweek", \.final, prefs)
-                                matchdayToggle("Line-ups", "Who of your XI starts, about an hour before kick-off", \.lineups, prefs)
+                                matchdayToggle("Penalties", "A penalty saved or missed by one of your players", \.penalties, prefs)
+                                matchdayToggle("Captain changes", "When your vice-captain takes the armband", \.captain, prefs)
+                                matchdayToggle("Recaps and final score", "After each wave of matches, and when FPL confirms the gameweek", \.final, prefs)
+                                matchdayToggle("Line-up surprises", "When one of your XI isn't starting", \.lineups, prefs)
+                                matchdayToggle("Big rank moves", "When your estimated rank moves 10% or more", \.rank, prefs)
                                 matchdayToggle("DEFCON", "When one of your players reaches it", \.defcon, prefs)
                                 matchdayToggle("Bonus", "When FPL confirms your players' bonus", \.bonus, prefs)
                                 matchdayToggle("Rival lead changes", "When your featured rival overtakes you, or you them", \.rivals, prefs)
@@ -173,9 +176,9 @@ struct NotificationSettingsView: View {
 
     private func presetDetail(_ preset: DevicePrefs.MatchdayAlerts.Preset?) -> String {
         switch preset {
-        case .essential: "Goals, assists, red cards and your final score."
-        case .normal: "Adds line-ups, DEFCON, bonus and rival lead changes."
-        case .everything: "Adds substitutions, saves and clean sheets lost."
+        case .essential: "Goals, assists, red cards, penalties, your captain changing, and recaps."
+        case .normal: "Adds line-up surprises, rival lead changes and big rank moves. The rest stays in Matchday."
+        case .everything: "Adds DEFCON, bonus, substitutions, saves and clean sheets lost."
         case nil: "Your own choice of alerts."
         }
     }

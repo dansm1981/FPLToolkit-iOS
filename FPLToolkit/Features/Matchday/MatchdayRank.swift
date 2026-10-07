@@ -2,30 +2,31 @@ import SwiftUI
 
 // MARK: - Matchday v2 phase 3: rank, win probability, leagues
 
-/// "Est. rank ~327k ↑18k" under the live score (Dan's concept): always called an estimate, with
-/// how it's worked out a tap away. The figures and words are the server's (`rank` on /live/team).
+/// The live rank under the score (Dan's concept; Matchday v3 item 5 gives it a bigger stage):
+/// "Estimated live rank · ~42.8k → ~28.2k ↑14.6k", always called an estimate, with how it's worked
+/// out a tap away. The figures and words are the server's (`rank` on /live/team).
 struct MatchdayRankLine: View {
     let rank: LiveTeam.Rank
     @State private var explaining = false
 
     var body: some View {
         Button { explaining = true } label: {
-            // One Text, so it wraps as a sentence at large sizes.
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Group {
-                    if let move = rank.movementText {
-                        Text("Est. rank \(rank.text) \(Text(move).foregroundStyle(RankText.colour(rank.movement)))")
-                    } else {
-                        Text("Est. rank \(rank.text)")
-                    }
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("Estimated live rank")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.secondaryText)
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(ToolkitColor.link)
+                        .accessibilityHidden(true)
                 }
-                .foregroundStyle(ToolkitColor.primaryText)
-                .fixedSize(horizontal: false, vertical: true)
-                Image(systemName: "info.circle")
-                    .foregroundStyle(ToolkitColor.link)
-                    .accessibilityHidden(true)
+                // One Text, so it wraps as a sentence at large sizes.
+                RankText.journey(rank)
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(ToolkitColor.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .font(.subheadline.weight(.semibold).monospacedDigit())
             .frame(minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
         }
@@ -41,6 +42,13 @@ struct MatchdayRankLine: View {
 }
 
 enum RankText {
+    /// "~42.8k → ~28.2k ↑14.6k", the move coloured.
+    static func journey(_ rank: LiveTeam.Rank) -> Text {
+        let now = rank.previousText.map { "\($0) → \(rank.text)" } ?? rank.text
+        guard let move = rank.movementText else { return Text(now) }
+        return Text("\(now) \(Text(move).foregroundStyle(colour(rank.movement)))")
+    }
+
     /// Up the table is good news; down is a warning.
     static func colour(_ movement: Int?) -> Color {
         guard let movement, movement != 0 else { return ToolkitColor.secondaryText }
