@@ -306,6 +306,13 @@ final class ScreenAuditTests: XCTestCase {
         waitFor(app.staticTexts["Your next move"].firstMatch, "Today", timeout: 40)
         settle()
         check(app, "03-today")
+        // "Your rival": the starred rival, or the pick-a-rival suggestion when there isn't one.
+        let rival = app.staticTexts["Your rival"].firstMatch
+        if rival.waitForExistence(timeout: 15) {
+            reveal(rival, in: app)
+            settle()
+            check(app, "03b-today-rival")
+        }
     }
 
     /// My Team, its sheets and the pitch. `auditApiBaseURL` as for test11 (e.g. a branch's Team

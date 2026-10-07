@@ -35,6 +35,8 @@ struct RivalsRepository: Sendable {
 final class RivalsStore {
     let repository: RivalsRepository
     private(set) var list: RivalsList?
+    /// When the list last loaded, so screens coming back into view can refresh a stale one.
+    private(set) var loadedAt: Date?
     private(set) var loadError: ErrorCopy?
     private(set) var updateError: ErrorCopy?
     /// The rival being added, changed or removed.
@@ -52,6 +54,7 @@ final class RivalsStore {
         loadError = nil
         do {
             list = try await repository.list()
+            loadedAt = .now
         } catch let error as APIError {
             loadError = ErrorCopy(error)
         } catch {}
@@ -59,6 +62,13 @@ final class RivalsStore {
 
     func loadIfNeeded() async {
         if list == nil { await load() }
+    }
+
+    /// Back on a screen: loads again if the list never arrived (a failed or cancelled first load)
+    /// or is older than `maxAge` seconds.
+    func refreshIfStale(maxAge: TimeInterval = 60) async {
+        if let loadedAt, list != nil, Date.now.timeIntervalSince(loadedAt) < maxAge { return }
+        await load()
     }
 
     /// True when it was saved.
@@ -69,6 +79,7 @@ final class RivalsStore {
         defer { changing = nil }
         do {
             list = try await repository.save(entryId, patch)
+            loadedAt = .now
             return true
         } catch let error as APIError {
             updateError = ErrorCopy(error)
@@ -84,6 +95,7 @@ final class RivalsStore {
         defer { changing = nil }
         do {
             list = try await repository.remove(entryId)
+            loadedAt = .now
         } catch let error as APIError {
             updateError = ErrorCopy(error)
         } catch {}
@@ -93,6 +105,7 @@ final class RivalsStore {
 
     func reset() {
         list = nil
+        loadedAt = nil
         loadError = nil
         updateError = nil
     }

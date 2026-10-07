@@ -130,8 +130,11 @@ struct TodayView: View {
         async let liveLoad: Void = live?.refreshIfStale(maxAge: 15) ?? ()
         async let teamLoad: Void = team?.refreshIfStale() ?? ()
         async let draftsLoad: Void = drafts?.refreshIfStale() ?? ()
+        // Also catches a first load that failed or was cancelled, which used to hide "Your rival"
+        // until the app was relaunched.
+        async let rivalsLoad: Void = appModel.rivals.refreshIfStale()
         await resource?.refreshIfStale()
-        _ = await (liveLoad, teamLoad, draftsLoad)
+        _ = await (liveLoad, teamLoad, draftsLoad, rivalsLoad)
         if let picks = team?.loaded?.value.snapshot?.picks {
             appModel.squadIds = Set(picks.map(\.playerId))
         }
@@ -141,6 +144,8 @@ struct TodayView: View {
 struct TodayContent: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// "Not now" on the pick-a-rival suggestion.
+    @AppStorage("today.rivalPromptDismissed") private var rivalPromptDismissed = false
     let loaded: Loaded<Today>
     /// False while showing a saved copy or after a failed refresh: never claim anything is clear then.
     var isCurrent = true
@@ -209,6 +214,23 @@ struct TodayContent: View {
                 SectionHeader(title: "Your rival", actionTitle: list.rivals.count > 1 ? "All rivals" : nil,
                               action: list.rivals.count > 1 ? onRivals : nil)
                 FeaturedRivalCard(rival: rival, gameweek: list.gameweek) { onRival(rival.entryId) }
+            } else if let list = appModel.rivals.list, !rivalPromptDismissed {
+                // No starred rival: say how to get one rather than leaving the section to vanish.
+                let prompt = TodayText.rivalPrompt(hasRivals: !list.rivals.isEmpty)
+                SectionHeader(title: "Your rival")
+                CardGroup {
+                    LinkRow(title: prompt.title, detail: prompt.detail, systemImage: "person.2", action: onRivals)
+                }
+                Button { rivalPromptDismissed = true } label: {
+                    // The frame on the label, so the whole 44 points is the button.
+                    Text("Not now")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ToolkitColor.link)
+                        .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Hides this suggestion on Today")
             }
 
             if let snapshot = today.snapshot {
@@ -798,6 +820,13 @@ private struct AttentionRow: View {
 }
 
 enum TodayText {
+    /// With no starred rival: what Today suggests instead.
+    nonisolated static func rivalPrompt(hasRivals: Bool) -> (title: String, detail: String) {
+        hasRivals
+            ? ("Star a rival", "Follow them here and on Matchday: the gap, and who's ahead live")
+            : ("Pick a rival", "Someone from your mini-leagues to race all season, live on Matchday")
+    }
+
     static func statusTag(_ team: LiveTeam) -> String { MatchdayText.status(team.status) }
 
     /// "52 confirmed + 3 estimated" (one score convention, Matchday v2 item 10).

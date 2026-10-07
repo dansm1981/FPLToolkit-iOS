@@ -176,4 +176,9 @@ struct RivalsTests {
         let list = try APIClient.decode(Envelope<RivalsList>.self, from: Data(raw.utf8)).data
         #expect(list.rivals[0].state == .unknown && list.status == .live)
     }
+
+    @Test func todaySuggestsARivalWhenNoneIsStarred() {
+        #expect(TodayText.rivalPrompt(hasRivals: false).title == "Pick a rival")
+        #expect(TodayText.rivalPrompt(hasRivals: true).title == "Star a rival")
+    }
 }
