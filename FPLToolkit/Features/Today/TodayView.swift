@@ -206,6 +206,10 @@ struct TodayContent: View {
                     appModel.router.open(.reveal)
                 }
             }
+            // The round-up once FPL confirms the gameweek, until the next deadline.
+            if let live = live?.loaded?.value, live.status == .finished, live.replay == nil {
+                RoundupLink(gameweek: live.gameweek) { appModel.router.open(.roundup) }
+            }
 
             GameweekCard(live: live, entry: today.entry, snapshot: team?.snapshot,
                          squadValue: team.flatMap(TeamText.squadValue),

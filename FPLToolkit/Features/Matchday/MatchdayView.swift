@@ -38,6 +38,7 @@ struct MatchdayView: View {
     @State private var showingAllMoments = false
     /// The Deadline reveal (tasks/deadline-reveal.md).
     @State private var showingReveal = false
+    @State private var showingRoundup = false
     @State private var showingNextPoints = false
     @State private var showingHeadToHead = false
     /// A moment opened from Pulse or All moments (phase 2).
@@ -93,6 +94,12 @@ struct MatchdayView: View {
             appModel.router.revealRequested = false
         }
         .navigationDestination(isPresented: $showingReveal) { DeadlineRevealView() }
+        .onChange(of: appModel.router.roundupRequested, initial: true) { _, requested in
+            guard requested else { return }
+            showingRoundup = true
+            appModel.router.roundupRequested = false
+        }
+        .navigationDestination(isPresented: $showingRoundup) { RoundupView() }
         .navigationDestination(isPresented: $showingAllMoments) {
             MatchdayAllMoments(live: table.current?.loaded?.value, seen: feedSeen, focus: focus)
         }
@@ -252,7 +259,8 @@ struct MatchdayView: View {
                           onAllMoments: { showingAllMoments = true },
                           onNextPoints: { showingNextPoints = true },
                           onMoment: { pushedMoment = $0 },
-                          onReveal: entryId == appModel.entryId && live.replay == nil ? { showingReveal = true } : nil)
+                          onReveal: entryId == appModel.entryId && live.replay == nil ? { showingReveal = true } : nil,
+                          onRoundup: entryId == appModel.entryId && live.replay == nil ? { showingRoundup = true } : nil)
         case .team:
             // At accessibility text sizes the list stands in for the pitch, as in the Planner.
             let pitchFits = !typeSize.isAccessibilitySize

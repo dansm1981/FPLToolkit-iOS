@@ -26,6 +26,8 @@ enum DeepLink: Equatable {
     case matchday(item: String? = nil)
     /// The Deadline reveal (tasks/deadline-reveal.md): `fpltoolkit://reveal`, from its push.
     case reveal
+    /// The gameweek round-up: `fpltoolkit://roundup`, from the confirmed-gameweek alert.
+    case roundup
     /// `event` is set when the link came from an alert (notifications.md §6).
     case player(Int, event: String? = nil)
 
@@ -40,6 +42,7 @@ enum DeepLink: Equatable {
         case "research": self = .research
         case "watch": self = parts.first?.lowercased() == "alerts" ? .alerts : .watch
         case "reveal": self = .reveal
+        case "roundup": self = .roundup
         case "matchday":
             self = .matchday(item: URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?.first { $0.name == "item" }?.value)
@@ -67,6 +70,8 @@ final class Router {
     var matchdayFocus: String?
     /// The Deadline reveal, opened over Matchday; Matchday clears it.
     var revealRequested = false
+    /// The round-up, opened over Matchday; Matchday clears it.
+    var roundupRequested = false
     /// A draft to open on the Planner tab (Today's "Continue your plan"); the Planner clears it.
     var pendingDraftId: String?
     /// The part of the Planner tab to scroll to when it next shows; the Planner clears it.
@@ -100,6 +105,9 @@ final class Router {
             showingMatchday = true
         case .reveal:
             revealRequested = true
+            showingMatchday = true
+        case .roundup:
+            roundupRequested = true
             showingMatchday = true
         case .player(let id, let event): presentedPlayer = PlayerRef(id: id, fromAlert: event != nil)
         }

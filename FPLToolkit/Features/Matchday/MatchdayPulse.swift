@@ -15,6 +15,8 @@ struct MatchdayPulse: View {
     var onMoment: (String) -> Void = { _ in }
     /// Opens the Deadline reveal (your own team only).
     var onReveal: (() -> Void)?
+    /// Opens the gameweek round-up once FPL confirms it (your own team only).
+    var onRoundup: (() -> Void)?
 
     var body: some View {
         if let pulse = live.pulse {
@@ -27,6 +29,9 @@ struct MatchdayPulse: View {
             if let race = pulse.race {
                 MatchdayRaceHeader(race: race, chance: pulse.winProbability,
                                    onOpen: { onRival(race.entryId) }, onSwing: onMoment)
+            }
+            if let onRoundup, live.status == .finished {
+                RoundupLink(gameweek: live.gameweek, open: onRoundup)
             }
             if let final = pulse.recap?.final {
                 FinalRecapCard(recap: final, live: live, swing: pulse.race?.biggestSwing?.text, onMoment: onMoment)
