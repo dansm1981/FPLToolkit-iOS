@@ -45,6 +45,10 @@ struct ResearchView: View {
                     detail: "Every flagged player, most owned first, with the latest news.") {
                     InjuriesView()
                 }
+                row("Team news", systemImage: "newspaper",
+                    detail: "What the press conferences said, club by club, beside FPL's own flags.") {
+                    TeamNewsView()
+                }
             } header: {
                 Text("Players")
             }
