@@ -237,6 +237,16 @@ struct MatchdayView: View {
                           rank: live.rank,
                           canFollow: Self.canFollow(live.status),
                           onFollow: { sheet = .follow })
+        // The rotating live ticker (matchday-alive): something new every glance.
+        if let ticker = live.pulse?.ticker, !ticker.isEmpty {
+            LiveTicker(items: ticker) { item in
+                if let id = item.itemId {
+                    pushedMoment = id
+                } else if let p = item.playerId, live.squad.contains(where: { $0.playerId == p }) {
+                    sheet = .points(p)
+                }
+            }
+        }
         if let since, let catchUp = MatchdayMemory.catchUp(live, since: since) {
             MatchdayCatchUp(text: catchUp)
         }
@@ -1174,6 +1184,47 @@ struct MatchdayFixtures: View {
             Text("Tap a match for its goals, assists, cards, saves, bonus and DEFCON counts.")
                 .font(.footnote)
                 .foregroundStyle(ToolkitColor.secondaryText)
+        }
+        otherMatches
+    }
+
+    /// Every other fixture of the gameweek (matchday-alive): the whole league, not only yours.
+    @ViewBuilder private var otherMatches: some View {
+        let mine = Set(live.fixtures.map(\.id))
+        let others = (live.allFixtures ?? []).filter { !mine.contains($0.id) }
+            .sorted { ($0.kickoff ?? .distantFuture) < ($1.kickoff ?? .distantFuture) }
+        if !others.isEmpty {
+            SectionHeader(title: "Other matches")
+            VStack(spacing: 0) {
+                ForEach(Array(others.enumerated()), id: \.element.id) { index, f in
+                    if index > 0 { Divider().overlay(ToolkitColor.border) }
+                    let title = "\(appModel.club(f.homeClubId)?.shortName ?? "Home") \(f.homeScore.map(String.init) ?? "")\(f.state == .notStarted ? "v" : "–")\(f.awayScore.map(String.init) ?? "") \(appModel.club(f.awayClubId)?.shortName ?? "Away")"
+                    let state = f.state == .inPlay ? (f.minute.map { "\($0)'" } ?? "Live")
+                        : f.state == .finished ? "FT" : (f.kickoff?.formatted(date: .omitted, time: .shortened) ?? "")
+                    Button {
+                        guard f.state != .notStarted else { return }
+                        withAnimation(.snappy) { expanded = expanded == f.id ? nil : f.id }
+                    } label: {
+                        HStack {
+                            Text(title).font(.subheadline.weight(.semibold).monospacedDigit()).foregroundStyle(ToolkitColor.primaryText)
+                            Spacer()
+                            Text(state).font(.footnote.monospacedDigit())
+                                .foregroundStyle(f.state == .inPlay ? ToolkitColor.positive : ToolkitColor.secondaryText)
+                        }
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    if expanded == f.id {
+                        MatchStatsPanel(fixtureId: f.id, gameweek: live.gameweek, squad: Set(live.squad.map(\.playerId)),
+                                        refreshed: refreshed)
+                            .padding(.bottom, ToolkitSpace.md)
+                    }
+                }
+            }
+            .padding(.horizontal, 15)
+            .background(ToolkitColor.surface, in: RoundedRectangle(cornerRadius: ToolkitRadius.card))
         }
     }
 

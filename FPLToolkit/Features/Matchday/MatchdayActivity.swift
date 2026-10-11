@@ -23,7 +23,7 @@ enum MatchdayActivity {
             provisionalBonus: live.total.provisionalBonus,
             playing: live.playing,
             toPlay: live.toPlay,
-            headline: live.headline?.text ?? "\(live.playing) playing · \(live.toPlay) to play",
+            headline: rotatingHeadline(live, now: .now),
             status: live.status.rawValue,
             updatedAt: updated ?? .now,
             rival: live.rivals?.featured.flatMap { featured in
@@ -160,3 +160,13 @@ struct LiveActivityAck: Decodable, Sendable {
     let registered: Bool?
     let ended: Bool?
 }
+
+/// The Lock Screen's line, as the server words it (matchday-alive F): something that just happened
+/// stays up; otherwise it moves through the ticker's first five every 45 seconds.
+nonisolated func rotatingHeadline(_ live: LiveTeam, now: Date) -> String {
+    let fallback = live.headline?.text ?? "\(live.playing) playing · \(live.toPlay) to play"
+    let top = Array((live.pulse?.ticker ?? []).prefix(5))
+    if live.headline?.kind == "moment" || top.isEmpty { return fallback }
+    return top[Int(now.timeIntervalSince1970 / 45) % top.count].text
+}
+

@@ -39,6 +39,7 @@ struct MatchdayPulse: View {
                 SpellRecapCard(recap: spell, live: live, onMoment: onMoment)
             }
             justHappened(pulse)
+            AroundTheGameSection(live: live, onMoment: onMoment, onAll: onAllMoments)
             whatMattersNow(pulse)
             if pulse.race == nil, let end = pulse.ifNothingChanges {
                 IfNothingChangesCard(end: end)
@@ -77,7 +78,7 @@ struct MatchdayPulse: View {
 
     @ViewBuilder private func whatMattersNow(_ pulse: LiveTeam.Pulse) -> some View {
         SectionHeader(title: "What could happen next")
-        if pulse.whatMattersNow.isEmpty && rivalSituations.isEmpty {
+        if pulse.whatMattersNow.isEmpty && rivalSituations.isEmpty && (pulse.swings ?? []).isEmpty {
             Text(quietText)
                 .font(.subheadline)
                 .foregroundStyle(ToolkitColor.secondaryText)
@@ -93,6 +94,11 @@ struct MatchdayPulse: View {
                         PulseItemRow(item: item, photo: live.player(item.playerId)?.photo)
                     }
                     .buttonStyle(.plain)
+                }
+                // What a goal would do to your rank (matchday-alive).
+                if let swings = pulse.swings, !swings.isEmpty {
+                    if !pulse.whatMattersNow.isEmpty { Divider().overlay(ToolkitColor.border) }
+                    RankSwingRows(swings: swings)
                 }
                 // Against your rival: what would help you and what would hurt you.
                 ForEach(Array(rivalSituations.enumerated()), id: \.offset) { index, situation in

@@ -12,6 +12,8 @@ enum MatchdayFeedFilter: String, CaseIterable, Identifiable {
     case watching = "Watching"
     /// What moved your rivalries (happy-backend-pal#68); offered only when the feed has some.
     case rivals = "Rivals"
+    /// Big moments across the league (matchday-alive); offered only when the feed has some.
+    case around = "Around the game"
 
     var id: String { rawValue }
 
@@ -24,6 +26,7 @@ enum MatchdayFeedFilter: String, CaseIterable, Identifiable {
         case .lineups: item.group == .lineups
         case .watching: item.group == .watching
         case .rivals: item.group == .rivals || !(item.rivals?.isEmpty ?? true)
+        case .around: item.group == .around
         }
     }
 }
@@ -93,8 +96,9 @@ struct MatchdayFeed: View {
     private var filters: [MatchdayFeedFilter] {
         let watching = feed.contains { $0.group == .watching }
         let rivals = feed.contains(where: MatchdayFeedFilter.rivals.includes)
+        let around = feed.contains { $0.group == .around }
         return MatchdayFeedFilter.allCases.filter {
-            ($0 != .watching || watching) && ($0 != .rivals || rivals)
+            ($0 != .watching || watching) && ($0 != .rivals || rivals) && ($0 != .around || around)
         }
     }
 

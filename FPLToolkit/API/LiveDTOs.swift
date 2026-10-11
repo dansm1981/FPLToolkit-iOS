@@ -184,6 +184,8 @@ struct LiveTeam: Decodable, Sendable {
         /// `rivals` is a player only your rivals count.
         enum Group: String, FallbackDecodable {
             case goals, defence, bonus, lineups, match, watching, rivals
+            /// Other players' big moments across the league (matchday-alive).
+            case around
             case unknown
             static let fallback = Self.unknown
         }
@@ -497,6 +499,10 @@ struct LiveTeam: Decodable, Sendable {
             /// "Your differentials: Gabriel (live), Palmer"
             let differentials: String?
             let projected: Projected?
+            /// "Still to come: you ~18 pts, Andy ~24 pts" (matchday-alive).
+            var atStakeText: String?
+            /// Why the race is changing: the last three swings, newest first.
+            var recentSwings: [String]?
 
             var margin: Int { you - them }
         }
@@ -507,6 +513,32 @@ struct LiveTeam: Decodable, Sendable {
         var recap: Recap?
         var winProbability: WinProbability?
         var race: Race?
+        /// The rotating ticker at the top of Matchday (matchday-alive).
+        var ticker: [TickerItem]?
+        /// What a goal would do to your rank, either way (matchday-alive).
+        var swings: [Swing]?
+
+        struct TickerItem: Decodable, Sendable, Hashable, Identifiable {
+            /// breaking, player, fixture, rival, opportunity, threat, around or coming.
+            let id: String
+            let kind: String
+            let text: String
+            let detail: String?
+            var impact: Impact?
+            var playerId: Int?
+            var fixtureId: Int?
+            var itemId: String?
+        }
+        struct Swing: Decodable, Sendable, Hashable, Identifiable {
+            let id: String
+            /// threat or opportunity.
+            let kind: String
+            /// "A Haaland goal would cost you ~24k places"
+            let text: String
+            let detail: String
+            let playerId: Int
+            let rankEffect: Int
+        }
     }
 
     /// The live overall rank estimate (Matchday v2 phase 3): always called an estimate.
@@ -585,6 +617,19 @@ struct LiveTeam: Decodable, Sendable {
     var pulse: Pulse?
     /// The live overall rank estimate; nil until the gameweek's sample is in (phase 3).
     var rank: Rank?
+    /// Every fixture of the gameweek (matchday-alive), for Matches.
+    var allFixtures: [AnyFixture]?
+
+    struct AnyFixture: Decodable, Sendable, Hashable, Identifiable {
+        let id: Int
+        let homeClubId: Int
+        let awayClubId: Int
+        let kickoff: Date?
+        let state: Fixture.State
+        let minute: Int?
+        let homeScore: Int?
+        let awayScore: Int?
+    }
     /// Your saved mini-leagues live; only with `?rivals=1` from this team's own device (phase 3).
     var leagues: [League]?
     let players: [String: PlayerSummary]

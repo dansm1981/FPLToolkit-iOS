@@ -73,6 +73,16 @@ struct MatchdayRaceHeader: View {
             if let differentials = race.differentials {
                 line(differentials, systemImage: "star.fill", colour: ToolkitColor.accent)
             }
+            if let swings = race.recentSwings, !swings.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Why it's changing").font(.caption.weight(.bold)).foregroundStyle(ToolkitColor.secondaryText)
+                    ForEach(swings, id: \.self) { Text($0).font(.footnote).foregroundStyle(ToolkitColor.primaryText) }
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if let stake = race.atStakeText {
+                line(stake, systemImage: "hourglass", colour: ToolkitColor.secondaryText)
+            }
             if let projected = race.projected {
                 line(projected.text, systemImage: "chart.line.uptrend.xyaxis", colour: ToolkitColor.secondaryText)
             }
